@@ -64,7 +64,7 @@ Desktop
 
 主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。`Detection/` 另行公开 `DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、`DetectionRowRulePipeline`、`FreezeDetectionRow` 与 `FreezeRowDetector`，使规则可在不构造后端服务的情况下直接测试。
 
-### 检测规则管线（NativeCore）
+### 检测规则管线
 
 行级规则位于 `EDetection.NativeCore/Detection/`，是纯 `net11.0` 子命名空间，不引用后端 partial、WinUI 或文件 IO。`NativeDetectionBackendService` 负责解析与编排，规则只消费行上下文：
 
