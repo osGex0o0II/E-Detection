@@ -50,6 +50,7 @@ $requiredFiles = @(
     "Views\DetectionWorkbenchView.xbf",
     "Views\RunSetupView.xbf",
     "Views\SettingsView.xbf",
+    "Views\Settings\DetectionRulesSettingsSection.xbf",
     "config.json",
     "DesktopPathSafety.ps1",
     "Install-Desktop.ps1",

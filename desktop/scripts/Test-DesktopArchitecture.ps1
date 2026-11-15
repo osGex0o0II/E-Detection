@@ -72,6 +72,7 @@ foreach ($entry in $limits.GetEnumerator()) {
 
 $settingsPartials = @(
     Get-ChildItem -LiteralPath 'desktop/EDetection.Desktop/Views' -Filter 'SettingsView*.cs' -File
+    Get-ChildItem -LiteralPath 'desktop/EDetection.Desktop/Views/Settings' -Filter '*.cs' -File -ErrorAction SilentlyContinue
 )
 foreach ($partial in $settingsPartials) {
     $count = (Get-Content -LiteralPath $partial.FullName).Count

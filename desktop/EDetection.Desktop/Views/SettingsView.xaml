@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<UserControl x:Class="EDetection.Desktop.Views.SettingsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d">
+<UserControl x:Class="EDetection.Desktop.Views.SettingsView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:settings="using:EDetection.Desktop.Views.Settings" mc:Ignorable="d">
     <Grid x:Name="SettingsRoot" Background="Transparent" Opacity="0">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="SettingsLayoutStates">
+                <VisualState x:Name="ExpandedSettingsLayout">
+                    <VisualState.StateTriggers>
+                        <StateTrigger x:Name="ExpandedSettingsTrigger" IsActive="True" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SettingsBody.Padding" Value="24,22,24,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="24" />
+                        <Setter Target="SettingsNavColumn.Width" Value="184" />
+                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="CompactSettingsLayout">
+                    <VisualState.StateTriggers>
+                        <StateTrigger x:Name="CompactSettingsTrigger" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SettingsBody.Padding" Value="18,18,18,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="18" />
+                        <Setter Target="SettingsNavColumn.Width" Value="152" />
+                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="IconSettingsLayout">
+                    <VisualState.StateTriggers>
+                        <StateTrigger x:Name="IconSettingsTrigger" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="SettingsBody.Padding" Value="18,18,18,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="14" />
+                        <Setter Target="SettingsNavColumn.Width" Value="56" />
+                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <Grid.RenderTransform>
             <CompositeTransform x:Name="SettingsRootTransform" TranslateX="24" />
         </Grid.RenderTransform>
@@ -262,123 +299,50 @@
                             </StackPanel>
                         </Border>
                     </StackPanel>
-                    <StackPanel x:Name="DetectionRulesSection" Spacing="8">
-                        <TextBlock Text="检测规则" Style="{StaticResource SectionTitleTextStyle}" />
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="电流过载检测" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding CurrentOverloadEnabled, Mode=TwoWay}" AutomationProperties.Name="电流过载检测" />
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="电流不平衡检测" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding CurrentUnbalanceEnabled, Mode=TwoWay}" AutomationProperties.Name="电流不平衡检测" />
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="功率因数检测" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding PowerFactorEnabled, Mode=TwoWay}" AutomationProperties.Name="功率因数检测" />
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="详细异常输出（报告更大）" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="开启后会在报告中写入逐项异常详情，适合复核；报告文件会更大。" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding DetailOutputEnabled, Mode=TwoWay}" AutomationProperties.Name="详细异常输出" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
+                    <settings:DetectionRulesSettingsSection x:Name="DetectionRulesSection" />
                     <StackPanel x:Name="ReportsSection" Spacing="8">
                         <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="生成 Excel 报告（建议开启）" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="关闭后仅完成检测并显示摘要，不生成 Excel 文件。" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding WriteReport, Mode=TwoWay}" IsEnabled="{Binding CanEditRunConfiguration}" AutomationProperties.Name="生成 Excel 报告" />
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="报告历史保留" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ComboBox Grid.Column="1" SelectedIndex="{Binding ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史保留">
-                                        <ComboBoxItem Content="10 个" />
-                                        <ComboBoxItem Content="20 个" />
-                                        <ComboBoxItem Content="50 个" />
-                                    </ComboBox>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="清空报告历史" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <Button Grid.Column="1" Click="ClearRecentReports_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE894;" FontSize="14" />
-                                            <TextBlock Text="清空" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Spacing="4">
+                            <controls:SettingsCard Header="生成 Excel 报告（建议开启）" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
+                                <ToggleSwitch IsOn="{x:Bind ViewModel.WriteReport, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Header="报告历史保留">
+                                <ComboBox SelectedIndex="{x:Bind ViewModel.ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史保留">
+                                    <ComboBoxItem Content="10 个" />
+                                    <ComboBoxItem Content="20 个" />
+                                    <ComboBoxItem Content="50 个" />
+                                </ComboBox>
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Header="清空报告历史">
+                                <Button Click="ClearRecentReports_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
+                                        <TextBlock Text="清空" />
+                                    </StackPanel>
+                                </Button>
+                            </controls:SettingsCard>
+                        </StackPanel>
                     </StackPanel>
                     <StackPanel x:Name="LogsSection" Spacing="8">
                         <TextBlock Text="运行记录" Style="{StaticResource SectionTitleTextStyle}" />
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="运行记录保留" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ComboBox Grid.Column="1" SelectedIndex="{Binding RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录保留">
-                                        <ComboBoxItem Content="200 条" />
-                                        <ComboBoxItem Content="500 条" />
-                                        <ComboBoxItem Content="1000 条" />
-                                        <ComboBoxItem Content="2000 条" />
-                                    </ComboBox>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="清空运行记录" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <Button Grid.Column="1" Click="ClearRuntimeLogs_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE894;" FontSize="14" />
-                                            <TextBlock Text="清空" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Spacing="4">
+                            <controls:SettingsCard Header="运行记录保留">
+                                <ComboBox SelectedIndex="{x:Bind ViewModel.RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录保留">
+                                    <ComboBoxItem Content="200 条" />
+                                    <ComboBoxItem Content="500 条" />
+                                    <ComboBoxItem Content="1000 条" />
+                                    <ComboBoxItem Content="2000 条" />
+                                </ComboBox>
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Header="清空运行记录">
+                                <Button Click="ClearRuntimeLogs_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
+                                        <TextBlock Text="清空" />
+                                    </StackPanel>
+                                </Button>
+                            </controls:SettingsCard>
+                        </StackPanel>
                     </StackPanel>
                     <StackPanel x:Name="WindowSection" Spacing="8">
                         <TextBlock Text="通知与窗口" Style="{StaticResource SectionTitleTextStyle}" />
@@ -641,48 +605,29 @@
                     </StackPanel>
                     <StackPanel x:Name="AdvancedSection" Spacing="8">
                         <TextBlock Text="维护" Style="{StaticResource SectionTitleTextStyle}" />
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="应用状态" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <StackPanel Grid.Column="1" Spacing="8">
-                                        <TextBlock Text="{Binding DesktopHealth.SummaryText}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                        <Button Command="{Binding RefreshDesktopHealthCommand}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
-                                                <TextBlock Text="刷新状态" />
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Expander x:Name="DiagnosticsDetailsExpander" Header="维护详情" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                    <StackPanel>
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
-                                                <ColumnDefinition Width="*" MaxWidth="320" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="检测组件" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding DesktopHealth.BackendText}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                        </Grid>
-                                        <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
-                                                <ColumnDefinition Width="*" MaxWidth="320" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="设置存储" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <TextBlock Grid.Column="1" Text="{Binding DesktopHealth.SettingsText}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                        </Grid>
-                                    </StackPanel>
-                                </Expander>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Spacing="4">
+                            <controls:SettingsCard Header="应用状态">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Button Command="{x:Bind ViewModel.RefreshDesktopHealthCommand, Mode=OneWay}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                                            <TextBlock Text="刷新状态" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </controls:SettingsCard>
+                            <Expander x:Name="DiagnosticsDetailsExpander" Header="维护详情" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                                <StackPanel Spacing="4">
+                                    <controls:SettingsCard Header="检测组件">
+                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="设置存储">
+                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
                     </StackPanel>
                     <StackPanel x:Name="ProxySection" Spacing="8">
                         <TextBlock Text="网络连接" Style="{StaticResource SectionTitleTextStyle}" />
@@ -860,69 +805,38 @@
                     </StackPanel>
                     <StackPanel x:Name="AppearanceSection" Spacing="8">
                         <TextBlock Text="外观" Style="{StaticResource SectionTitleTextStyle}" />
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="应用主题" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
-                                        <ComboBoxItem Content="跟随系统" />
-                                        <ComboBoxItem Content="浅色" />
-                                        <ComboBoxItem Content="深色" />
-                                    </ComboBox>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="窗口背景" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
-                                        <ComboBoxItem Content="Mica" />
-                                        <ComboBoxItem Content="Acrylic" />
-                                        <ComboBoxItem Content="无" />
-                                    </ComboBox>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200" />
-                                        <ColumnDefinition Width="*" MaxWidth="320" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="顶部诗词" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{Binding EnablePoetryStatus}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                    <StackPanel>
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="诗词来源" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <TextBox Grid.Column="1" Text="{Binding PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
-                                        </Grid>
-                                        <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
-                                                <ColumnDefinition Width="*" MaxWidth="320" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="诗词语言" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
-                                                <ComboBoxItem Content="简体中文" />
-                                                <ComboBoxItem Content="繁体中文" />
-                                            </ComboBox>
-                                        </Grid>
-                                    </StackPanel>
-                                </Expander>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Spacing="4">
+                            <controls:SettingsCard Header="应用主题">
+                                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
+                                    <ComboBoxItem Content="跟随系统" />
+                                    <ComboBoxItem Content="浅色" />
+                                    <ComboBoxItem Content="深色" />
+                                </ComboBox>
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Header="窗口背景">
+                                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
+                                    <ComboBoxItem Content="Mica" />
+                                    <ComboBoxItem Content="Acrylic" />
+                                    <ComboBoxItem Content="无" />
+                                </ComboBox>
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Header="顶部诗词">
+                                <ToggleSwitch IsOn="{x:Bind ViewModel.EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
+                            </controls:SettingsCard>
+                            <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{x:Bind ViewModel.EnablePoetryStatus, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                                <StackPanel Spacing="4">
+                                    <controls:SettingsCard Header="诗词来源">
+                                        <TextBox Text="{x:Bind ViewModel.PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="诗词语言">
+                                        <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
+                                            <ComboBoxItem Content="简体中文" />
+                                            <ComboBoxItem Content="繁体中文" />
+                                        </ComboBox>
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>

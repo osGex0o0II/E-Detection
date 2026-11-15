@@ -6,8 +6,6 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class SettingsView : UserControl
 {
-    private const double ExpandedNavigationWidth = 184;
-    private const double CompactNavigationWidth = 152;
     private const double IconNavigationWidth = 56;
     private const double ExpandedLabelWidth = 200;
     private const double CompactLabelWidth = 168;

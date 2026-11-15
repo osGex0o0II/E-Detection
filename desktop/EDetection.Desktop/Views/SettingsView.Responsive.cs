@@ -58,13 +58,9 @@ public sealed partial class SettingsView
 
         var compact = availableWidth < CompactBodyBreakpoint;
         var iconOnlyNavigation = availableWidth < IconNavigationBreakpoint;
-        SettingsBody.Padding = compact
-            ? new Thickness(18, 18, 18, 0)
-            : new Thickness(24, 22, 24, 0);
-        SettingsBody.ColumnSpacing = iconOnlyNavigation ? 14 : compact ? 18 : 24;
-        SettingsNavColumn.Width = new GridLength(iconOnlyNavigation
-            ? IconNavigationWidth
-            : compact ? CompactNavigationWidth : ExpandedNavigationWidth);
+        ExpandedSettingsTrigger.IsActive = !compact && !iconOnlyNavigation;
+        CompactSettingsTrigger.IsActive = compact && !iconOnlyNavigation;
+        IconSettingsTrigger.IsActive = iconOnlyNavigation;
         UpdateNavigationRailLayout(iconOnlyNavigation);
         UpdateFooterLayout(availableWidth < StackedFooterBreakpoint);
 
@@ -75,7 +71,6 @@ public sealed partial class SettingsView
         }
 
         SettingsContentStack.Width = Math.Min(contentWidth, SettingsContentMaxWidth);
-        SettingsContentStack.MaxWidth = SettingsContentMaxWidth;
 
         var stackSettingRows = contentWidth < StackedSettingsRowsBreakpoint;
         var labelWidth = contentWidth < CompactContentBreakpoint ? CompactLabelWidth : ExpandedLabelWidth;

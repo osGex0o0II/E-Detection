@@ -137,7 +137,8 @@ $requiredWinUIResources = @(
     "Views\AppShellView.xbf",
     "Views\DetectionWorkbenchView.xbf",
     "Views\RunSetupView.xbf",
-    "Views\SettingsView.xbf"
+    "Views\SettingsView.xbf",
+    "Views\Settings\DetectionRulesSettingsSection.xbf"
 )
 
 foreach ($resource in $requiredWinUIResources) {
