@@ -1,1 +1,5 @@
 * text=auto eol=lf
+
+# Legacy PyInstaller output is still tracked in history; if it is ever restored,
+# keep it out of GitHub language statistics and diffs.
+build/** linguist-vendored
