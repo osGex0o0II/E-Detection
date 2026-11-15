@@ -181,7 +181,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($CaseName -in @('All', 'Poetry')) {
-    $viewModelText = Get-Content -LiteralPath (Join-Path $repoRoot 'desktop\EDetection.Desktop\ViewModels\MainViewModel.cs') -Raw
+    $viewModelDirectory = Join-Path $repoRoot 'desktop\EDetection.Desktop\ViewModels'
+    $viewModelText = (Get-ChildItem -LiteralPath $viewModelDirectory -Filter 'MainViewModel*.cs' -File |
+        Sort-Object Name |
+        ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join [Environment]::NewLine
     if (-not $viewModelText.Contains('_networkProxy.BuildHandler(this, useProxy: true)', [System.StringComparison]::Ordinal)) {
         throw 'Poetry refresh must build a handler through the shared proxy service after opt-in.'
     }
