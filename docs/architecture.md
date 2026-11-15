@@ -64,7 +64,7 @@ Desktop
 
 主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。`Detection/` 另行公开 `DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、`DetectionRowRulePipeline`、`FreezeDetectionRow` 与 `FreezeRowDetector`，使规则可在不构造后端服务的情况下直接测试。
 
-## 检测规则管线
+### 检测规则管线（NativeCore）
 
 行级规则位于 `EDetection.NativeCore/Detection/`，是纯 `net11.0` 子命名空间，不引用后端 partial、WinUI 或文件 IO。`NativeDetectionBackendService` 负责解析与编排，规则只消费行上下文：
 
@@ -99,7 +99,7 @@ NativeDetectionBackendService.Analysis.cs
 - 相别文本集中在 `DetectionMath.VoltagePhaseColumns` / `PhaseForCurrentColumn`；数值格式使用 `InvariantCulture`（`F1`/`F3`），不受运行线程区域设置影响。
 - 关闭 `detail_output` 时，电流过大与温度异常按超限相数重复通用标签（例如两个“电流过大”），保留既有行级重数；后续结构化明细只做一次汇总。
 - 行级规则本身无 IO，不单独接收取消令牌；`Analysis.cs` 在逐行循环检查取消，`FreezeRowDetector` 在辅助列、核心列、滑窗与输出行逐项检查。
-- `DetectionRulePipelineTests.cs` 的 15 项测试覆盖全零行、PT 接线、相电压不平衡、多相电压、电流重数、电流不平衡开关、CT 极性、有功下限、功率因数开关、温度相别、数据冻结、待机行抑制与数据恒定；xUnit 总计 22 项。
+- `DetectionRulePipelineTests.cs` 的 15 项测试覆盖全零行、PT 接线、相电压不平衡（含逐相详情）、多相电压、电流重数、电流不平衡开关、CT 极性、有功下限、功率因数开关、温度相别与通用标签重数、数据冻结、待机行抑制与数据恒定；xUnit 总计 22 项。
 
 ### `EDetection.Desktop.Core`
 

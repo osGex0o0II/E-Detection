@@ -1,6 +1,6 @@
 # E-Detection 数据模型
 
-本文覆盖 CSV 输入、检测请求/事件、报告 DTO、设置与密钥、工作簿列、异常/严重等级/传感器模型，以及运行状态。架构与线程模型见 [`architecture.md`](architecture.md)。
+本文覆盖 CSV 输入、规则管线、检测请求/事件、报告 DTO、设置与密钥、工作簿列、异常/严重等级/传感器模型，以及运行状态。架构与线程模型见 [`architecture.md`](architecture.md)。
 
 ## 数据流总览
 
@@ -504,7 +504,7 @@ $env:EDETECTION_NATIVE_PARITY_TRACE = "<本地随机密钥>"
 | 数据冻结 | 核心列中至少 2 列连续平坦，且不是待机行 | `数据冻结` | 同左。 |
 | 数据恒定 | 无功功率或功率因数列出现连续平坦段 | `数据恒定` | 同左。 |
 
-“电流活跃”定义为任一相电流 `>= CurrentActiveMinThreshold`。待机行定义为所有存在的电流列 `< CurrentActiveMinThreshold`，且所有存在的电压列都在 `[VoltageMinThreshold, VoltageMaxThreshold]` 内。
+“电流活跃”定义为任一相电流 `>= CurrentActiveMinThreshold`。待机行要求至少存在一个电流列，且所有存在的电流列 `< CurrentActiveMinThreshold`，同时所有存在的电压列都在 `[VoltageMinThreshold, VoltageMaxThreshold]` 内；无电流列的行不按待机行处理。
 
 ### `FreezeDetectionRow` 与 `FreezeRowDetector`
 
@@ -559,7 +559,7 @@ DetectionRowRulePipeline.Evaluate → rowTypes
 | 传感器故障 | 相温度平均值为 `2867.2` | `传感器故障(A相温度:2867.2°C,共N点)`。 |
 | 传感器未配置 | 列存在且有观测单元格，但没有任何非零有效值 | 传感器状态“未配置”；不单独生成异常明细。 |
 
-“电流活跃”定义为任一相电流 `>= I_MIN_ACTIVE_THRESHOLD`（默认 1.0）。待机行定义为所有存在的电流列 `< I_MIN_ACTIVE_THRESHOLD`，且电压列均在 `[V_MIN_THRESHOLD, V_MAX_THRESHOLD]` 内；待机行不判定数据冻结。
+“电流活跃”定义为任一相电流 `>= I_MIN_ACTIVE_THRESHOLD`（默认 1.0）。待机行要求至少存在一个电流列，且所有存在的电流列 `< I_MIN_ACTIVE_THRESHOLD`，同时所有存在的电压列均在 `[V_MIN_THRESHOLD, V_MAX_THRESHOLD]` 内；待机行不判定数据冻结。
 
 ### 严重等级与优先级
 

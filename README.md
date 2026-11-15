@@ -119,7 +119,7 @@ CSV 根目录
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Detection.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Detection.cs) | 运行入口、文件枚举、事件发出、汇总与报告调用。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs) | 单文件解析、组装 `DetectionRowContext`、调用规则管线、离线/传感器判定。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Rules.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Rules.cs) | 离线无效观测计数与传感器状态辅助；电压/电流/功率/温度/冻结规则已移入 `Detection/`。 |
-| [`desktop/EDetection.NativeCore/Detection/`](desktop/EDetection.NativeCore/Detection/DetectionRowRulePipeline.cs) | 行级规则管线：`DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、固定顺序 `DetectionRowRulePipeline` 与 `FreezeRowDetector`。 |
+| [`desktop/EDetection.NativeCore/Detection/`](desktop/EDetection.NativeCore/Detection/) | 行级规则管线：`DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、固定顺序 `DetectionRowRulePipeline` 与 `FreezeRowDetector`。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.RuleOptions.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.RuleOptions.cs) | `NativeDetectionConfig` → `DetectionRuleOptions` 映射，保持配置加载与纯规则管线解耦。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Csv.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Csv.cs) | 编码候选、CSV 分词、列名归一化、无效值与统计尾行处理。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Reporting.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Reporting.cs) | 6 张工作表的 OpenXML 生成、XML 校验与原子发布。 |
@@ -173,7 +173,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\desktop\scripts\Test-DesktopInst
 | 文档 | 内容 |
 | --- | --- |
 | [`docs/architecture.md`](docs/architecture.md) | 项目依赖、DI 组合、运行生命周期、线程与取消、报告生成、发布模型、架构门禁。 |
-| [`docs/data-model.md`](docs/data-model.md) | CSV 编码与列映射、请求/事件/报告 DTO、设置与密钥、工作簿列、规则与运行状态。 |
+| [`docs/data-model.md`](docs/data-model.md) | CSV 编码与列映射、规则管线、请求/事件/报告 DTO、设置与密钥、工作簿列与运行状态。 |
 | [`docs/状态.md`](docs/状态.md) | 2026-11-16 验证快照、重构阶段、已知限制与后续路线。 |
 | [`docs/交接.md`](docs/交接.md) | 交接用构建/测试/发布说明、关键文件、架构不变量与常见问题。 |
 | [`desktop/README.md`](desktop/README.md) | 原生开发者指南：依赖、运行、验证矩阵、发布与排障。 |
