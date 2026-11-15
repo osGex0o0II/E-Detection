@@ -1,18 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="E-Detection">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0B1220"/>
-      <stop offset="1" stop-color="#12304A"/>
-    </linearGradient>
-    <linearGradient id="pulse" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#38BDF8"/>
-      <stop offset="1" stop-color="#22C55E"/>
-    </linearGradient>
-  </defs>
-  <rect x="8" y="8" width="144" height="144" rx="34" fill="url(#bg)"/>
-  <path d="M80 30l38 13v33c0 27-17 46-38 54-21-8-38-27-38-54V43z"
-        fill="none" stroke="#38BDF8" stroke-opacity=".55" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M46 84h18l8-19 13 41 10-29 7 7h18"
-        fill="none" stroke="url(#pulse)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="119" cy="43" r="7" fill="#22C55E"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-labelledby="title desc">
+  <title id="title">E-Detection</title>
+  <desc id="desc">深灰色数据波形，右上方一个红色检测点。</desc>
+  <rect x="5" y="5" width="150" height="150" rx="34" fill="#F8F8F8" stroke="#E4E4E7" stroke-width="1"/>
+  <path d="M30 90H54L73 48L91 110L106 74L116 90H132"
+        fill="none" stroke="#242427" stroke-width="11"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="131" cy="61" r="8" fill="#D13438"/>
 </svg>
