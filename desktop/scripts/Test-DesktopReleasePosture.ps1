@@ -67,7 +67,11 @@ $desktopProject = Get-Text $DesktopProjectPath
 $rootReadme = Get-Text $RootReadmePath
 $desktopReadme = Get-Text $DesktopReadmePath
 $migrationDocument = Get-Text $MigrationDocumentPath
-$mainViewModel = Get-Text $MainViewModelPath
+$mainViewModelFile = (Resolve-Path $MainViewModelPath).Path
+$mainViewModelDirectory = Split-Path -Parent $mainViewModelFile
+$mainViewModel = (Get-ChildItem -LiteralPath $mainViewModelDirectory -Filter 'MainViewModel*.cs' -File |
+    Sort-Object Name |
+    ForEach-Object { Get-Content -LiteralPath $_.FullName -Raw }) -join [Environment]::NewLine
 
 Assert-Contains $workflow "run: ./desktop/scripts/Publish-Desktop.ps1 -RuntimeIdentifier win-x64" "workflow must publish the native package."
 Assert-Contains $workflow "run: ./desktop/scripts/Test-DesktopSettingsMigrationSmoke.ps1" "workflow must run settings migration and optional-network regressions."
