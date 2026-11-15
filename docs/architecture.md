@@ -1,0 +1,289 @@
+# E-Detection 原生桌面架构
+
+本文描述当前 `main` 分支上的实际实现，而不是历史 Python 进程桥接方案。历史迁移记录见 [`../desktop/NATIVE_BACKEND_MIGRATION.md`](../desktop/NATIVE_BACKEND_MIGRATION.md)。
+
+## 概览
+
+- **系统**：Windows 桌面工作台，输入 SCADA/电力监控 CSV 日报，输出可追溯的电气异常 Excel 报告。
+- **UI**：WinUI 3 + Windows App SDK 2.6.5，`WindowsPackageType=None`，自包含发布，不依赖预装 Windows App Runtime。
+- **领域层**：`EDetection.Domain` 目前是纯标记程序集，无项目引用；业务模型仍主要位于 `NativeCore` 与 `Desktop.Core`。
+- **检测层**：`EDetection.NativeCore` 是纯 `net11.0` 程序集，包含 CSV 解析、规则、事件、汇总和 OpenXML 报告，不依赖 WinUI 或 Windows App SDK。
+- **基础设施层**：`EDetection.Infrastructure` 只负责把 `IDetectionBackendService` 适配到 `NativeDetectionBackendService`。
+- **应用层**：`EDetection.Desktop.Core` 承载 WinUI-free 的设置、诊断、历史、事件映射、运行状态和报告摘要服务。
+- **打包层**：`dotnet publish` 自包含发布 + Inno Setup 7 按用户安装器。
+- **运行后端**：`native` 是唯一实现；不存在 Python 运行时、wheelhouse 或双后端分支。
+
+## 分层与依赖
+
+逻辑上希望保持“领域 → 检测核心 → 基础设施/应用服务 → 桌面壳”的单向依赖。实际 `csproj` 不是一条单链：`Infrastructure` 与 `Desktop.Core` 并列引用 `Domain` 和 `NativeCore`，彼此不引用。
+
+```text
+Desktop
+├── Desktop.Core ──► Domain
+│                └─► NativeCore
+├── Infrastructure ──► Domain
+│                  └─► NativeCore
+└── NativeCore          （无项目引用）
+```
+
+| 项目 | 目标框架 | 直接项目引用 | 关键约束 |
+| --- | --- | --- | --- |
+| `EDetection.Domain` | `net11.0` | — | 仅 `DomainAssemblyMarker`；不得引用 WinUI / Windows App SDK。 |
+| `EDetection.NativeCore` | `net11.0` | — | 纯检测核心；不得引用 WinUI、Windows App SDK 或 `Desktop.Core`。 |
+| `EDetection.Infrastructure` | `net11.0` | `Domain`、`NativeCore` | 只做 DI 适配，不承载规则。 |
+| `EDetection.Desktop.Core` | `net11.0` | `Domain`、`NativeCore` | WinUI-free；不得引用 `Infrastructure`。 |
+| `EDetection.Desktop` | `net11.0-windows10.0.19041.0` | `Desktop.Core`、`Infrastructure`、`NativeCore` | 唯一 WinUI 壳；不承载检测规则。 |
+| `EDetection.Tests` | `net11.0` | `Desktop.Core`、`Domain`、`Infrastructure` | xUnit v3，组合根与架构测试。 |
+| `EDetection.Desktop.Tests` | `net11.0` | `Desktop.Core`、`NativeCore` | 无界面控制台冒烟；启动时断言未加载 UI 运行时。 |
+
+依赖方向只允许向下。新增项目引用时，先检查它是否破坏 `Domain` / `Desktop.Core` 的 WinUI-free 约束和 `NativeCore` 的可独立运行能力。
+
+## 项目职责
+
+### `EDetection.NativeCore`
+
+| 文件 | 职责 |
+| --- | --- |
+| `NativeDetectionBackendService.Detection.cs` | `RunDetectionAsync` 入口、输入校验、文件枚举、事件发出、汇总与报告调用。 |
+| `NativeDetectionBackendService.Configuration.cs` | 配置文件加载、阈值合法性检查、CSV 递归枚举。 |
+| `NativeDetectionBackendService.Csv.cs` | 编码候选、CSV 分词、列名归一化、无效值与统计尾行。 |
+| `NativeDetectionBackendService.Analysis.cs` | 单文件分析、行级规则、离线与传感器状态。 |
+| `NativeDetectionBackendService.Rules.cs` | 电压、电流、有功、功率因数、温度、冻结规则。 |
+| `NativeDetectionBackendService.Details.cs` | 异常详情、PT/不平衡/CT 文本、HMAC 对等追踪。 |
+| `NativeDetectionBackendService.Summaries.cs` | 设备汇总、问题类型统计、严重等级、时间顺序。 |
+| `NativeDetectionBackendService.Reporting.cs` | OpenXML 工作簿生成、样式、XML 校验与原子发布。 |
+| `NativeDetectionBackendService.Models.cs` | 内部配置、列组、位置、行/文件分析记录。 |
+
+主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。
+
+### `EDetection.Desktop.Core`
+
+WinUI-free 应用服务，供 WinUI 壳和无界面测试共同引用：
+
+- `SettingsService`：`settings.json` 原子读写、版本迁移、设置目录覆盖。
+- `DetectionConfigService`：用户阈值配置的创建、加载、归一化、保存与校验。
+- `DesktopDiagnosticsService`：输入目录、配置文件和输出目录的运行前检查。
+- `ReportHistoryService`：最近报告增删、筛选、上限裁剪和“最新”标记。
+- `RuntimeLogService`、`RunTelemetryService`、`RunEventService`、`RunStateService`：运行日志、遥测、事件映射与状态快照。
+- `ReportDetailPreviewService`：异常明细的搜索、等级/类型筛选、排序。
+- `ReportSummaryComposer`：生成可复制的检测汇报文本。
+- `NetworkProxyService`、`NtfyNotificationService`、`LlmAssistantService`、`UpdateCheckService`、`PoetryStatusService`：可选网络能力。
+- `StartupService`、`StartupDiagnostics`：登录启动与启动诊断。
+
+### `EDetection.Desktop`
+
+WinUI 3 壳只负责界面与系统集成：
+
+- `App.xaml.cs`：单实例注册、Host 构建、启动参数、窗口创建。
+- `MainWindow.xaml.cs`：窗口放置、标题栏、托盘、任务栏图标、桌面通知、会话结束处理。
+- `Views/AppShellView.xaml`：标题栏、状态带、工作台/设置页切换。
+- `Views/RunSetupView.xaml`：输入、输出、运行开关、报告历史。
+- `Views/DetectionWorkbenchView.xaml`：指标卡、风险设备、异常类型、异常明细、运行记录。
+- `Views/SettingsView.xaml` + partials：设置分区、搜索、导航和动作；17 个 `SettingsCard`、17 处 `{x:Bind}`、`SettingsLayoutStates` 三态 VSM（`ExpandedSettingsLayout` / `CompactSettingsLayout` / `IconSettingsLayout`）。
+- `Views/Settings/DetectionRulesSettingsSection.xaml`：检测规则分区试点 `UserControl`；`SettingsView` 以 `x:Name="DetectionRulesSection"` 承载，搜索和分类导航仍可定位。
+- 设置卡片使用 `CommunityToolkit.WinUI.Controls.SettingsControls` `8.2.251219`；导航宽度、正文内边距和内容最大宽度由 VSM setter 管理，`UpdateResponsiveLayout` 驱动 `StateTrigger`。
+- `ViewModels/MainViewModel*.cs`：命令、属性、设置持久化、报告文本、运行事件编排。
+- `Composition/AppHost.cs`：WinUI 壳的 DI 组合根。
+- `Services/DesktopHealthService.cs`：应用、通知、启动集成、设置存储和包健康状态。
+- `Services/SecureCredentialService.cs`：Windows Credential Locker 封装。
+
+## 组合根与 DI
+
+`AppHost.Build()` 使用 `Microsoft.Extensions.Hosting` 创建 Host，清空默认日志提供程序，然后按以下顺序注册：
+
+```csharp
+services.AddSingleton<SecureCredentialService>();
+services.AddSingleton<IAppCredentialStore>(
+    provider => provider.GetRequiredService<SecureCredentialService>());
+services.AddSingleton<IStartupIntegrationProvider>(
+    _ => new FallbackStartupIntegrationProvider(
+        new TaskSchedulerStartupIntegrationProvider(),
+        new RegistryRunStartupIntegrationProvider()));
+services.AddDesktopCore();
+services.AddInfrastructure();
+services.AddSingleton<DesktopHealthService>();
+services.AddSingleton<MainViewModel>();
+services.AddSingleton<MainWindow>();
+```
+
+| 组合方法 | 注册内容 |
+| --- | --- |
+| `AddDesktopCore()` | `SettingsService`、`DetectionConfigService`、`DesktopDiagnosticsService`、`ReportHistoryService`、`RuntimeLogService`、`RunTelemetryService`、`RunEventService`、`ReportDetailPreviewService`、`ReportSummaryComposer`、`RunStateService`、`NetworkProxyService`、`NtfyNotificationService`、`LlmAssistantService`、`UpdateCheckService`、`PoetryStatusService`、`StartupService`。 |
+| `AddInfrastructure()` | `IDetectionBackendService` → `NativeDetectionBackendService`，单例。 |
+| `AppHost` 额外注册 | 凭据存储、启动集成 Fallback、健康检查、`MainViewModel`、`MainWindow`。 |
+
+所有服务均为单例。`MainViewModel` 的命令入口当前通过 `DetectionBackendServiceFactory.CreateDefault()` 创建检测后端；容器中注册的 `IDetectionBackendService` 与工厂返回同一实现，便于组合根测试和无界面替换。
+
+## 启动与单实例
+
+```text
+App.OnLaunched
+  ├─ AppInstance.FindOrRegisterForKey("EDetection.Desktop.MainInstance")
+  │    ├─ 已有实例：RedirectActivationToAsync（静默启动除外）→ Exit(0)
+  │    └─ 当前实例：注册 Activated，继续
+  ├─ AppHost.Build()
+  ├─ SettingsService.Load()
+  ├─ MainWindow（构造 MainViewModel、托盘、通知、窗口消息）
+  ├─ 需要时隐藏到托盘（--startup-minimized / --background-startup / 设置）
+  └─ MainWindow.Activate()
+```
+
+`App.xaml.cs` 还捕获 WinUI 与 AppDomain 未处理异常并写入启动诊断；`MainWindow` 在关闭时可取消关闭并隐藏到托盘，退出托盘或系统会话结束时才真正释放 Host。
+
+## 运行生命周期
+
+```text
+MainWindow / RunSetupView
+  └─ MainViewModel.StartCommand
+      ├─ EnsureReadyToStartAsync        # 输入、配置、输出目录检查
+      ├─ SaveDetectionConfig()          # 保存用户阈值
+      ├─ EnsureEffectiveConfigPath()    # 确保存在用户 config
+      ├─ ResetRunState()                # 清理上次摘要、筛选、日志、进度
+      ├─ new DetectionRequest { ... }
+      ├─ new CancellationTokenSource()
+      ├─ new Progress<DetectionBackendEvent>(HandleBackendEvent)
+      └─ DetectionExecutionService.RunAsync(
+             DetectionBackendServiceFactory.CreateDefault(),
+             request, progress, token)
+             └─ Task.Run(...)
+                 └─ NativeDetectionBackendService.RunDetectionAsync
+```
+
+`RunDetectionAsync` 的顺序：
+
+1. 校验 `InputDirectory` 非空且存在；解析输入/输出根目录。
+2. 加载 `ConfigPath`；缺失时使用默认值，JSON 无效或阈值倒置时发出 `error` 并返回 1。
+3. 枚举 `*.csv`（递归、忽略不可访问目录、跳过 reparse point、按 `OrdinalIgnoreCase` 排序）。
+4. 发出 `run_started`。
+5. 逐文件分析；每个文件发出 `file_result` 与 `file_progress`。
+6. 有可报告内容时构建 `report_summary`（高风险设备 Top 10、问题类型 Top 8、明细预览前 100 条）。
+7. `WriteReport=true` 且存在汇总时生成工作簿，发出 `report_written`。
+8. 发出 `run_completed`（总数、正常/异常文件、异常记录、跳过文件、报告路径、耗时）。
+
+### 事件契约
+
+| 事件 | 发出时机 | 关键字段 |
+| --- | --- | --- |
+| `run_started` | 输入/配置校验并完成文件枚举后 | `input_dir`、`output_dir`、`total_files`、`write_report`、`generated_at` |
+| `file_result` | 每个文件处理结束 | `source_file`、`relative_path`、`building`、`transformer`、`status`、`message`、`anomaly_count`、`anomaly_types`、`native_parity_trace` |
+| `file_progress` | 每个文件处理结束，紧随 `file_result` | `processed_files`、`total_files`、`percent` |
+| `report_summary` | 存在异常、传感器状态行或跳过行 | `normal_files`、`anomaly_files`、`anomaly_records`、`skipped_files`、`device_count`、`high_risk_devices`、`top_issue_types`、`sensor_overview`、`detail_preview_count`、`detail_preview` |
+| `report_written` | 工作簿成功发布后 | `report_path`、`anomaly_records` |
+| `run_completed` | 正常运行结束（无论是否写报告） | 汇总计数、`report_path`、`duration_seconds`、`generated_at` |
+| `error` | 输入/配置无效或报告写入失败 | `error_type`、`message`；返回退出码 1，不再发 `run_completed` |
+
+`RunEventService` 把事件映射为 `RunEventAction`：更新总数/已处理数/百分比、当前文件、状态文本、任务栏进度、日志、通知、摘要和最近报告。`stderr` 分支是 UI 兼容路径，原生后端当前不发出该事件。
+
+## 线程、取消与进度
+
+- `DetectionExecutionService.RunAsync` 用 `Task.Run` 把 CPU 密集的同步检测循环移出 UI 线程；`NativeDetectionBackendService.RunDetectionAsync` 本身先 `Task.Yield()`，但主要工作是同步循环。
+- `Progress<DetectionBackendEvent>` 在 UI 线程创建，捕获 WinUI 同步上下文；`HandleBackendEvent` 在 UI 线程更新 `ObservableCollection`、属性和任务栏，工作线程不直接改动 UI 集合。
+- `CancellationToken` 在文件枚举、编码探测、逐行读取、逐行分析、冻结检测、明细排序和工作簿行生成中检查；单个大文件也可以被取消。
+- `MainViewModel.CancelCommand` 采用两步确认：第一次点击/按 Esc 进入“再次确认取消”，5 秒内第二次才调用 `_runCts.Cancel()`；超时自动恢复运行状态。
+- 取消时抛出 `OperationCanceledException`，UI 记录“检测已取消”，任务栏暂停，不再发完成通知。失败时任务栏错误，发出一次失败通知。
+- `IsRunning` 同时限制“开始检测”和托盘开始命令；`finally` 中释放 CTS 并恢复命令可用性。
+
+## 报告生成与 OpenXML 工作簿
+
+```text
+reportDetails（按严重等级排序的全部明细）
+  ├─ BuildOverviewRows        → 检测概览
+  ├─ BuildDetailRows          → 异常明细（23 列）
+  ├─ BuildDeviceRows          → 设备汇总（按 P1/P2/P3 + 异常数排序）
+  ├─ BuildIssueRows           → 异常分类统计（类型/建筑/变压器）
+  ├─ BuildSensorRows          → 传感器状态（含跳过行）
+  └─ BuildConfigRows          → 检测配置 + 运行信息
+        └─ ZipArchive 临时文件
+            ├─ [Content_Types].xml
+            ├─ _rels/.rels
+            ├─ xl/workbook.xml
+            ├─ xl/_rels/workbook.xml.rels
+            ├─ xl/styles.xml
+            └─ xl/worksheets/sheet1.xml … sheet6.xml
+                └─ ValidateWorkbookArchive（条目存在 + XML 可解析）
+                    └─ File.Move → 电气异常报告_yyyyMMdd_HHmmss.xlsx
+```
+
+- 输出文件名使用本地时间 `yyyyMMdd_HHmmss`；同名时追加 `_1` 到 `_99`，仍冲突则追加 GUID。
+- 工作簿先写入同目录的 `.{reportName}.{guid}.tmp`，成功校验后 `File.Move` 到最终名；任何异常都会删除临时文件，避免留下半成品 `.xlsx`。
+- 工作表首行冻结并启用自动筛选；列宽按内容截断到 42 个字符；表头使用深蓝底白字。
+- 明细表按严重等级着色：高/中/低分别使用不同底色；与异常类型对应的测点值使用强调色。
+- 单元格以 `inlineStr` 写入；以 `= + - @` 开头的文本会加前导单引号，防止 Excel 公式注入；XML 1.0 不允许的控制字符直接丢弃，合法的代理对保留。
+- 零 CSV 文件时不会产生 `report_summary`，也不会写报告；只要处理过文件（包括全部正常），传感器状态行会触发汇总与报告生成。
+- 工作簿列定义、工作表名和逐列含义见 [`data-model.md`](data-model.md#报告工作簿)。
+
+## 发布与打包模型
+
+### 发布属性
+
+`EDetection.Desktop.csproj` 的关键属性：
+
+```xml
+<TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
+<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+<WindowsPackageType>None</WindowsPackageType>
+<SelfContained>true</SelfContained>
+<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+<PublishReadyToRun>false</PublishReadyToRun>
+<PublishSingleFile>false</PublishSingleFile>
+<PublishTrimmed>false</PublishTrimmed>
+```
+
+`WindowsAppSDKSelfContained=true` 让 Windows App SDK 二进制进入发布目录；否则干净机器需要预装 Windows App Runtime，而安装器不会代装。`PublishSingleFile=false` 保持 `.xbf` / `.pri` 与依赖 DLL 的可检查布局。
+
+### 产物
+
+| 路径 | 内容 |
+| --- | --- |
+| `artifacts/desktop/win-x64/publish/` | 自包含应用、WinAppSDK 运行时、WinUI 资源、`config.json`、交付脚本、`release-info.txt`、`INSTALL.txt`、`install-files.txt`。 |
+| `artifacts/desktop/win-x64/EDetection-win-x64.zip` | 便携包。 |
+| `artifacts/desktop/win-x64/installer/EDetection-Setup-win-x64.exe` | Inno Setup 安装器。 |
+
+`Publish-Desktop.ps1` 会清理并重建 `publish` 目录，校验 `EDetection.exe`、图标、`App.xbf`、`MainWindow.xbf`、`EDetection.pri`、`Styles/Common.xbf` 和 5 个视图/设置 `.xbf`（`AppShellView`、`DetectionWorkbenchView`、`RunSetupView`、`SettingsView`、`Settings/DetectionRulesSettingsSection`），复制 `config.json` 与交付脚本，写入 `release-info.txt` / `INSTALL.txt`，生成 `install-files.txt`，随后调用包健康检查并压缩 ZIP。包健康脚本同样要求 `Views/Settings/DetectionRulesSettingsSection.xbf`。
+
+### 安装器
+
+- 默认安装到 `%LOCALAPPDATA%\Programs\EDetection`，`PrivilegesRequired=lowest`，按用户安装，不需要管理员权限。
+- `ArchitecturesAllowed=x64compatible`；当前发布工作流只产出 `win-x64`。
+- 拒绝安装到磁盘根目录、用户根目录、桌面、`Program Files` 等不安全位置，也拒绝覆盖包含其他文件的普通目录。
+- 升级时按 `install-files.txt` 删除旧产品文件，并清理旧的 `core`、`e_detection`、`python-runtime`、`python-wheelhouse` 目录。
+- 卸载时运行 `Uninstall-Desktop.ps1 -CleanupOnly -Quiet` 清理注册表启动项和计划任务；用户设置默认保留，只有显式 `-RemoveSettings` 才删除。
+- CI 固定安装 Inno Setup 7.1.1 并校验安装器 SHA-256；本地脚本优先查找 Inno Setup 7，找不到时兼容 Inno Setup 6。
+
+### 发布门禁
+
+`.github/workflows/desktop.yml` 在 `windows-latest` 上执行：
+
+1. 包健康 fixture。
+2. `dotnet restore` / `dotnet build`。
+3. `dotnet format --verify-no-changes`。
+4. 架构门禁 + xUnit。
+5. 原生后端控制台冒烟（20 项）。
+6. 设置迁移、脚本安全、诊断脱敏、发布姿态烟测。
+7. 自包含发布、包健康、便携安装与安装器静态/安装/升级烟测。
+8. 仅在推送 `v*` 标签或手动指定 `release_tag` 时发布 GitHub Release。
+
+`v2.0.2` 发布物有意保持未签名；如果未配置签名证书，工作流也会生成未签名产物。SHA-256 仅验证文件完整性，不能验证发布者身份。
+
+## 架构门禁与已知约束
+
+`Test-DesktopArchitecture.ps1` 检查：
+
+| 检查 | 规则 |
+| --- | --- |
+| 必需文件 | `Directory.Build.props`、`Directory.Packages.props`、Domain/Infrastructure/Tests 的 `csproj` 必须存在。 |
+| 旧产物 | `git ls-files build/E-Detection` 必须为空。 |
+| 中央包管理 | `desktop/**/*.csproj` 不允许出现带 `Version=` 的 `PackageReference`。 |
+| WinUI-free | `EDetection.Domain` 与 `EDetection.Desktop.Core` 的 `csproj` 不得包含 `Microsoft.WindowsAppSDK`、`Microsoft.WinUI` 或 `UseWinUI`。 |
+| 行数上限 | `MainViewModel.cs` ≤ 600；`NativeDetectionBackendService.cs` ≤ 120；每个 `SettingsView*.cs` ≤ 450；每个后端 partial ≤ 800；每个 `MainViewModel*.cs` partial ≤ 800。 |
+| 构建与测试 | 默认先 `dotnet build`，再 `dotnet test`；`-NoBuild` 可跳过构建。 |
+
+当前已知约束：
+
+- **未签名发布**：`v2.0.2` 没有 Authenticode 证书，Windows 可能显示未知发布者或 SmartScreen 提示。
+- **许可证未声明**：仓库当前没有 `LICENSE` 文件。
+- **UI 烟测依赖交互桌面**：默认 CI 跳过单实例、设置页和视觉烟测；只在 `workflow_dispatch` 且 `run_desktop_ui_smoke=true` 时运行。
+- **GitHub 语言统计滞后**：仓库主体是 C#，但 GitHub Linguist 缓存仍可能显示旧的 HTML 统计。
+- **安装路径受限**：安装器只接受空目录或既有 EDetection 产品目录，不能安装到受保护目录。
+- **ARM64 未形成发布链**：脚本和项目支持 `win-arm64`，但安装器与发布工作流当前只验证 `win-x64`。
+- **`Domain` 仍是骨架**：当前只有标记程序集，领域模型尚未从 `NativeCore` / `Desktop.Core` 迁移出来。
