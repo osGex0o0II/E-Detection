@@ -8,8 +8,8 @@
                         <StateTrigger x:Name="ExpandedSettingsTrigger" IsActive="True" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="24,22,24,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="24" />
+                        <Setter Target="SettingsBody.Padding" Value="20,16,20,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="20" />
                         <Setter Target="SettingsNavColumn.Width" Value="184" />
                         <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
                     </VisualState.Setters>
@@ -19,8 +19,8 @@
                         <StateTrigger x:Name="CompactSettingsTrigger" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="18,18,18,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="18" />
+                        <Setter Target="SettingsBody.Padding" Value="16,14,16,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="16" />
                         <Setter Target="SettingsNavColumn.Width" Value="152" />
                         <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
                     </VisualState.Setters>
@@ -30,8 +30,8 @@
                         <StateTrigger x:Name="IconSettingsTrigger" />
                     </VisualState.StateTriggers>
                     <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="18,18,18,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="14" />
+                        <Setter Target="SettingsBody.Padding" Value="14,12,14,0" />
+                        <Setter Target="SettingsBody.ColumnSpacing" Value="12" />
                         <Setter Target="SettingsNavColumn.Width" Value="56" />
                         <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
                     </VisualState.Setters>
@@ -61,7 +61,7 @@
                 </Button>
             </Grid>
         </Border>
-        <Grid x:Name="SettingsBody" Grid.Row="1" Padding="20,16" ColumnSpacing="20" SizeChanged="SettingsBody_SizeChanged">
+        <Grid x:Name="SettingsBody" Grid.Row="1" Padding="20,16,20,0" ColumnSpacing="20" SizeChanged="SettingsBody_SizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SettingsNavColumn" Width="184" />
                 <ColumnDefinition Width="*" />

@@ -1,14 +1,21 @@
-<img src="docs/images/e-detection-logo.svg" alt="E-Detection：深色数据波形与红色检测点" width="84" />
+<p align="center">
+  <img src="docs/images/e-detection-logo.svg" alt="E-Detection 品牌标志：深灰数据波形与红色检测点" width="104" height="104" />
+</p>
 
-# E-Detection
+<h1 align="center">E-Detection</h1>
 
-**Windows 原生电力数据异常检测工具**
+<p align="center"><strong>Windows 原生电力数据异常检测工具</strong></p>
+
+<p align="center">
+  <a href="https://github.com/osGex0o0II/E-Detection/releases/latest">下载最新版本</a> ·
+  <a href="#检测能力">检测能力</a> ·
+  <a href="#使用方法">使用方法</a> ·
+  <a href="docs/README.md">开发文档</a>
+</p>
+
+<p align="center"><code>C#</code> · <code>.NET 11</code> · <code>WinUI 3</code> · <code>Windows 10/11 x64</code></p>
 
 批量读取电力监控与 SCADA 导出的 CSV 日报，识别异常测点和设备状态，并生成可追溯的 Excel 报告。检测、汇总和报告生成在本机完成。
-
-**[下载最新版本](https://github.com/osGex0o0II/E-Detection/releases/latest)** · [功能](#检测能力) · [使用方法](#使用方法) · [开发文档](docs/README.md)
-
-`C#` · `.NET 11` · `WinUI 3` · `Windows 10/11 x64`
 
 ## 检测能力
 
@@ -24,7 +31,7 @@
 
 ## 界面预览
 
-以下为仓库保存的**真实软件截图**。工作台截图处于待命状态，计数为零，**不代表一次已完成的检测结果**。
+以下为仓库保存的**真实软件截图（改版前）**，用于展示工作台布局。截图中的标题栏仍为旧版图标；工作台处于待命状态、计数为零，**不是本次新 Logo 的实机截图，也不代表已完成检测**。新版运行截图需在 Windows 上重新采集。
 
 ![E-Detection 工作台：左侧输入配置与报告历史，右侧风险指标和异常明细](docs/images/e-detection-workbench.png)
 
