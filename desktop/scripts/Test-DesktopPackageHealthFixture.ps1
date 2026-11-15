@@ -49,6 +49,16 @@ function Write-InstallFilesManifest([string]$Root) {
 function New-NativePackageFixture([string]$Root) {
     $commonRequiredFiles = @(
         "EDetection.exe",
+        "EDetection.dll",
+        "EDetection.NativeCore.dll",
+        "EDetection.Desktop.Core.dll",
+        "EDetection.Domain.dll",
+        "EDetection.Infrastructure.dll",
+        "Microsoft.WindowsAppRuntime.dll",
+        "Microsoft.UI.Xaml.dll",
+        "CoreMessagingXP.dll",
+        "DWriteCore.dll",
+        "MRM.dll",
         "Assets\Icons\app.ico",
         "Assets\Icons\running.ico",
         "App.xbf",

@@ -29,6 +29,8 @@ $requiredFiles = @(
     "EDetection.dll",
     "EDetection.NativeCore.dll",
     "EDetection.Desktop.Core.dll",
+    "EDetection.Domain.dll",
+    "EDetection.Infrastructure.dll",
     # Windows App SDK self-contained payload.  SelfContained=true only bundles
     # the .NET runtime; without WindowsAppSDKSelfContained these are absent and
     # the package silently depends on a preinstalled Windows App Runtime, so a
