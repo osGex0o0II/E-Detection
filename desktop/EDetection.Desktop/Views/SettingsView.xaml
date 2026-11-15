@@ -61,7 +61,7 @@
                 </Button>
             </Grid>
         </Border>
-        <Grid x:Name="SettingsBody" Grid.Row="1" Padding="24,22" ColumnSpacing="24" SizeChanged="SettingsBody_SizeChanged">
+        <Grid x:Name="SettingsBody" Grid.Row="1" Padding="20,16" ColumnSpacing="20" SizeChanged="SettingsBody_SizeChanged">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="SettingsNavColumn" Width="184" />
                 <ColumnDefinition Width="*" />
@@ -121,12 +121,12 @@
                 </ListView>
             </Grid>
             <ScrollViewer x:Name="SettingsScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" ViewChanged="SettingsScroll_ViewChanged" SizeChanged="SettingsScroll_SizeChanged">
-                <StackPanel x:Name="SettingsContentStack" MaxWidth="900" HorizontalAlignment="Stretch" Spacing="18" Padding="0,0,20,24">
+                <StackPanel x:Name="SettingsContentStack" MaxWidth="900" HorizontalAlignment="Stretch" Spacing="14" Padding="0,0,16,20">
                     <StackPanel x:Name="DefaultsSection" Spacing="8">
                         <TextBlock Text="检测" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" />
@@ -144,7 +144,7 @@
                                     </Grid>
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" />
@@ -162,7 +162,7 @@
                                     </Grid>
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -194,7 +194,7 @@
                         <TextBlock Text="检测阈值" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid x:Name="ThresholdConfigPathRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid x:Name="ThresholdConfigPathRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" />
@@ -348,7 +348,7 @@
                         <TextBlock Text="通知与窗口" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -357,7 +357,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding CloseToTrayOnClose, Mode=TwoWay}" AutomationProperties.Name="关闭后最小化到托盘" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -366,7 +366,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding StartMinimizedToTray, Mode=TwoWay}" AutomationProperties.Name="启动时隐藏到托盘" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -375,7 +375,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding EnableDesktopNotifications, Mode=TwoWay}" AutomationProperties.Name="桌面通知" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -401,7 +401,7 @@
                                     </Grid>
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -428,7 +428,7 @@
                         <TextBlock Text="智能助手集成" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -439,7 +439,7 @@
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                 <Expander x:Name="LlmConnectionExpander" Header="连接与凭据（启用后生效）" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
                                     <StackPanel>
-                                        <Grid x:Name="LlmEndpointRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="LlmEndpointRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" />
@@ -448,7 +448,7 @@
                                             <TextBox Grid.Column="1" Text="{Binding LlmEndpoint, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://api.example.com/v1/chat/completions" AutomationProperties.Name="LLM 服务地址" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="LlmModelRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="LlmModelRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -457,7 +457,7 @@
                                             <TextBox Grid.Column="1" Text="{Binding LlmModel, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="模型名称" AutomationProperties.Name="LLM 模型" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="LlmApiKeyRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="LlmApiKeyRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" />
@@ -479,7 +479,7 @@
                                             </Grid>
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="LlmProxyRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="LlmProxyRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -488,7 +488,7 @@
                                             <ToggleSwitch Grid.Column="1" IsOn="{Binding UseProxyForLlm, Mode=TwoWay}" AutomationProperties.Name="LLM 使用网络代理" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -510,7 +510,7 @@
                         <TextBlock Text="外部消息推送" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -521,7 +521,7 @@
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                 <Expander x:Name="NtfySettingsExpander" Header="推送服务配置（启用后生效）" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
                                     <StackPanel>
-                                        <Grid x:Name="NtfyServerRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="NtfyServerRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" />
@@ -530,7 +530,7 @@
                                             <TextBox Grid.Column="1" Text="{Binding NtfyServerUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="https://ntfy.sh" AutomationProperties.Name="ntfy 服务地址" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -539,7 +539,7 @@
                                             <TextBox Grid.Column="1" Text="{Binding NtfyTopic, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="topic" AutomationProperties.Name="ntfy 主题" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -554,7 +554,7 @@
                                             </ComboBox>
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="NtfyTokenRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="NtfyTokenRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" />
@@ -576,7 +576,7 @@
                                             </Grid>
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -585,7 +585,7 @@
                                             <ToggleSwitch Grid.Column="1" IsOn="{Binding UseProxyForNotifications, Mode=TwoWay}" AutomationProperties.Name="ntfy 使用网络代理" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -633,7 +633,7 @@
                         <TextBlock Text="网络连接" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -642,7 +642,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding EnableNetworkProxy, Mode=TwoWay}" AutomationProperties.Name="启用网络代理" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" />
@@ -651,7 +651,7 @@
                                     <TextBox Grid.Column="1" Text="{Binding ProxyAddress, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding EnableNetworkProxy}" PlaceholderText="http://127.0.0.1:7890" AutomationProperties.Name="代理地址" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -660,7 +660,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding ProxyRequiresAuthentication, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="代理需要认证" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -669,7 +669,7 @@
                                     <TextBox Grid.Column="1" Text="{Binding ProxyUserName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditProxyCredentials}" AutomationProperties.Name="代理用户名" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" />
@@ -691,7 +691,7 @@
                                     </Grid>
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -723,7 +723,7 @@
                         <TextBlock Text="应用更新" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -732,7 +732,7 @@
                                     <ToggleSwitch Grid.Column="1" IsOn="{Binding EnableUpdateChecks, Mode=TwoWay}" AutomationProperties.Name="检查软件更新" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="420" />
@@ -741,7 +741,7 @@
                                     <TextBlock Grid.Column="1" Text="{Binding UpdateStatusText}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="{Binding UpdateStatusText}" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Grid MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
@@ -769,7 +769,7 @@
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                 <Expander x:Name="AdvancedUpdateExpander" Header="高级更新选项" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
                                     <StackPanel>
-                                        <Grid x:Name="UpdateProxyRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="UpdateProxyRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -778,7 +778,7 @@
                                             <ToggleSwitch Grid.Column="1" IsOn="{Binding UseProxyForUpdates, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="更新使用网络代理" />
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="UpdateChannelRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="UpdateChannelRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" MaxWidth="320" />
@@ -790,7 +790,7 @@
                                             </ComboBox>
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="UpdateFeedRow" MinHeight="64" Padding="18,10" ColumnSpacing="20">
+                                        <Grid x:Name="UpdateFeedRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="200" />
                                                 <ColumnDefinition Width="*" />
