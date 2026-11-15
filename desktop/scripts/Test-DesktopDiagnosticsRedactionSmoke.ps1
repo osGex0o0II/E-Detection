@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$ProjectPath = ""
+    [string]$ProjectPath = "",
+    [string]$CorePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,9 +11,15 @@ $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 if ([string]::IsNullOrWhiteSpace($ProjectPath)) {
     $ProjectPath = Join-Path $repoRoot "desktop\EDetection.Desktop"
 }
+# The WinUI-free services live in EDetection.Desktop.Core; the view models stay
+# in the shell project, so both roots are inspected.
+if ([string]::IsNullOrWhiteSpace($CorePath)) {
+    $CorePath = Join-Path $repoRoot "desktop\EDetection.Desktop.Core"
+}
 
 $projectFull = [System.IO.Path]::GetFullPath((Resolve-Path $ProjectPath).Path)
-$redactorPath = Join-Path $projectFull "Services\DiagnosticsRedactor.cs"
+$coreFull = [System.IO.Path]::GetFullPath((Resolve-Path $CorePath).Path)
+$redactorPath = Join-Path $coreFull "Services\DiagnosticsRedactor.cs"
 if (!(Test-Path $redactorPath)) {
     throw "Diagnostics redaction smoke failed: DiagnosticsRedactor.cs was not found at $redactorPath"
 }
@@ -41,7 +48,7 @@ if ($diagnosticsViewModel.IndexOf("诊断信息: 已脱敏本机路径和凭据"
     throw "Diagnostics redaction smoke failed: diagnostics clipboard text is not explicitly redacted."
 }
 
-$runtimeLogServicePath = Join-Path $projectFull "Services\RuntimeLogService.cs"
+$runtimeLogServicePath = Join-Path $coreFull "Services\RuntimeLogService.cs"
 $runtimeLogService = Get-Content -Path $runtimeLogServicePath -Raw
 if ($runtimeLogService.IndexOf("DiagnosticsRedactor.Redact(item.Message)", [System.StringComparison]::Ordinal) -lt 0 `
     -or $runtimeLogService.IndexOf("说明\t诊断信息\t已脱敏本机路径和凭据", [System.StringComparison]::Ordinal) -lt 0) {

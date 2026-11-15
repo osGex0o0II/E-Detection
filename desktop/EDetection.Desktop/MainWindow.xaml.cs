@@ -21,10 +21,7 @@ public sealed partial class MainWindow : Window
     private readonly TaskbarProgressService _taskbarProgress = new();
     private readonly AppInfoService _appInfo = new();
     private readonly DesktopNotificationService _desktopNotifications = new();
-    private readonly SecureCredentialService _credentials = new();
-    private readonly NetworkProxyService _networkProxy;
     private readonly NtfyNotificationService _ntfyNotifications;
-    private readonly LlmAssistantService _llmAssistant;
     private readonly ShellResourceService _shellResources = new();
     private readonly TrayIconService _trayIcon;
     private readonly WindowMessageMonitor _windowMessageMonitor;
@@ -47,26 +44,10 @@ public sealed partial class MainWindow : Window
 
     public MainViewModel ViewModel { get; }
 
-    public MainWindow()
+    public MainWindow(MainViewModel viewModel, NtfyNotificationService ntfyNotifications)
     {
-        _networkProxy = new NetworkProxyService(_credentials);
-        _ntfyNotifications = new NtfyNotificationService(_credentials, _networkProxy);
-        _llmAssistant = new LlmAssistantService(_credentials, _networkProxy);
-        ViewModel = new MainViewModel(
-            new SettingsService(),
-            new DetectionConfigService(),
-            new DesktopDiagnosticsService(),
-            new ReportHistoryService(),
-            new RuntimeLogService(),
-            new RunTelemetryService(),
-            new RunEventService(),
-            new ReportDetailPreviewService(),
-            new RunStateService(),
-            new StartupService(),
-            _credentials,
-            _ntfyNotifications,
-            _llmAssistant,
-            _networkProxy);
+        ViewModel = viewModel;
+        _ntfyNotifications = ntfyNotifications;
         InitializeComponent();
         Shell.DataContext = ViewModel;
         _windowHandle = WindowNative.GetWindowHandle(this);
@@ -112,10 +93,32 @@ public sealed partial class MainWindow : Window
     {
         Activated -= MainWindow_Activated;
         await Task.Delay(TimeSpan.FromSeconds(2));
-        if (!_isClosed)
+        if (_isClosed)
         {
-            await ViewModel.RefreshPoetryStatusAsync();
-            await ViewModel.CheckForUpdatesInBackgroundAsync();
+            return;
+        }
+
+        // Nothing started here is essential to the shell.  This is an async void
+        // handler, so an exception escaping it has no caller to observe it and
+        // terminates the process - a bad persisted setting would otherwise kill
+        // the app a couple of seconds after every launch, with no way back in.
+        await RunStartupBackgroundTaskAsync(
+            ViewModel.RefreshPoetryStatusAsync,
+            "Poetry status refresh failed");
+        await RunStartupBackgroundTaskAsync(
+            ViewModel.CheckForUpdatesInBackgroundAsync,
+            "Background update check failed");
+    }
+
+    private static async Task RunStartupBackgroundTaskAsync(Func<Task> operation, string failureDescription)
+    {
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            StartupDiagnostics.WriteException(failureDescription, ex);
         }
     }
 

@@ -18,20 +18,17 @@ public sealed partial class DetectionWorkbenchView : UserControl
     private void ApplyResponsiveLayout(double width)
     {
         var compact = width < CompactWidth;
-        ApplyMetricLayout(compact);
+        ApplyMetricState(compact);
         ApplyTelemetryLayout(compact);
         ApplyActionLayouts(compact);
         ApplyRiskLayout(compact);
         ApplyDetailFilterLayout(compact);
     }
 
-    private void ApplyMetricLayout(bool compact)
+    private void ApplyMetricState(bool compact)
     {
-        SetFourColumnGrid(MetricGrid, compact, MetricColumn0, MetricColumn1, MetricColumn2, MetricColumn3);
-        PlaceWide(ProcessedMetricCard, 0);
-        PlaceWide(AnomalyFilesMetricCard, 1);
-        PlaceCompactOrWide(AnomalyRecordsMetricCard, compact, 1, 0, 2);
-        PlaceCompactOrWide(SkippedMetricCard, compact, 1, 1, 3);
+        WideMetricsTrigger.IsActive = !compact;
+        CompactMetricsTrigger.IsActive = compact;
     }
 
     private void ApplyTelemetryLayout(bool compact)

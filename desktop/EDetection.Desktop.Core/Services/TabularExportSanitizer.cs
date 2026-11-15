@@ -1,6 +1,6 @@
 namespace EDetection.Desktop.Services;
 
-internal static class TabularExportSanitizer
+public static class TabularExportSanitizer
 {
     private static readonly char[] FormulaPrefixes = ['=', '+', '-', '@'];
 

@@ -1,6 +1,6 @@
 namespace EDetection.Desktop.Services;
 
-internal static class StartupDiagnostics
+public static class StartupDiagnostics
 {
     private static readonly object Gate = new();
     private static readonly string LogDirectory = Path.Combine(

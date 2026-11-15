@@ -22,6 +22,22 @@ if ([string]::IsNullOrWhiteSpace($PackagePath)) {
 $packageFull = [System.IO.Path]::GetFullPath((Resolve-Path $PackagePath).Path)
 $requiredFiles = @(
     "EDetection.exe",
+    # The application's own assemblies.  EDetection.exe is only the apphost;
+    # the IL lives in EDetection.dll, the detection engine in
+    # EDetection.NativeCore.dll and the WinUI-free service layer in
+    # EDetection.Desktop.Core.dll - missing any of them, the app cannot start.
+    "EDetection.dll",
+    "EDetection.NativeCore.dll",
+    "EDetection.Desktop.Core.dll",
+    # Windows App SDK self-contained payload.  SelfContained=true only bundles
+    # the .NET runtime; without WindowsAppSDKSelfContained these are absent and
+    # the package silently depends on a preinstalled Windows App Runtime, so a
+    # clean machine cannot start it.  Guard the property by its output.
+    "Microsoft.WindowsAppRuntime.dll",
+    "Microsoft.UI.Xaml.dll",
+    "CoreMessagingXP.dll",
+    "DWriteCore.dll",
+    "MRM.dll",
     "Assets\Icons\app.ico",
     "Assets\Icons\running.ico",
     "App.xbf",

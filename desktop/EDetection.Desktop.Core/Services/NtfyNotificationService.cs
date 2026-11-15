@@ -1,12 +1,12 @@
 using System.Net.Http.Headers;
 using System.Text;
 using EDetection.Desktop.Models;
-using EDetection.Desktop.ViewModels;
+
 
 namespace EDetection.Desktop.Services;
 
 public sealed class NtfyNotificationService(
-    SecureCredentialService credentials,
+    IAppCredentialStore credentials,
     NetworkProxyService? networkProxy = null)
 {
     private static readonly TimeSpan SendTimeout = TimeSpan.FromSeconds(8);
@@ -14,7 +14,7 @@ public sealed class NtfyNotificationService(
 
     public async Task<bool> TrySendAsync(
         DesktopNotificationRequest request,
-        MainViewModel settings,
+        INtfyNotificationSettings settings,
         CancellationToken cancellationToken = default)
     {
         if (!settings.EnableNtfyNotifications
@@ -58,7 +58,7 @@ public sealed class NtfyNotificationService(
 
     private static string BuildRemoteNotificationBody(
         DesktopNotificationRequest request,
-        MainViewModel settings)
+        INtfyNotificationSettings settings)
     {
         if (request.Kind is DesktopNotificationKind.Update)
         {

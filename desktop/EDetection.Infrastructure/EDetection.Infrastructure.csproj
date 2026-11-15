@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <RootNamespace>EDetection.Infrastructure</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EDetection.Domain\EDetection.Domain.csproj" />
+    <ProjectReference Include="..\EDetection.NativeCore\EDetection.NativeCore.csproj" />
+  </ItemGroup>
+</Project>

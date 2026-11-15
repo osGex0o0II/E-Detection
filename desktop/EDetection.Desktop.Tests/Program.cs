@@ -4,7 +4,7 @@ using EDetection.NativeCore.Services;
 
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-Console.Error.WriteLine("[native-smoke] stage=process_started target=net10.0");
+Console.Error.WriteLine("[native-smoke] stage=process_started target=net11.0");
 AssertNoUiRuntimeLoaded();
 
 if (args is ["--regression", var regressionName])

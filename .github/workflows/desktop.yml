@@ -16,6 +16,8 @@ on:
     paths:
       - "desktop/**"
       - "desktop/scripts/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
       - "NuGet.Config"
       - "global.json"
       - ".github/workflows/desktop.yml"
@@ -27,6 +29,8 @@ on:
     paths:
       - "desktop/**"
       - "desktop/scripts/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
       - "NuGet.Config"
       - "global.json"
       - ".github/workflows/desktop.yml"
@@ -44,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && inputs.release_tag || github.ref }}
@@ -92,8 +96,8 @@ jobs:
         shell: pwsh
         run: ./desktop/scripts/Test-DesktopPackageHealthFixture.ps1
 
-      - name: Setup .NET 10
-        uses: actions/setup-dotnet@v5
+      - name: Setup .NET 11
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -105,6 +109,10 @@ jobs:
 
       - name: Verify formatting
         run: dotnet format desktop/EDetection.Desktop.slnx --verify-no-changes --no-restore
+
+      - name: Architecture gate and xUnit tests
+        shell: pwsh
+        run: ./desktop/scripts/Test-DesktopArchitecture.ps1 -NoBuild
 
       - name: Native backend console smoke
         shell: pwsh
@@ -214,9 +222,25 @@ jobs:
         shell: pwsh
         run: ./desktop/scripts/Test-DesktopInstallerStatic.ps1
 
-      - name: Install Inno Setup
+      - name: Install Inno Setup 7
         shell: pwsh
-        run: choco install innosetup --no-progress --yes
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP "innosetup-7.1.1-x64.exe"
+          Invoke-WebRequest -Uri "https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe" -OutFile $installer
+          $hash = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash
+          if ($hash -ne "8A5A6711C3766A6E5FB74F280BA0E3551E719CE94538D901FDBD1F8F9920B3F0") {
+              throw "Inno Setup installer hash mismatch: $hash"
+          }
+          Start-Process -FilePath $installer -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-" -Wait
+          $iscc = @(
+              (Join-Path $env:LOCALAPPDATA "Programs\Inno Setup 7\ISCC.exe"),
+              "C:\Program Files\Inno Setup 7\ISCC.exe",
+              "C:\Program Files (x86)\Inno Setup 7\ISCC.exe"
+          ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+          if (!$iscc) {
+              throw "Inno Setup 7 ISCC.exe was not found after installation."
+          }
+          Write-Host "Using Inno Setup compiler: $iscc"
 
       - name: Build setup installer
         shell: pwsh
@@ -255,7 +279,7 @@ jobs:
           Compress-Archive -Path "./artifacts/desktop/win-x64/publish/*" -DestinationPath $zipPath
 
       - name: Upload desktop artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: EDetection-win-x64
           path: |
@@ -290,13 +314,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && inputs.release_tag || github.ref }}
 
       - name: Download desktop artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: EDetection-win-x64
           path: release-artifacts

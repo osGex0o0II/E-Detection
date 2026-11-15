@@ -75,7 +75,7 @@ public sealed class SettingsService
             settings.SelectedNtfyPriorityIndex = Math.Clamp(settings.SelectedNtfyPriorityIndex, 0, 4);
             if (string.IsNullOrWhiteSpace(settings.UpdateFeedUrl))
             {
-                settings.UpdateFeedUrl = "https://github.com/osGex0o0II/E-Detection-OSS/releases/latest";
+                settings.UpdateFeedUrl = "https://github.com/osGex0o0II/E-Detection/releases/latest";
             }
         }
 

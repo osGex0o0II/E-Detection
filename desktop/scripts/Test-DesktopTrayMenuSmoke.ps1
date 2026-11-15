@@ -4,6 +4,8 @@ param(
 
     [string]$SourceRoot = "",
 
+    [string]$CoreRoot = "",
+
     [string]$OutputDirectory = ""
 )
 
@@ -49,10 +51,17 @@ $sourceFull = [System.IO.Path]::GetFullPath((Resolve-Path $SourceRoot).Path)
 $outputFull = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
 
-$trayServicePath = Join-Path $sourceFull "Services\TrayIconService.cs"
+# TrayIconService moved to the WinUI-free EDetection.Desktop.Core assembly;
+# MainWindow stays in the shell, so both roots are inspected.
+if ([string]::IsNullOrWhiteSpace($CoreRoot)) {
+    $CoreRoot = Join-Path (Split-Path -Parent $sourceFull) "EDetection.Desktop.Core"
+}
+
+$coreFull = [System.IO.Path]::GetFullPath($CoreRoot)
+$trayServicePath = Join-Path $coreFull "Services\TrayIconService.cs"
 $mainWindowPath = Join-Path $sourceFull "MainWindow.xaml.cs"
 if (!(Test-Path $trayServicePath) -or !(Test-Path $mainWindowPath)) {
-    throw "Tray-menu smoke failed: source files were not found under $sourceFull"
+    throw "Tray-menu smoke failed: source files were not found under $sourceFull / $coreFull"
 }
 
 $traySource = Get-Content -LiteralPath $trayServicePath -Raw

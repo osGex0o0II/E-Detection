@@ -1,19 +1,19 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using EDetection.Desktop.ViewModels;
+
 
 namespace EDetection.Desktop.Services;
 
 public sealed class LlmAssistantService(
-    SecureCredentialService credentials,
+    IAppCredentialStore credentials,
     NetworkProxyService? networkProxy = null)
 {
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(15);
     private readonly NetworkProxyService _networkProxy = networkProxy ?? new NetworkProxyService(credentials);
 
     public async Task<string> TestConnectionAsync(
-        MainViewModel settings,
+        ILlmAssistantSettings settings,
         CancellationToken cancellationToken = default)
     {
         return await SendUserPromptAsync(
@@ -24,7 +24,7 @@ public sealed class LlmAssistantService(
     }
 
     public async Task<string> ExplainDetailAsync(
-        MainViewModel settings,
+        ILlmAssistantSettings settings,
         string detailText,
         CancellationToken cancellationToken = default)
     {
@@ -56,7 +56,7 @@ public sealed class LlmAssistantService(
     }
 
     private async Task<string> SendUserPromptAsync(
-        MainViewModel settings,
+        ILlmAssistantSettings settings,
         string prompt,
         int maxTokens,
         CancellationToken cancellationToken)

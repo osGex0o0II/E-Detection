@@ -1,5 +1,9 @@
 <Solution>
-  <Project Path="EDetection.Desktop/EDetection.Desktop.csproj" />
+  <Project Path="EDetection.Domain/EDetection.Domain.csproj" />
+  <Project Path="EDetection.Desktop.Core/EDetection.Desktop.Core.csproj" />
   <Project Path="EDetection.NativeCore/EDetection.NativeCore.csproj" />
+  <Project Path="EDetection.Infrastructure/EDetection.Infrastructure.csproj" />
+  <Project Path="EDetection.Desktop/EDetection.Desktop.csproj" />
   <Project Path="EDetection.Desktop.Tests/EDetection.Desktop.Tests.csproj" />
+  <Project Path="EDetection.Tests/EDetection.Tests.csproj" />
 </Solution>

@@ -44,9 +44,14 @@ function Resolve-IsccPath {
         return $command.Source
     }
 
+    $localPrograms = Join-Path ([Environment]::GetFolderPath("LocalApplicationData")) "Programs"
     $candidates = @(
-        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
-        "C:\Program Files\Inno Setup 6\ISCC.exe"
+        (Join-Path $localPrograms "Inno Setup 7\ISCC.exe"),
+        "C:\Program Files\Inno Setup 7\ISCC.exe",
+        "C:\Program Files (x86)\Inno Setup 7\ISCC.exe",
+        (Join-Path $localPrograms "Inno Setup 6\ISCC.exe"),
+        "C:\Program Files\Inno Setup 6\ISCC.exe",
+        "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
     )
 
     foreach ($candidate in $candidates) {
@@ -55,7 +60,7 @@ function Resolve-IsccPath {
         }
     }
 
-    throw "Inno Setup compiler ISCC.exe was not found. Install Inno Setup 6 or pass -IsccPath."
+    throw "Inno Setup compiler ISCC.exe was not found. Install Inno Setup 7 (recommended) or Inno Setup 6, or pass -IsccPath."
 }
 
 $sourceFull = [System.IO.Path]::GetFullPath((Resolve-Path $SourcePath).Path)

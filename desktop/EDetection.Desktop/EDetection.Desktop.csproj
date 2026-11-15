@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>EDetection.Desktop</RootNamespace>
     <AssemblyName>EDetection</AssemblyName>
@@ -25,6 +25,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\EDetection.Desktop.Core\EDetection.Desktop.Core.csproj" />
+    <ProjectReference Include="..\EDetection.Infrastructure\EDetection.Infrastructure.csproj" />
     <ProjectReference Include="..\EDetection.NativeCore\EDetection.NativeCore.csproj" />
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
@@ -39,10 +41,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
-    <PackageReference Include="WinUIEx" Version="2.9.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="WinUIEx" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -50,6 +53,14 @@
     <PublishSingleFile>false</PublishSingleFile>
     <PublishTrimmed>false</PublishTrimmed>
     <SelfContained>true</SelfContained>
+    <!--
+      SelfContained only bundles the .NET runtime.  Without this, the Windows
+      App SDK stays framework-dependent and the published app needs the Windows
+      App Runtime preinstalled - which the installer never provisions, so a
+      clean machine cannot start it.  Requires WindowsPackageType=None (set
+      above) and makes the WinAppSDK binaries part of the publish output.
+    -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
   <Target Name="CopyWinUIResourcesToPublishDirectory" AfterTargets="Publish" Condition="'$(PublishDir)' != ''">

@@ -2,9 +2,9 @@
 
 ## 状态
 
-E-Detection 已完成从 Python JSON Lines 进程桥接到进程内 **C# + .NET 10** 检测后端的迁移。`native-default` 是唯一支持的运行和发布配置；Python 后端、运行时、依赖锁定、兼容入口与对等测试基线已从仓库移除。
+E-Detection 已完成从 Python JSON Lines 进程桥接到进程内 **C# + .NET 11** 检测后端的迁移。`native-default` 是唯一支持的运行和发布配置；Python 后端、运行时、依赖锁定、兼容入口与对等测试基线已从仓库移除。
 
-原生检测核心位于 `EDetection.NativeCore/`，不依赖 WinUI 或 Windows App SDK。`EDetection.Desktop/` 仅作为 WinUI 壳引用该核心；`EDetection.Desktop.Tests/` 是独立的 `net10.0` 控制台测试项目，仅引用核心，因此可在无交互 GitHub Actions Runner 中验证检测逻辑。
+原生检测核心位于 `EDetection.NativeCore/`，不依赖 WinUI 或 Windows App SDK。`EDetection.Desktop/` 仅作为 WinUI 壳引用该核心；`EDetection.Desktop.Tests/` 是独立的 `net11.0` 控制台测试项目，仅引用核心，因此可在无交互 GitHub Actions Runner 中验证检测逻辑。
 
 ## 已验证能力
 

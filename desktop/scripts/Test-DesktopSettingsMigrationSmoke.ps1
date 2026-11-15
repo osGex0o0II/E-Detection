@@ -27,14 +27,14 @@ function ConvertTo-XmlAttribute([string]$Value) {
 
 $nativeProject = ConvertTo-XmlAttribute (Join-Path $repoRoot 'desktop\EDetection.NativeCore\EDetection.NativeCore.csproj')
 $linkedSources = @(
-    'desktop\EDetection.Desktop\GlobalUsings.cs',
-    'desktop\EDetection.Desktop\Models\AppSettings.cs',
-    'desktop\EDetection.Desktop\Models\RecentReport.cs',
-    'desktop\EDetection.Desktop\Models\PoetryStatusSnapshot.cs',
-    'desktop\EDetection.Desktop\Models\SettingsServiceVersion.cs',
-    'desktop\EDetection.Desktop\Services\SettingsService.cs',
-    'desktop\EDetection.Desktop\Services\PoetryStatusService.cs',
-    'desktop\EDetection.Desktop\Services\EndpointSecurity.cs'
+    'desktop\EDetection.Desktop.Core\GlobalUsings.cs',
+    'desktop\EDetection.Desktop.Core\Models\AppSettings.cs',
+    'desktop\EDetection.Desktop.Core\Models\RecentReport.cs',
+    'desktop\EDetection.Desktop.Core\Models\PoetryStatusSnapshot.cs',
+    'desktop\EDetection.Desktop.Core\Models\SettingsServiceVersion.cs',
+    'desktop\EDetection.Desktop.Core\Services\SettingsService.cs',
+    'desktop\EDetection.Desktop.Core\Services\PoetryStatusService.cs',
+    'desktop\EDetection.Desktop.Core\Services\EndpointSecurity.cs'
 )
 $compileItems = ($linkedSources | ForEach-Object {
     $sourcePath = ConvertTo-XmlAttribute (Join-Path $repoRoot $_)
@@ -45,7 +45,7 @@ $projectText = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>

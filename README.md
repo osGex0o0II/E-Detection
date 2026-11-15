@@ -7,7 +7,7 @@
 <p align="center">面向电力监控与 SCADA CSV 日报的 Windows 原生异常检测工作台。</p>
 
 <p align="center">
-  <a href="https://github.com/osGex0o0II/E-Detection-OSS/releases/latest">获取最新版本</a> ·
+  <a href="https://github.com/osGex0o0II/E-Detection/releases/latest">获取最新版本</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#验证与发布">验证与发布</a>
 </p>
@@ -16,7 +16,7 @@
 
 ## 从 CSV 到可追溯的检测报告
 
-E-Detection 在本机进程内完成 CSV 解析、规则检测、结果汇总和 Excel 报告生成。发布物仅使用 **C# + .NET 10 + WinUI 3**，不携带 Python 运行时、wheelhouse 或进程桥接层。
+E-Detection 在本机进程内完成 CSV 解析、规则检测、结果汇总和 Excel 报告生成。发布物仅使用 **C# + .NET 11 + WinUI 3**，不携带 Python 运行时、wheelhouse 或进程桥接层。
 
 | 输入 | 检测 | 输出 |
 | --- | --- | --- |
@@ -37,11 +37,13 @@ E-Detection 在本机进程内完成 CSV 解析、规则检测、结果汇总和
 
 ## 快速开始
 
-需要 Windows 10/11 x64、.NET 10 SDK 与 Windows App SDK 开发环境。
+需要 Windows 10/11 x64、.NET 11 SDK 与 Windows App SDK 开发环境。
 
 ```powershell
 dotnet restore .\desktop\EDetection.Desktop.slnx
 dotnet build .\desktop\EDetection.Desktop.slnx -c Debug
+dotnet test .\desktop\EDetection.Tests\EDetection.Tests.csproj -c Debug --no-build
+.\desktop\scripts\Test-DesktopArchitecture.ps1
 .\desktop\scripts\Test-DesktopNativeBackendSmoke.ps1 -NoBuild
 ```
 
@@ -62,8 +64,12 @@ dotnet build .\desktop\EDetection.Desktop.slnx -c Debug
 
 ```text
 desktop/
+├── EDetection.Domain/          # 纯领域模型与契约
 ├── EDetection.NativeCore/      # 纯 .NET 检测、规则、事件与报告
+├── EDetection.Infrastructure/  # 检测后端与基础设施适配
+├── EDetection.Desktop.Core/    # 应用服务与用例编排（WinUI-free）
 ├── EDetection.Desktop/         # WinUI 3 应用壳
+├── EDetection.Tests/           # xUnit v3 组合根与架构测试
 ├── EDetection.Desktop.Tests/   # 无界面原生核心冒烟测试
 ├── installer/                  # Inno Setup 定义
 └── scripts/                    # 发布、健康检查和桌面烟测

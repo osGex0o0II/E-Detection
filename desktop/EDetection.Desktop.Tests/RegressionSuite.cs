@@ -9,11 +9,20 @@ internal static partial class RegressionSuite
     private static readonly IReadOnlyDictionary<string, Func<Task>> Tests =
         new Dictionary<string, Func<Task>>(StringComparer.OrdinalIgnoreCase)
         {
+            ["ambient-temperature-is-not-phase-temperature"] = AmbientTemperatureIsNotPhaseTemperatureAsync,
+            ["ambiguous-alias-columns-are-skipped"] = AmbiguousAliasColumnsAreSkippedAsync,
             ["blank-key-values"] = BlankKeyValuesAsync,
             ["backend-runs-on-worker-thread"] = BackendRunsOnWorkerThreadAsync,
             ["cancellation-interrupts-large-file"] = CancellationInterruptsLargeFileAsync,
             ["chronological-device-times"] = ChronologicalDeviceTimesAsync,
+            ["control-characters-produce-readable-workbook"] = ControlCharactersProduceReadableWorkbookAsync,
+            ["diagnostics-redaction-removes-secrets"] = DiagnosticsRedactionRemovesSecretsAsync,
             ["harness"] = HarnessAsync,
+            ["malformed-proxy-address-is-rejected"] = MalformedProxyAddressIsRejectedNotThrownAsync,
+            ["phase-current-unit-suffix"] = PhaseCurrentUnitSuffixAsync,
+            ["statistics-footer-row-is-dropped"] = StatisticsFooterRowIsDroppedAsync,
+            ["statistics-label-in-point-name-keeps-rows"] = StatisticsLabelInPointNameKeepsRowsAsync,
+            ["valid-proxy-address-is-honoured"] = ValidProxyAddressIsHonouredAsync,
             ["inverted-temperature-thresholds"] = InvertedTemperatureThresholdsAsync,
             ["inverted-voltage-thresholds"] = InvertedVoltageThresholdsAsync,
             ["non-finite-key-values"] = NonFiniteKeyValuesAsync,

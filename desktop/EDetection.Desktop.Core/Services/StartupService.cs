@@ -6,13 +6,9 @@ public sealed class StartupService
 {
     private readonly IStartupIntegrationProvider _provider;
 
-    public StartupService()
-        : this(new FallbackStartupIntegrationProvider(
-            new TaskSchedulerStartupIntegrationProvider(),
-            new RegistryRunStartupIntegrationProvider()))
-    {
-    }
-
+    // The concrete providers are Windows-specific and are composed by the shell
+    // (see MainWindow), so this service stays testable and free of platform
+    // APIs.  There is deliberately no parameterless constructor.
     public StartupService(IStartupIntegrationProvider provider)
     {
         _provider = provider;

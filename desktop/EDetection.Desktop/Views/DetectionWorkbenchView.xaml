@@ -4,12 +4,50 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:behaviors="using:EDetection.Desktop.Behaviors"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
     <Grid x:Name="Root"
           RowSpacing="12"
           SizeChanged="Root_SizeChanged">
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="MetricLayoutStates">
+                <VisualState x:Name="WideMetrics">
+                    <VisualState.StateTriggers>
+                        <StateTrigger x:Name="WideMetricsTrigger" IsActive="True" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="MetricRow1.Height" Value="0" />
+                        <Setter Target="MetricColumn2.Width" Value="*" />
+                        <Setter Target="MetricColumn3.Width" Value="*" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.Row)" Value="0" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.Column)" Value="2" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="SkippedMetricCard.(Grid.Row)" Value="0" />
+                        <Setter Target="SkippedMetricCard.(Grid.Column)" Value="3" />
+                        <Setter Target="SkippedMetricCard.(Grid.ColumnSpan)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="CompactMetrics">
+                    <VisualState.StateTriggers>
+                        <StateTrigger x:Name="CompactMetricsTrigger" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="MetricRow1.Height" Value="Auto" />
+                        <Setter Target="MetricColumn2.Width" Value="0" />
+                        <Setter Target="MetricColumn3.Width" Value="0" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.Row)" Value="1" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.Column)" Value="0" />
+                        <Setter Target="AnomalyRecordsMetricCard.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="SkippedMetricCard.(Grid.Row)" Value="1" />
+                        <Setter Target="SkippedMetricCard.(Grid.Column)" Value="2" />
+                        <Setter Target="SkippedMetricCard.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -23,7 +61,7 @@
               RowSpacing="12">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="0" />
+                <RowDefinition x:Name="MetricRow1" Height="0" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="MetricColumn0" Width="*" />
@@ -32,7 +70,10 @@
                 <ColumnDefinition x:Name="MetricColumn3" Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border x:Name="ProcessedMetricCard" Grid.Column="0" Style="{StaticResource MetricCardStyle}">
+            <Border x:Name="ProcessedMetricCard"
+                    Grid.Column="0"
+                    behaviors:CompositionHoverBehavior.IsEnabled="True"
+                    Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="文件"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -43,7 +84,10 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
-            <Border x:Name="AnomalyFilesMetricCard" Grid.Column="1" Style="{StaticResource MetricCardStyle}">
+            <Border x:Name="AnomalyFilesMetricCard"
+                    Grid.Column="1"
+                    behaviors:CompositionHoverBehavior.IsEnabled="True"
+                    Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="异常文件"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -54,7 +98,10 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
-            <Border x:Name="AnomalyRecordsMetricCard" Grid.Column="2" Style="{StaticResource MetricCardStyle}">
+            <Border x:Name="AnomalyRecordsMetricCard"
+                    Grid.Column="2"
+                    behaviors:CompositionHoverBehavior.IsEnabled="True"
+                    Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="异常记录"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -65,7 +112,10 @@
                                TextTrimming="CharacterEllipsis" />
                 </StackPanel>
             </Border>
-            <Border x:Name="SkippedMetricCard" Grid.Column="3" Style="{StaticResource MetricCardStyle}">
+            <Border x:Name="SkippedMetricCard"
+                    Grid.Column="3"
+                    behaviors:CompositionHoverBehavior.IsEnabled="True"
+                    Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="跳过"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"

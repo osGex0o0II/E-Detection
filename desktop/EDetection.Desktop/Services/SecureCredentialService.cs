@@ -2,7 +2,7 @@ using Windows.Security.Credentials;
 
 namespace EDetection.Desktop.Services;
 
-public sealed class SecureCredentialService
+public sealed class SecureCredentialService : IAppCredentialStore
 {
     private const string ResourcePrefix = "E-Detection.Desktop";
     private const string LlmApiKeyResource = $"{ResourcePrefix}.LLM.ApiKey";

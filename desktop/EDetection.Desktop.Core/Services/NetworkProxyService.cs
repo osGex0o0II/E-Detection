@@ -1,13 +1,13 @@
 using System.Net;
-using EDetection.Desktop.ViewModels;
+
 
 namespace EDetection.Desktop.Services;
 
-public sealed class NetworkProxyService(SecureCredentialService credentials)
+public sealed class NetworkProxyService(IAppCredentialStore credentials)
 {
     private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(8);
 
-    public HttpClientHandler BuildHandler(MainViewModel settings, bool useProxy)
+    public HttpClientHandler BuildHandler(INetworkProxySettings settings, bool useProxy)
     {
         var handler = new HttpClientHandler();
         if (!useProxy
@@ -17,13 +17,22 @@ public sealed class NetworkProxyService(SecureCredentialService credentials)
             return handler;
         }
 
+        if (!TryBuildProxy(settings, out var proxy))
+        {
+            // A malformed address is a rejected setting, not a fatal error.
+            // Throwing here would escape into background callers and take the
+            // process down on every launch until the value is hand-edited out
+            // of settings.json.
+            return handler;
+        }
+
         handler.UseProxy = true;
-        handler.Proxy = BuildProxy(settings);
+        handler.Proxy = proxy;
         return handler;
     }
 
     public async Task TestProxyAsync(
-        MainViewModel settings,
+        INetworkProxySettings settings,
         CancellationToken cancellationToken = default)
     {
         if (!settings.EnableNetworkProxy)
@@ -34,6 +43,11 @@ public sealed class NetworkProxyService(SecureCredentialService credentials)
         if (string.IsNullOrWhiteSpace(settings.ProxyAddress))
         {
             throw new InvalidOperationException("请填写代理地址。");
+        }
+
+        if (!TryBuildProxy(settings, out _))
+        {
+            throw new InvalidOperationException("代理地址格式无效，请填写形如 http://host:port 的地址。");
         }
 
         using var handler = BuildHandler(settings, useProxy: true);
@@ -50,17 +64,31 @@ public sealed class NetworkProxyService(SecureCredentialService credentials)
         }
     }
 
-    private WebProxy BuildProxy(MainViewModel settings)
+    // WebProxy's constructor throws UriFormatException on values that are
+    // perfectly ordinary strings but not valid URIs ("http://", a stray space
+    // before the port).  The address arrives from a free-text settings box that
+    // persists on every keystroke, so it must be validated, never assumed.
+    private bool TryBuildProxy(INetworkProxySettings settings, out WebProxy? proxy)
     {
-        var proxy = new WebProxy(settings.ProxyAddress);
+        proxy = null;
+        var address = settings.ProxyAddress;
+        if (string.IsNullOrWhiteSpace(address)
+            || !Uri.TryCreate(address, UriKind.Absolute, out var uri)
+            || string.IsNullOrEmpty(uri.Host))
+        {
+            return false;
+        }
+
+        var built = new WebProxy(uri);
         if (settings.ProxyRequiresAuthentication
             && !string.IsNullOrWhiteSpace(settings.ProxyUserName))
         {
-            proxy.Credentials = new NetworkCredential(
+            built.Credentials = new NetworkCredential(
                 settings.ProxyUserName,
                 credentials.GetProxyPassword());
         }
 
-        return proxy;
+        proxy = built;
+        return true;
     }
 }

@@ -1,6 +1,9 @@
+using EDetection.Desktop.Composition;
+using EDetection.Desktop.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
-using EDetection.Desktop.Services;
 
 namespace EDetection.Desktop;
 
@@ -12,6 +15,7 @@ public partial class App : Application
     private const string SingleInstanceKey = "EDetection.Desktop.MainInstance";
 
     private AppInstance? _mainInstance;
+    private IHost? _host;
     private volatile bool _pendingExternalActivation;
 
     public static MainWindow? CurrentWindow { get; private set; }
@@ -39,12 +43,19 @@ public partial class App : Application
                 return;
             }
 
-            var savedSettings = new SettingsService().Load();
+            var host = AppHost.Build();
+            _host = host;
+            var savedSettings = host.Services.GetRequiredService<SettingsService>().Load();
             var startMinimized = commandLineBackgroundStartup
                 || commandLineStartupMinimized
                 || savedSettings.StartMinimizedToTray;
-            CurrentWindow = new EDetection.Desktop.MainWindow();
-            CurrentWindow.Closed += (_, _) => CurrentWindow = null;
+            CurrentWindow = host.Services.GetRequiredService<MainWindow>();
+            CurrentWindow.Closed += (_, _) =>
+            {
+                CurrentWindow = null;
+                _host?.Dispose();
+                _host = null;
+            };
             var preparedForStartupHide = startMinimized
                 && CurrentWindow.PrepareForStartupHidden();
 
@@ -64,6 +75,8 @@ public partial class App : Application
         catch (Exception ex)
         {
             StartupDiagnostics.WriteException("OnLaunched failed", ex);
+            _host?.Dispose();
+            _host = null;
             throw;
         }
     }

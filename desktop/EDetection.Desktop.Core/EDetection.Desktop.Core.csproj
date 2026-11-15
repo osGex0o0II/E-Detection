@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <!--
+      The desktop services keep their original namespaces so relocating them
+      here changes no call site.  The assembly is deliberately WinUI-free: it is
+      referenced by the headless test project, which asserts that no UI runtime
+      is ever loaded.
+    -->
+    <RootNamespace>EDetection.Desktop</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EDetection.Domain\EDetection.Domain.csproj" />
+    <ProjectReference Include="..\EDetection.NativeCore\EDetection.NativeCore.csproj" />
+  </ItemGroup>
+</Project>

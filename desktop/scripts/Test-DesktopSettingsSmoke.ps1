@@ -404,7 +404,7 @@ try {
         EnableUpdateChecks = $true
         UseProxyForUpdates = $true
         SelectedUpdateChannelIndex = 1
-        UpdateFeedUrl = "https://github.com/osGex0o0II/E-Detection-OSS/releases/latest"
+        UpdateFeedUrl = "https://github.com/osGex0o0II/E-Detection/releases/latest"
         SelectedLogRetentionIndex = 2
         SelectedRecentReportLimitIndex = 2
         SelectedThemeIndex = 0
