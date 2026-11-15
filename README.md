@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/e-detection-workbench.png" alt="E-Detection 原生检测工作台" width="100%" />
+  <img src="docs/images/e-detection-logo.svg" alt="E-Detection 品牌标志" width="128" />
 </p>
 
 <h1 align="center">E-Detection</h1>
@@ -97,7 +97,7 @@ CSV 根目录
 │   ├── EDetection.Infrastructure/         # IDetectionBackendService 的 DI 适配
 │   ├── EDetection.Desktop.Core/           # WinUI-free 应用服务、模型与用例编排
 │   ├── EDetection.Desktop/                # WinUI 3 应用壳、视图、视图模型与系统集成
-│   ├── EDetection.Tests/                  # xUnit v3 组合根与架构测试
+│   ├── EDetection.Tests/                  # xUnit v3 组合根、架构与规则管线测试
 │   ├── EDetection.Desktop.Tests/          # net11.0 无界面原生核心冒烟与回归测试
 │   ├── installer/                         # Inno Setup 安装器定义
 │   └── scripts/                           # 构建、发布、包健康、安装与桌面烟测脚本
@@ -117,7 +117,10 @@ CSV 根目录
 | 路径 | 作用 |
 | --- | --- |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Detection.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Detection.cs) | 运行入口、文件枚举、事件发出、汇总与报告调用。 |
-| [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs) | 单文件解析、行级规则执行、离线/传感器判定。 |
+| [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Analysis.cs) | 单文件解析、组装 `DetectionRowContext`、调用规则管线、离线/传感器判定。 |
+| [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Rules.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Rules.cs) | 离线无效观测计数与传感器状态辅助；电压/电流/功率/温度/冻结规则已移入 `Detection/`。 |
+| [`desktop/EDetection.NativeCore/Detection/`](desktop/EDetection.NativeCore/Detection/DetectionRowRulePipeline.cs) | 行级规则管线：`DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、固定顺序 `DetectionRowRulePipeline` 与 `FreezeRowDetector`。 |
+| [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.RuleOptions.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.RuleOptions.cs) | `NativeDetectionConfig` → `DetectionRuleOptions` 映射，保持配置加载与纯规则管线解耦。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Csv.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Csv.cs) | 编码候选、CSV 分词、列名归一化、无效值与统计尾行处理。 |
 | [`desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Reporting.cs`](desktop/EDetection.NativeCore/Services/NativeDetectionBackendService.Reporting.cs) | 6 张工作表的 OpenXML 生成、XML 校验与原子发布。 |
 | [`desktop/EDetection.NativeCore/Models/DetectionRequest.cs`](desktop/EDetection.NativeCore/Models/DetectionRequest.cs) | 检测请求契约。 |
@@ -128,6 +131,7 @@ CSV 根目录
 | [`desktop/EDetection.Desktop/ViewModels/MainViewModel.RunCommands.cs`](desktop/EDetection.Desktop/ViewModels/MainViewModel.RunCommands.cs) | 开始/取消、进度事件、摘要、通知与报告历史编排。 |
 | [`desktop/EDetection.Desktop/Views/SettingsView.xaml`](desktop/EDetection.Desktop/Views/SettingsView.xaml) | 设置页布局；17 个 `SettingsCard`、17 处 `{x:Bind}`、`SettingsLayoutStates` 三态 VSM；响应式/搜索/导航/动作拆为多个 partial。 |
 | [`desktop/EDetection.Desktop/Views/Settings/DetectionRulesSettingsSection.xaml`](desktop/EDetection.Desktop/Views/Settings/DetectionRulesSettingsSection.xaml) | 检测规则分区试点 `UserControl`；在 `SettingsView` 中以 `x:Name="DetectionRulesSection"` 承载，供搜索和分类导航定位。 |
+| [`desktop/EDetection.Tests/DetectionRulePipelineTests.cs`](desktop/EDetection.Tests/DetectionRulePipelineTests.cs) | 15 个规则边界与冻结检测 xUnit 测试；xUnit 总计 22 项。 |
 | [`desktop/scripts/Test-DesktopArchitecture.ps1`](desktop/scripts/Test-DesktopArchitecture.ps1) | 架构门禁：UI-free 断言、包版本集中管理、行数上限与 xUnit。 |
 | [`desktop/scripts/Test-DesktopNativeBackendSmoke.ps1`](desktop/scripts/Test-DesktopNativeBackendSmoke.ps1) | 无界面原生核心冒烟与 20 项命名回归。 |
 | [`desktop/scripts/Publish-Desktop.ps1`](desktop/scripts/Publish-Desktop.ps1) | 自包含发布、资源校验、包健康与便携 ZIP。 |

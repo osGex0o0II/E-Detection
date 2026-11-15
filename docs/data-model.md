@@ -10,6 +10,9 @@ CSV 文件
   ├─ 行/列解析
   ├─ 列名归一化
   └─ 逐行规则检测
+        ├─ DetectionRowContext（本行可用测点）
+        ├─ DetectionRowRulePipeline.Evaluate（电压 → 电流 → 有功 → 功率因数 → 温度）
+        ├─ FreezeRowDetector.Detect（整列冻结/恒定）
         ├─ NativeRowAnalysis（行级中间结果）
         ├─ ReportDetailPreview（可报告异常明细）
         │     └─ ReportDeviceSummary / ReportIssueType（设备与问题汇总）
@@ -440,9 +443,103 @@ $env:EDETECTION_NATIVE_PARITY_TRACE = "<本地随机密钥>"
 - 文本单元格做 XML 转义；以 `= + - @` 开头的文本加前导单引号；XML 1.0 非法控制字符丢弃，合法代理对保留。
 - 首行冻结、自动筛选、列宽按内容截断到 42。
 
+## 规则管线数据模型
+
+行级规则在 `EDetection.NativeCore/Detection/` 内完成，输入是后端解析后的行上下文，输出是异常类型字符串列表；`NativeDetectionBackendService` 只负责把结果转为 `NativeRowAnalysis`、`ReportDetailPreview` 和报告行。
+
+### `DetectionRowContext`
+
+| 属性 | 类型 | 说明 |
+| --- | --- | --- |
+| `VoltageValues` | `IReadOnlyDictionary<string,double>` | 键为 `Uab` / `Ubc` / `Uca`。 |
+| `CurrentValues` | `IReadOnlyDictionary<string,double>` | 键为 `Ia` / `Ib` / `Ic`。 |
+| `ActivePowerValues` | `IReadOnlyDictionary<string,double>` | 键为 `有功功率`。 |
+| `PowerFactorValues` | `IReadOnlyDictionary<string,double>` | 键为 `功率因数`。 |
+| `TemperatureValues` | `IReadOnlyDictionary<string,double>` | 键为 `A相温度` / `B相温度` / `C相温度`。 |
+| `VoltageColumnCount` | `int` | 文件发现的电压列组数，含空单元格；判断全零行时要求 `VoltageValues.Count == VoltageColumnCount`。 |
+
+- 字典只包含本行存在、可解析，且未被 `-1` / `2867.2` 无效值规则剔除的测点；重复表头先按列组取平均。
+- 缺失相不会进入字典，因此不会被误判为全零行；全零行要求至少 2 个电压列，且所有已发现电压列都 `< 1.0`。
+- 行规则彼此独立；只有冻结/恒定检测读取整列序列。
+
+### `DetectionRuleOptions`
+
+`DetectionRuleOptions` 是运行期记录，不参与 JSON 序列化。`NativeDetectionBackendService.RuleOptions.cs` 的 `ToRuleOptions` 把已校验的 `NativeDetectionConfig` 逐字段映射到它；管线本身不重新校验或交换上下限。
+
+| 属性 | 默认值 | 说明 |
+| --- | --- | --- |
+| `VoltageMinThreshold` | `353.0` | 相电压过低阈值。 |
+| `VoltageMaxThreshold` | `430.0` | 相电压过高阈值。 |
+| `VoltageImbalanceThreshold` | `0.02` | 相电压偏离均值的比例阈值。 |
+| `CurrentMaxThreshold` | `1000.0` | 相电流过载阈值。 |
+| `CurrentUnbalanceMaxThreshold` | `0.15` | 电流不平衡比例阈值。 |
+| `CurrentActiveMinThreshold` | `1.0` | 判定“电流活跃”的最小相电流。 |
+| `ActivePowerMinThreshold` | `0.0` | 有功功率下限。 |
+| `PowerFactorMinThreshold` | `0.90` | 功率因数下限。 |
+| `TemperatureMinThreshold` | `0.0` | 相温度下限。 |
+| `TemperatureMaxThreshold` | `70.0` | 相温度上限。 |
+| `CurrentOverloadEnabled` | `true` | 电流过载规则开关。 |
+| `CurrentUnbalanceEnabled` | `false` | 电流不平衡规则开关。 |
+| `PowerFactorEnabled` | `false` | 功率因数规则开关。 |
+| `DetailOutputEnabled` | `false` | 输出相别/数值详情；关闭时使用通用标签。 |
+| `FreezeCountThreshold` | `3` | 连续平坦点数量。 |
+| `FreezeStdThreshold` | `0.01` | 相邻点差值小于该值视为平坦。 |
+
+### 规则契约与输出字符串
+
+`IDetectionRowRule.Evaluate(context, options, issueTypes)` 只追加异常类型字符串。`DetectionRowRulePipeline.Default` 固定按 **电压 → 电流 → 有功功率 → 功率因数 → 温度** 执行；构造器可注入自定义规则，但生产入口始终使用 `Default`。
+
+| 规则 | 触发摘要 | `detail_output=true` | `detail_output=false` |
+| --- | --- | --- | --- |
+| 全零行 | 至少 2 个电压列，所有已发现电压列 `< 1.0` | 不产生电压类异常 | 同左。 |
+| PT 接线异常 | 三相电压齐全、均值 `> 30`、中位数非 0；某相偏离中位数 `> 30%`，其余相最大偏离 `< 15%` | `A相电压疑似PT接线异常(偏差xx.x%)` | `疑似PT接线异常`。 |
+| 相电压不平衡 | 至少 2 个电压值、均值 `> 30`、非全零、无 PT 异常；某相偏离均值 `> V_IMBALANCE_THRESHOLD` | `A相电压电压不平衡:380.0:偏差0.053` | `相电压不平衡`（整行一条）。 |
+| 电压过低/过高 | 非全零行，任一相电压超出上下限 | `A相电压过低` / `A相电压过高`（逐相） | `电压异常`（每个超限值一条）。 |
+| 电流过大 | `CurrentOverloadEnabled` 且任一相电流 `> I_MAX_THRESHOLD` | `A相电流过大`（逐相） | `电流过大`（每个超限相一条）。 |
+| 电流不平衡 | `CurrentUnbalanceEnabled`、至少 2 个电流值且均值非 0；`(max-min)/mean > I_UNBALANCE_MAX_THRESHOLD` | `电流不平衡` | 同左。 |
+| CT 极性异常 | 有功功率存在、电流活跃、有功功率 `< 0` | `CT极性异常` | 同左。 |
+| 有功功率异常 | 有功功率存在、电流活跃、有功功率 `< P_ACTIVE_MIN_THRESHOLD` 且非负 | `有功功率异常` | 同左。 |
+| 功率因数过低 | `PowerFactorEnabled`、电流活跃、功率因数 `< PF_MIN_THRESHOLD` | `功率因数过低` | 同左。 |
+| 温度异常 | 相温度 `< T_MIN_THRESHOLD` 或 `> T_MAX_THRESHOLD` | `A相温度过高` / `A相温度过低`（逐相） | `温度异常`（每个超限相一条）。 |
+| 数据冻结 | 核心列中至少 2 列连续平坦，且不是待机行 | `数据冻结` | 同左。 |
+| 数据恒定 | 无功功率或功率因数列出现连续平坦段 | `数据恒定` | 同左。 |
+
+“电流活跃”定义为任一相电流 `>= CurrentActiveMinThreshold`。待机行定义为所有存在的电流列 `< CurrentActiveMinThreshold`，且所有存在的电压列都在 `[VoltageMinThreshold, VoltageMaxThreshold]` 内。
+
+### `FreezeDetectionRow` 与 `FreezeRowDetector`
+
+| 成员 | 说明 |
+| --- | --- |
+| `FreezeDetectionRow.CoreValues` | 冻结检测的核心测点：`Uab` / `Ubc` / `Uca` / `Ia` / `Ib` / `Ic` / `有功功率`。 |
+| `FreezeDetectionRow.AuxValues` | 恒定检测的辅助测点：`无功功率` / `功率因数`。 |
+| `FreezeRowDetector.Detect(rows, options, cancellationToken)` | 返回与输入行等长的 `IReadOnlyList<IReadOnlyList<string>>`；每行只包含该行命中的 `数据冻结` / `数据恒定`。 |
+
+- 辅助列先检查：全零列跳过；否则对连续差 `< FreezeStdThreshold` 的平坦段（长度达到 `FreezeCountThreshold`）逐行标记 `数据恒定`。
+- 核心列再检查：至少 2 个核心列同时处于平坦段，且该行不是待机行，才追加 `数据冻结`。
+- 当前样本或前一样本缺失时按平坦处理，保持既有 pandas `fillna(0)` 语义；全零列不会触发冻结。
+- `Detect` 在辅助列、核心列、滑窗和输出行检查 `CancellationToken`；空输入返回空列表。
+
+### 进入报告输出
+
+```text
+DetectionRowRulePipeline.Evaluate → rowTypes
+  └─ FreezeRowDetector.Detect 追加冻结/恒定
+      ├─ 仅冻结/恒定类型 → 整行跳过，不生成 ReportDetailPreview
+      └─ OrderBy(IssueRuleOrder)
+          ├─ detail_output=false：紧凑类型/详情/异常值 → 1 条 ReportDetailPreview
+          └─ detail_output=true：按类型展开多条 ReportDetailPreview
+                └─ ReportValues（同一行测点）→ 异常明细 23 列
+```
+
+- `IssueRuleOrder` 只影响结构化明细与摘要顺序：电压/PT → 电流过大 → 电流不平衡 → 冻结/恒定 → CT/有功 → 功率因数 → 温度。
+- `ReportValues` 由同一行的电压、电流、有功、功率因数、温度和 `无功功率` 构建，供明细行、`ReportDetailPreview` 和工作簿使用。
+- 设备离线与传感器故障在行规则之后统一判定：离线文件追加高等级“设备离线(列名...)”，异常计数为 `1 + 传感器故障数`。
+
 ## 异常、严重等级与传感器模型
 
 ### 规则
+
+下表是规则行为契约，由 `Detection/` 的 `DetectionRowRulePipeline` 与 `FreezeRowDetector` 实现；字符串和固定顺序见[规则管线数据模型](#规则管线数据模型)。
 
 | 规则族 | 触发条件 | 典型类型 |
 | --- | --- | --- |

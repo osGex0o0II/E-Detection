@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Text.Json;
+using EDetection.NativeCore.Detection;
 using EDetection.NativeCore.Models;
 
 namespace EDetection.NativeCore.Services;
@@ -155,6 +156,7 @@ public sealed partial class NativeDetectionBackendService : IDetectionBackendSer
             static group => group.Name,
             static _ => new NativeSensorColumnState(),
             StringComparer.Ordinal);
+        var ruleOptions = ToRuleOptions(config);
         var dataRows = 0;
         foreach (var line in lines.Skip(1))
         {
@@ -197,11 +199,16 @@ public sealed partial class NativeDetectionBackendService : IDetectionBackendSer
                 reactivePowerColumnGroups
                     .Concat(powerFactorColumnGroups)
                     .ToList());
-            var rowTypes = DetectVoltageAnomalyTypes(rowVoltageValues, voltageColumnGroups.Count, config)
-                .Concat(DetectCurrentAnomalyTypes(rowCurrentValues, config))
-                .Concat(DetectActivePowerAnomalyTypes(rowActivePowerValues, rowCurrentValues, config))
-                .Concat(DetectPowerFactorAnomalyTypes(rowPowerFactorValues, rowCurrentValues, config))
-                .Concat(DetectTemperatureAnomalyTypes(rowTemperatureValues, config))
+            var rowTypes = DetectionRowRulePipeline.Default
+                .Evaluate(
+                    new DetectionRowContext(
+                        rowVoltageValues,
+                        rowCurrentValues,
+                        rowActivePowerValues,
+                        rowPowerFactorValues,
+                        rowTemperatureValues,
+                        voltageColumnGroups.Count),
+                    ruleOptions)
                 .ToList();
             rawRowLabels?.Add(rowTypes.ToList());
             var reportValues = BuildReportValues(
@@ -214,7 +221,10 @@ public sealed partial class NativeDetectionBackendService : IDetectionBackendSer
             rowAnalyses.Add(new NativeRowAnalysis(rowTime, rowTypes, rowFreezeCoreValues, rowFreezeAuxValues, reportValues));
         }
 
-        var freezeRowTypes = DetectFreezeRowTypes(rowAnalyses, config, cancellationToken);
+        var freezeRows = rowAnalyses
+            .Select(static row => new FreezeDetectionRow(row.FreezeCoreValues, row.FreezeAuxValues))
+            .ToList();
+        var freezeRowTypes = FreezeRowDetector.Detect(freezeRows, ruleOptions, cancellationToken);
         for (var rowIndex = 0; rowIndex < rowAnalyses.Count; rowIndex++)
         {
             cancellationToken.ThrowIfCancellationRequested();

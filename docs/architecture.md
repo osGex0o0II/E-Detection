@@ -24,12 +24,14 @@ Desktop
 ├── Infrastructure ──► Domain
 │                  └─► NativeCore
 └── NativeCore          （无项目引用）
+    ├── Services/       （CSV、编排、汇总、报告）
+    └── Detection/      （纯行级规则管线）
 ```
 
 | 项目 | 目标框架 | 直接项目引用 | 关键约束 |
 | --- | --- | --- | --- |
 | `EDetection.Domain` | `net11.0` | — | 仅 `DomainAssemblyMarker`；不得引用 WinUI / Windows App SDK。 |
-| `EDetection.NativeCore` | `net11.0` | — | 纯检测核心；不得引用 WinUI、Windows App SDK 或 `Desktop.Core`。 |
+| `EDetection.NativeCore` | `net11.0` | — | 纯检测核心；不得引用 WinUI、Windows App SDK 或 `Desktop.Core`；`Detection/` 规则管线不依赖后端服务或文件 IO。 |
 | `EDetection.Infrastructure` | `net11.0` | `Domain`、`NativeCore` | 只做 DI 适配，不承载规则。 |
 | `EDetection.Desktop.Core` | `net11.0` | `Domain`、`NativeCore` | WinUI-free；不得引用 `Infrastructure`。 |
 | `EDetection.Desktop` | `net11.0-windows10.0.19041.0` | `Desktop.Core`、`Infrastructure`、`NativeCore` | 唯一 WinUI 壳；不承载检测规则。 |
@@ -47,14 +49,57 @@ Desktop
 | `NativeDetectionBackendService.Detection.cs` | `RunDetectionAsync` 入口、输入校验、文件枚举、事件发出、汇总与报告调用。 |
 | `NativeDetectionBackendService.Configuration.cs` | 配置文件加载、阈值合法性检查、CSV 递归枚举。 |
 | `NativeDetectionBackendService.Csv.cs` | 编码候选、CSV 分词、列名归一化、无效值与统计尾行。 |
-| `NativeDetectionBackendService.Analysis.cs` | 单文件分析、行级规则、离线与传感器状态。 |
-| `NativeDetectionBackendService.Rules.cs` | 电压、电流、有功、功率因数、温度、冻结规则。 |
+| `NativeDetectionBackendService.Analysis.cs` | 单文件分析：解析行、组装 `DetectionRowContext`、调用规则管线、离线与传感器状态。 |
+| `NativeDetectionBackendService.RuleOptions.cs` | `NativeDetectionConfig` → `DetectionRuleOptions` 映射，配置加载与纯规则管线之间的适配层。 |
+| `NativeDetectionBackendService.Rules.cs` | 仅保留离线无效观测计数与传感器状态辅助；规则实现已移入 `Detection/`。 |
+| `Detection/DetectionRowContext.cs` | 行上下文 `DetectionRowContext` 与规则接口 `IDetectionRowRule`。 |
+| `Detection/DetectionRuleOptions.cs` | 规则阈值与开关记录；默认值与 `NativeDetectionConfig` 一致。 |
+| `Detection/DetectionRowRulePipeline.cs` | 固定顺序规则管线及电压/电流/有功功率/功率因数/温度规则实现。 |
+| `Detection/FreezeRowDetector.cs` | 行序列冻结/恒定检测、待机行抑制与 `FreezeDetectionRow`。 |
+| `Detection/DetectionMath.cs` | 相别映射、中位数、电流活跃判断等内部数学辅助。 |
 | `NativeDetectionBackendService.Details.cs` | 异常详情、PT/不平衡/CT 文本、HMAC 对等追踪。 |
 | `NativeDetectionBackendService.Summaries.cs` | 设备汇总、问题类型统计、严重等级、时间顺序。 |
 | `NativeDetectionBackendService.Reporting.cs` | OpenXML 工作簿生成、样式、XML 校验与原子发布。 |
 | `NativeDetectionBackendService.Models.cs` | 内部配置、列组、位置、行/文件分析记录。 |
 
-主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。
+主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。`Detection/` 另行公开 `DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、`DetectionRowRulePipeline`、`FreezeDetectionRow` 与 `FreezeRowDetector`，使规则可在不构造后端服务的情况下直接测试。
+
+## 检测规则管线
+
+行级规则位于 `EDetection.NativeCore/Detection/`，是纯 `net11.0` 子命名空间，不引用后端 partial、WinUI 或文件 IO。`NativeDetectionBackendService` 负责解析与编排，规则只消费行上下文：
+
+```text
+NativeDetectionBackendService.Analysis.cs
+  ├─ BuildRowVoltageValues / BuildRowNumericValues
+  │     └─ 重复列组先取平均；只保留本行存在且未被无效值规则剔除的数值
+  ├─ new DetectionRowContext(电压、电流、有功、功率因数、温度, 电压列数)
+  ├─ DetectionRowRulePipeline.Default.Evaluate(context, ToRuleOptions(config))
+  │     ├─ VoltageAnomalyRule
+  │     ├─ CurrentAnomalyRule
+  │     ├─ ActivePowerAnomalyRule
+  │     ├─ PowerFactorAnomalyRule
+  │     └─ TemperatureAnomalyRule
+  └─ FreezeRowDetector.Detect(FreezeDetectionRow[], options, cancellationToken)
+        └─ rowTypes → NativeRowAnalysis → ReportDetailPreview / 汇总 / 工作簿
+```
+
+规则顺序是检测契约的一部分，固定为 **电压 → 电流 → 有功功率 → 功率因数 → 温度**；冻结/恒定检测在行级规则之后按整列序列执行，并把 `数据冻结` / `数据恒定` 追加到对应行。后续 `IssueRuleOrder` 只调整结构化明细与摘要的展示顺序，不改变管线输出顺序。
+
+| 契约 | 职责 |
+| --- | --- |
+| `DetectionRowContext` | 每行的电压/电流/有功功率/功率因数/温度字典；键是归一化列名，字典只含本行可用的测点。`VoltageColumnCount` 是文件发现的电压列组总数（含空单元格），用于区分“全零行”和“缺相行”。 |
+| `DetectionRuleOptions` | 16 个阈值与开关，默认值与 `config.json` / `NativeDetectionConfig` 一致；由 `NativeDetectionBackendService.RuleOptions.cs` 的 `ToRuleOptions` 映射。 |
+| `IDetectionRowRule` | `Evaluate(context, options, ICollection<string> issueTypes)`；规则只追加异常类型字符串。 |
+| `DetectionRowRulePipeline` | `public sealed`，`Default` 为单例；构造器可注入自定义规则，供测试替换顺序或规则集。 |
+| `FreezeDetectionRow` / `FreezeRowDetector` | 冻结检测只依赖核心字典（`Uab/Ubc/Uca/Ia/Ib/Ic/有功功率`）与辅助字典（`无功功率/功率因数`）；`Detect` 返回与输入行等长的逐行类型列表。 |
+| `DetectionMath` | `internal` 辅助：相别到列名/列名到相别、`Median`、`IsCurrentActive`、可选值读取。 |
+
+稳定性与取消：
+
+- 相别文本集中在 `DetectionMath.VoltagePhaseColumns` / `PhaseForCurrentColumn`；数值格式使用 `InvariantCulture`（`F1`/`F3`），不受运行线程区域设置影响。
+- 关闭 `detail_output` 时，电流过大与温度异常按超限相数重复通用标签（例如两个“电流过大”），保留既有行级重数；后续结构化明细只做一次汇总。
+- 行级规则本身无 IO，不单独接收取消令牌；`Analysis.cs` 在逐行循环检查取消，`FreezeRowDetector` 在辅助列、核心列、滑窗与输出行逐项检查。
+- `DetectionRulePipelineTests.cs` 的 15 项测试覆盖全零行、PT 接线、相电压不平衡、多相电压、电流重数、电流不平衡开关、CT 极性、有功下限、功率因数开关、温度相别、数据冻结、待机行抑制与数据恒定；xUnit 总计 22 项。
 
 ### `EDetection.Desktop.Core`
 
@@ -178,7 +223,7 @@ MainWindow / RunSetupView
 
 - `DetectionExecutionService.RunAsync` 用 `Task.Run` 把 CPU 密集的同步检测循环移出 UI 线程；`NativeDetectionBackendService.RunDetectionAsync` 本身先 `Task.Yield()`，但主要工作是同步循环。
 - `Progress<DetectionBackendEvent>` 在 UI 线程创建，捕获 WinUI 同步上下文；`HandleBackendEvent` 在 UI 线程更新 `ObservableCollection`、属性和任务栏，工作线程不直接改动 UI 集合。
-- `CancellationToken` 在文件枚举、编码探测、逐行读取、逐行分析、冻结检测、明细排序和工作簿行生成中检查；单个大文件也可以被取消。
+- `CancellationToken` 在文件枚举、编码探测、逐行读取、逐行分析与规则管线编排、冻结检测、明细排序和工作簿行生成中检查；单个大文件也可以被取消。
 - `MainViewModel.CancelCommand` 采用两步确认：第一次点击/按 Esc 进入“再次确认取消”，5 秒内第二次才调用 `_runCts.Cancel()`；超时自动恢复运行状态。
 - 取消时抛出 `OperationCanceledException`，UI 记录“检测已取消”，任务栏暂停，不再发完成通知。失败时任务栏错误，发出一次失败通知。
 - `IsRunning` 同时限制“开始检测”和托盘开始命令；`finally` 中释放 CTS 并恢复命令可用性。

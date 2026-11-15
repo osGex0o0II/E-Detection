@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Text.Json;
+using EDetection.NativeCore.Detection;
 using EDetection.NativeCore.Models;
 
 namespace EDetection.NativeCore.Services;
@@ -703,7 +704,7 @@ public sealed partial class NativeDetectionBackendService : IDetectionBackendSer
         out string phase,
         out string detailType)
     {
-        foreach (var (prefix, column) in VoltagePhaseColumns())
+        foreach (var (prefix, column) in DetectionMath.VoltagePhaseColumns())
         {
             if (issueType == $"{prefix}电压过低")
             {
@@ -729,24 +730,6 @@ public sealed partial class NativeDetectionBackendService : IDetectionBackendSer
     }
 
     private static IReadOnlyList<(string Phase, string Column)> VoltagePhaseColumns() =>
-    [
-        ("A相", "Uab"),
-        ("B相", "Ubc"),
-        ("C相", "Uca"),
-    ];
-
-    private static string PhaseForVoltageColumn(string column) =>
-        VoltagePhaseColumns()
-            .FirstOrDefault(phaseColumn => phaseColumn.Column == column)
-            .Phase ?? column;
-
-    private static string PhaseForCurrentColumn(string column) =>
-        column switch
-        {
-            "Ia" => "A相",
-            "Ib" => "B相",
-            "Ic" => "C相",
-            _ => column,
-        };
+        DetectionMath.VoltagePhaseColumns();
 
 }

@@ -20,15 +20,29 @@
 | 项目 | 目标 | 作用 |
 | --- | --- | --- |
 | `EDetection.Domain` | `net11.0` | 纯标记程序集；无 UI/IO 依赖。 |
-| `EDetection.NativeCore` | `net11.0` | CSV 检测、规则、事件、汇总、OpenXML 报告；无 WinUI 依赖。 |
+| `EDetection.NativeCore` | `net11.0` | CSV 检测、行级规则管线、事件、汇总、OpenXML 报告；无 WinUI 依赖。 |
 | `EDetection.Infrastructure` | `net11.0` | `IDetectionBackendService` 的 DI 适配。 |
 | `EDetection.Desktop.Core` | `net11.0` | WinUI-free 设置、诊断、历史、事件映射、运行状态、报告摘要。 |
 | `EDetection.Desktop` | `net11.0-windows10.0.19041.0` | WinUI 3 壳、视图、视图模型、托盘/通知/窗口集成。 |
-| `EDetection.Tests` | `net11.0` | xUnit v3 组合根与架构测试（7 项）。 |
+| `EDetection.Tests` | `net11.0` | xUnit v3 组合根、架构与规则管线测试（22 项）。 |
 | `EDetection.Desktop.Tests` | `net11.0` | 无界面原生核心冒烟 + 20 项命名回归。 |
 | `EDetection.Desktop.slnx` | — | 以上项目的解决方案入口。 |
 | `installer/E-Detection.Desktop.iss` | — | Inno Setup 安装器定义。 |
 | `scripts/` | — | 发布、包健康、安装/卸载、安装器与桌面烟测。 |
+
+## 检测规则管线
+
+行级规则位于 `EDetection.NativeCore/Detection/`，不依赖 WinUI、后端 partial 或文件 IO：
+
+| 文件 | 职责 |
+| --- | --- |
+| `DetectionRowContext.cs` | 行上下文（电压/电流/有功/功率因数/温度字典 + 电压列数）与 `IDetectionRowRule`。 |
+| `DetectionRuleOptions.cs` | 阈值/开关记录，默认值与 `config.json` 一致。 |
+| `DetectionRowRulePipeline.cs` | 固定顺序：电压 → 电流 → 有功功率 → 功率因数 → 温度；`Default` 为生产入口。 |
+| `FreezeRowDetector.cs` | 整列冻结/恒定检测与待机行抑制。 |
+| `Services/NativeDetectionBackendService.RuleOptions.cs` | `NativeDetectionConfig` → `DetectionRuleOptions` 映射。 |
+
+`NativeDetectionBackendService.Analysis.cs` 只负责组装上下文和消费结果；`NativeDetectionBackendService.Rules.cs` 仅保留离线/传感器辅助。`DetectionRulePipelineTests.cs` 提供 15 项边界测试，xUnit 总计 22/22。
 
 ## 环境要求
 
@@ -127,7 +141,7 @@ dotnet publish .\desktop\EDetection.Desktop\EDetection.Desktop.csproj `
 | --- | --- | --- |
 | 构建 | `dotnet build ... -c Debug --no-restore` | 全部项目编译；当前为 0 警告/0 错误。 |
 | 格式 | `dotnet format ... --verify-no-changes --no-restore` | 代码风格与行尾。 |
-| xUnit | `dotnet test ... --no-build` | 组合根、架构、报告摘要（7 项）。 |
+| xUnit | `dotnet test ... --no-build` | 组合根、架构、报告摘要与规则管线（22 项，规则管线 15 项）。 |
 | 架构门禁 | `Test-DesktopArchitecture.ps1 -NoBuild` | UI-free、中央包管理、行数上限、构建/测试。 |
 | 原生烟测 | `Test-DesktopNativeBackendSmoke.ps1 -NoBuild` | 无界面检测、20 项命名回归、UI 运行时隔离。 |
 | 设置页 UI | `Test-DesktopSettingsSmoke.ps1 -Width 1600 -Height 1000` 等 | 1600×1000、1000×900、760×900；17 个 `SettingsCard` 与命名控件 UI Automation 可发现。 |
