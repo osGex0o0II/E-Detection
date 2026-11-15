@@ -43,6 +43,7 @@ public partial class MainViewModel
     private readonly NetworkProxyService _networkProxy;
     private readonly UpdateCheckService _updateCheck;
     private readonly PoetryStatusService _poetryStatus;
+    private readonly ReportSummaryComposer _reportSummaryComposer;
     private readonly Stopwatch _runStopwatch = new();
     private CancellationTokenSource? _runCts;
     private CancellationTokenSource? _cancelPromptCts;
@@ -70,7 +71,8 @@ public partial class MainViewModel
         NetworkProxyService? networkProxy = null,
         UpdateCheckService? updateCheck = null,
         PoetryStatusService? poetryStatus = null,
-        DesktopHealthService? desktopHealth = null)
+        DesktopHealthService? desktopHealth = null,
+        ReportSummaryComposer? reportSummaryComposer = null)
     {
         _settings = settings;
         _detectionConfig = detectionConfig;
@@ -85,6 +87,7 @@ public partial class MainViewModel
         _networkProxy = networkProxy ?? new NetworkProxyService(_credentials);
         _updateCheck = updateCheck ?? new UpdateCheckService();
         _poetryStatus = poetryStatus ?? new PoetryStatusService();
+        _reportSummaryComposer = reportSummaryComposer ?? new ReportSummaryComposer();
         Diagnostics = new DiagnosticsViewModel();
         RunTelemetry = new RunTelemetryViewModel(runTelemetry);
         RuntimeLogs = new RuntimeLogViewModel(runtimeLogs);

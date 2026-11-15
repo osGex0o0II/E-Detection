@@ -27,6 +27,7 @@ public sealed class CompositionTests
         Assert.NotNull(provider.GetRequiredService<NetworkProxyService>());
         Assert.NotNull(provider.GetRequiredService<NtfyNotificationService>());
         Assert.NotNull(provider.GetRequiredService<LlmAssistantService>());
+        Assert.NotNull(provider.GetRequiredService<ReportSummaryComposer>());
         Assert.NotNull(provider.GetRequiredService<StartupService>());
         Assert.IsType<NativeDetectionBackendService>(
             provider.GetRequiredService<IDetectionBackendService>());

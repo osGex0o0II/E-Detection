@@ -20,6 +20,7 @@ public static class DesktopCoreServiceCollectionExtensions
         services.AddSingleton<RunTelemetryService>();
         services.AddSingleton<RunEventService>();
         services.AddSingleton<ReportDetailPreviewService>();
+        services.AddSingleton<ReportSummaryComposer>();
         services.AddSingleton<RunStateService>();
         services.AddSingleton<NetworkProxyService>();
         services.AddSingleton<NtfyNotificationService>();
