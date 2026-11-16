@@ -1,6 +1,6 @@
 # E-Detection 原生桌面架构
 
-本文描述当前 `main` 分支上的实际实现，而不是历史 Python 进程桥接方案。历史迁移记录见 [`../desktop/NATIVE_BACKEND_MIGRATION.md`](../desktop/NATIVE_BACKEND_MIGRATION.md)。
+本文描述桌面端的模块职责与运行流程。历史实现见 [后端迁移记录](../desktop/NATIVE_BACKEND_MIGRATION.md)。
 
 ## 概览
 
@@ -62,7 +62,14 @@ Desktop
 | `NativeDetectionBackendService.Reporting.cs` | OpenXML 工作簿生成、样式、XML 校验与原子发布。 |
 | `NativeDetectionBackendService.Models.cs` | 内部配置、列组、位置、行/文件分析记录。 |
 
-主要公开契约包括 `DetectionRequest`、`DetectionBackendEvent`、`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`、`IDetectionBackendService` 和 `DetectionExecutionService`。`NativeDetectionBackendService`、`DetectionBackendServiceFactory` 与 `SemanticVersionComparer` 也为 `public`，供无界面测试和版本比较直接使用；配置、列组、行/文件分析与传感器状态等辅助类型保持 `private`。`Detection/` 另行公开 `DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、`DetectionRowRulePipeline`、`FreezeDetectionRow` 与 `FreezeRowDetector`，使规则可在不构造后端服务的情况下直接测试。
+公开类型按职责划分：
+
+- **检测与运行**：`DetectionRequest`、`DetectionBackendEvent`、`IDetectionBackendService`、`DetectionExecutionService`、`NativeDetectionBackendService`、`DetectionBackendServiceFactory`。
+- **报告与诊断**：`NativeParityTrace`、`ReportDetailPreview`、`ReportDeviceSummary`、`ReportIssueType`、`ReportSensorOverview`。
+- **检测规则**：`DetectionRowContext`、`DetectionRuleOptions`、`IDetectionRowRule`、`DetectionRowRulePipeline`、`FreezeDetectionRow`、`FreezeRowDetector`。
+- **版本处理**：`SemanticVersionComparer`。
+
+配置、列组、行与文件分析、传感器状态等辅助类型保持 `private`。规则可脱离后端服务独立测试。
 
 ### 检测规则管线
 
@@ -124,9 +131,9 @@ WinUI 3 壳只负责界面与系统集成：
 - `Views/AppShellView.xaml`：标题栏、状态带、工作台/设置页切换。
 - `Views/RunSetupView.xaml`：输入、输出、运行开关、报告历史。
 - `Views/DetectionWorkbenchView.xaml`：指标卡、风险设备、异常类型、异常明细、运行记录。
-- `Views/SettingsView.xaml` + partials：设置分区、搜索、导航和动作；17 个 `SettingsCard`、17 处 `{x:Bind}`、`SettingsLayoutStates` 三态 VSM（`ExpandedSettingsLayout` / `CompactSettingsLayout` / `IconSettingsLayout`）。
-- `Views/Settings/DetectionRulesSettingsSection.xaml`：检测规则分区试点 `UserControl`；`SettingsView` 以 `x:Name="DetectionRulesSection"` 承载，搜索和分类导航仍可定位。
-- 设置卡片使用 `CommunityToolkit.WinUI.Controls.SettingsControls` `8.2.251219`；导航宽度、正文内边距和内容最大宽度由 VSM setter 管理，`UpdateResponsiveLayout` 驱动 `StateTrigger`。
+- `Views/SettingsView.xaml` 及其 partial 文件：设置分区、搜索、导航和动作；通过 `SettingsLayoutStates` 适配窗口宽度。
+- `Views/Settings/DetectionRulesSettingsSection.xaml`：独立检测规则设置分区；可由设置页搜索与分类导航定位。
+- 设置卡片使用 `CommunityToolkit.WinUI.Controls.SettingsControls`；`UpdateResponsiveLayout` 更新响应式状态。
 - `ViewModels/MainViewModel*.cs`：命令、属性、设置持久化、报告文本、运行事件编排。
 - `Composition/AppHost.cs`：WinUI 壳的 DI 组合根。
 - `Services/DesktopHealthService.cs`：应用、通知、启动集成、设置存储和包健康状态。
@@ -151,11 +158,7 @@ services.AddSingleton<MainViewModel>();
 services.AddSingleton<MainWindow>();
 ```
 
-| 组合方法 | 注册内容 |
-| --- | --- |
-| `AddDesktopCore()` | `SettingsService`、`DetectionConfigService`、`DesktopDiagnosticsService`、`ReportHistoryService`、`RuntimeLogService`、`RunTelemetryService`、`RunEventService`、`ReportDetailPreviewService`、`ReportSummaryComposer`、`RunStateService`、`NetworkProxyService`、`NtfyNotificationService`、`LlmAssistantService`、`UpdateCheckService`、`PoetryStatusService`、`StartupService`。 |
-| `AddInfrastructure()` | `IDetectionBackendService` → `NativeDetectionBackendService`，单例。 |
-| `AppHost` 额外注册 | 凭据存储、启动集成 Fallback、健康检查、`MainViewModel`、`MainWindow`。 |
+`AddDesktopCore()` 注册设置、报告、运行状态与可选网络服务；`AddInfrastructure()` 注册 `IDetectionBackendService` 的原生实现。`AppHost` 另外注册凭据存储、启动集成、健康检查和 UI 对象。
 
 所有服务均为单例。`MainViewModel` 的命令入口当前通过 `DetectionBackendServiceFactory.CreateDefault()` 创建检测后端；容器中注册的 `IDetectionBackendService` 与工厂返回同一实现，便于组合根测试和无界面替换。
 
