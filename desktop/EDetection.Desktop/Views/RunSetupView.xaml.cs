@@ -54,7 +54,7 @@ public sealed partial class RunSetupView : UserControl
         var file = await PickFileAsync(".json");
         if (file is not null && ViewModel is not null)
         {
-            ViewModel.ConfigPath = file.Path;
+            ViewModel.PendingConfigPath = file.Path;
         }
     }
 

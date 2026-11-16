@@ -57,8 +57,55 @@ public sealed partial class SettingsView
         var file = await PickFileAsync(".json");
         if (file is not null && ViewModel is not null)
         {
-            ViewModel.ConfigPath = file.Path;
-            ViewModel.LoadDetectionConfigFromPathCommand.Execute(null);
+            ViewModel.PendingConfigPath = file.Path;
+            await LoadPendingConfigWithConfirmationAsync();
+        }
+    }
+
+    private async void LoadDetectionConfig_Click(object sender, RoutedEventArgs e) =>
+        await LoadPendingConfigWithConfirmationAsync();
+
+    private async Task LoadPendingConfigWithConfirmationAsync()
+    {
+        if (ViewModel is null || ViewModel.IsRunning)
+        {
+            return;
+        }
+
+        if (ViewModel.IsDetectionConfigDirty
+            && !await ConfirmActionAsync(
+                "放弃未保存的检测阈值？",
+                "加载另一份配置会替换当前尚未保存的阈值；原文件不会因此被覆盖。",
+                "放弃修改并加载"))
+        {
+            return;
+        }
+
+        ViewModel.TryLoadPendingDetectionConfig(discardUnsavedChanges: true);
+    }
+
+    private async void SaveDetectionConfigAs_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel is null || ViewModel.IsRunning)
+        {
+            return;
+        }
+
+        var picker = new FileSavePicker
+        {
+            SuggestedFileName = "detection-config",
+            DefaultFileExtension = ".json",
+        };
+        picker.FileTypeChoices.Add("JSON 配置", [".json"]);
+        if (App.CurrentWindow is not null)
+        {
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+        }
+
+        var file = await picker.PickSaveFileAsync();
+        if (file is not null)
+        {
+            ViewModel.TrySaveDetectionConfigAs(file.Path);
         }
     }
 
