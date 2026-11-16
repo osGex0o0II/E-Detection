@@ -462,11 +462,8 @@ jobs:
               ./desktop/scripts/Test-DesktopSignatureStatus.ps1 -Path $releaseSignaturePaths
           }
 
-          $shaPath = Join-Path $env:RUNNER_TEMP "EDetection-win-x64.sha256.txt"
-          @(
-              "$(Get-FileHash -Algorithm SHA256 -LiteralPath $setupPath.FullName | Select-Object -ExpandProperty Hash)  $($setupPath.Name)"
-              "$(Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath.FullName | Select-Object -ExpandProperty Hash)  $($zipPath.Name)"
-          ) | Set-Content -Path $shaPath -Encoding ASCII
+          $setupSha = Get-FileHash -Algorithm SHA256 -LiteralPath $setupPath.FullName | Select-Object -ExpandProperty Hash
+          $zipSha = Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath.FullName | Select-Object -ExpandProperty Hash
 
           $setupSignature = Get-AuthenticodeSignature -LiteralPath $setupPath.FullName
           $signatureStatus = $setupSignature.Status.ToString()
@@ -477,44 +474,46 @@ jobs:
               throw "Unsigned release setup installer must not carry an unexpected signature state. Status=$signatureStatus."
           }
           $signatureLine = if ($forceUnsigned) {
-              "The v2.0.2 setup installer and portable app are intentionally unsigned. Windows may show an Unknown Publisher or SmartScreen warning."
+              "$tag 安装包和便携版应用有意未签名。Windows 可能显示“未知发布者”或 SmartScreen 警告。"
           }
           elseif ($hasCertificate) {
-              "The setup installer is Authenticode signed by $($setupSignature.SignerCertificate.Subject)."
+              "安装包已使用 Authenticode 签名，签名者：$($setupSignature.SignerCertificate.Subject)。"
           }
           else {
-              "The setup installer is intentionally unsigned because no code-signing certificate is configured. Windows may show an Unknown Publisher or SmartScreen warning."
+              "安装包有意未签名，因为未配置代码签名证书。Windows 可能显示“未知发布者”或 SmartScreen 警告。"
           }
 
           $notesPath = Join-Path $env:RUNNER_TEMP "desktop-release-notes.md"
           $releaseNotes = @(
-              "Windows x64 desktop build generated from commit $buildSha."
+              "Windows x64 桌面版，构建自提交 $buildSha。"
               ""
-              "Recommended for most users: download and run EDetection-Setup-win-x64.exe."
-              "Use the same setup wizard to install or update the desktop app. It supports choosing the install location and normal Windows uninstall."
+              "推荐大多数用户下载并运行 EDetection-Setup-win-x64.exe。"
+              "同一个安装向导支持安装、覆盖更新、选择安装位置和标准 Windows 卸载。"
               $signatureLine
-              "Portable package for advanced users: EDetection-win-x64.zip"
+              "便携版供高级用户使用：EDetection-win-x64.zip"
               ""
-              "Included checks:"
+              "已包含的检查："
               "- dotnet restore/build"
-              "- publish package health"
-              "- native backend console smoke"
-              "- startup visibility smoke when run_desktop_ui_smoke is enabled"
-              "- install/uninstall smoke"
-              "- setup installer smoke"
+              "- 发布包健康检查"
+              "- 原生后端控制台冒烟"
+              "- 启用 run_desktop_ui_smoke 时执行启动可见性冒烟"
+              "- 安装/卸载冒烟"
+              "- 安装器冒烟"
               ""
-              "SHA-256 checksums are attached as EDetection-win-x64.sha256.txt."
-              "SHA-256 verifies file integrity, not publisher identity."
-              "Windows checksum command: Get-FileHash .\EDetection-Setup-win-x64.exe -Algorithm SHA256"
+              "SHA-256 校验值（仅验证文件完整性，不能验证发布者身份）："
+              "- EDetection-Setup-win-x64.exe: $setupSha"
+              "- EDetection-win-x64.zip: $zipSha"
+              ""
+              "Windows 校验命令：Get-FileHash .\EDetection-Setup-win-x64.exe -Algorithm SHA256"
           )
           if ($tag -eq "v2.0.3") {
               $releaseNotes += @(
                   ""
-                  "Changes in v2.0.3:"
-                  "- Reorganized settings navigation, Windows title bar, and workbench actions."
-                  "- Protected detection thresholds with explicit loading, dirty-state checks, and atomic writes with a rolling backup."
-                  "- Corrected anomaly sorting and added accessible navigation identifiers."
-                  "- Expanded regression checks for configuration validation and desktop UI automation."
+                  "v2.0.3 变更："
+                  "- 重新组织设置导航、Windows 标题栏和工作台操作。"
+                  "- 为检测阈值增加显式加载、脏状态检查和带滚动备份的原子写入。"
+                  "- 修正异常排序并增加可访问导航标识。"
+                  "- 扩展配置校验与桌面 UI 自动化回归检查。"
               )
           }
           $releaseNotes | Set-Content -Path $notesPath -Encoding UTF8
@@ -536,8 +535,27 @@ jobs:
               throw "Release $tag already exists. Published release assets are immutable for desktop updates; create a new patch tag instead."
           }
           else {
-              gh release create $tag $setupPath.FullName $zipPath.FullName $shaPath --repo $env:GITHUB_REPOSITORY --verify-tag --title "E-Detection $tag" --notes-file $notesPath
+              gh release create $tag $setupPath.FullName $zipPath.FullName --repo $env:GITHUB_REPOSITORY --verify-tag --title "E-Detection $tag" --notes-file $notesPath
               if ($LASTEXITCODE -ne 0) {
                   throw "Failed to create release $tag."
+              }
+
+              $assetLabels = @{
+                  "EDetection-Setup-win-x64.exe" = "Windows 安装包（推荐）"
+                  "EDetection-win-x64.zip" = "便携版 ZIP（高级用户）"
+              }
+              $releaseAssets = (& gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets | ConvertFrom-Json).assets
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to read release assets for $tag."
+              }
+              foreach ($asset in $releaseAssets) {
+                  $assetName = [string]$asset.name
+                  if (!$assetLabels.ContainsKey($assetName)) {
+                      continue
+                  }
+                  & gh api --method PATCH "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)" -f "label=$($assetLabels[$assetName])" | Out-Null
+                  if ($LASTEXITCODE -ne 0) {
+                      throw "Failed to set the Chinese label for release asset $assetName."
+                  }
               }
           }

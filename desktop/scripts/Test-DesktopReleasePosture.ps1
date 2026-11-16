@@ -124,10 +124,15 @@ Assert-NotContains $uninstall '$xml.IndexOf($installFull' "scheduled-task cleanu
 Assert-Contains $desktopProject '<Version>2.0.3</Version>' "desktop package version must be 2.0.3."
 Assert-Contains $desktopProject '<AssemblyVersion>2.0.3.0</AssemblyVersion>' "assembly version must be 2.0.3.0."
 Assert-Contains $desktopProject '<FileVersion>2.0.3.0</FileVersion>' "file version must be 2.0.3.0."
-foreach ($releaseText in @($workflow, $publish)) {
-    Assert-Contains $releaseText 'intentionally unsigned' "release workflow and package text must explicitly identify unsigned assets."
-    Assert-Contains $releaseText 'SHA-256 verifies file integrity, not publisher identity' "release workflow and package text must distinguish integrity from publisher identity."
-}
+Assert-Contains $workflow '安装包有意未签名' "release workflow must explicitly identify unsigned assets in Chinese."
+Assert-Contains $workflow 'SHA-256 校验值（仅验证文件完整性，不能验证发布者身份）' "release workflow must distinguish integrity from publisher identity in Chinese."
+Assert-Contains $workflow 'Windows 安装包（推荐）' "release workflow must label the setup installer in Chinese."
+Assert-Contains $workflow '便携版 ZIP（高级用户）' "release workflow must label the portable package in Chinese."
+Assert-Contains $workflow '- EDetection-Setup-win-x64.exe: $setupSha' "release workflow must embed the setup SHA-256 in the release notes."
+Assert-Contains $workflow '- EDetection-win-x64.zip: $zipSha' "release workflow must embed the portable SHA-256 in the release notes."
+Assert-NotContains $workflow 'EDetection-win-x64.sha256.txt' "release workflow must not upload a separate checksum asset."
+Assert-Contains $publish 'intentionally unsigned' "package text must explicitly identify unsigned assets."
+Assert-Contains $publish 'SHA-256 verifies file integrity, not publisher identity' "package text must distinguish integrity from publisher identity."
 foreach ($documentation in @($rootReadme, $desktopReadme, $migrationDocument)) {
     Assert-Contains $documentation '未签名' "release documentation must disclose unsigned release risks."
     Assert-Contains $documentation 'SHA-256 仅验证文件完整性，不能验证发布者身份' "release documentation must explain the checksum trust boundary."
