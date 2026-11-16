@@ -248,21 +248,21 @@
                                     Spacing="8"
                                     VerticalAlignment="Center">
                             <Button Command="{Binding CopyCompletionSummaryCommand}"
-                                    ToolTipService.ToolTip="复制检测完成摘要">
+                                    AutomationProperties.Name="复制检测完成摘要" ToolTipService.ToolTip="复制检测完成摘要">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                                     <TextBlock Text="复制摘要" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding OpenCurrentReportCommand}"
-                                    ToolTipService.ToolTip="打开最新报告">
+                                    AutomationProperties.Name="打开最新报告" ToolTipService.ToolTip="打开最新报告">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                                     <TextBlock Text="打开报告" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding OpenFirstAnomalySourceCommand}"
-                                    ToolTipService.ToolTip="定位首个异常源文件">
+                                    AutomationProperties.Name="定位首个异常源文件" ToolTipService.ToolTip="定位首个异常源文件">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE838;" FontSize="14" />
                                     <TextBlock Text="定位首个异常" />
@@ -287,7 +287,7 @@
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding CopyCurrentReportPathCommand}"
-                            ToolTipService.ToolTip="复制报告路径">
+                            AutomationProperties.Name="复制报告路径" ToolTipService.ToolTip="复制报告路径">
                         <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                     </Button>
                     <Button Command="{Binding ShowCurrentRunCommand}"
@@ -324,14 +324,14 @@
                                     Spacing="8"
                                     VerticalAlignment="Center">
                             <Button Command="{Binding RefreshDiagnosticsCommand}"
-                                    ToolTipService.ToolTip="检查状态">
+                                    AutomationProperties.Name="检查状态" ToolTipService.ToolTip="检查状态">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE895;" FontSize="14" />
                                     <TextBlock Text="检查状态" />
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding CopyDiagnosticsCommand}"
-                                    ToolTipService.ToolTip="复制状态详情">
+                                    AutomationProperties.Name="复制状态详情" ToolTipService.ToolTip="复制状态详情">
                                 <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                             </Button>
                         </StackPanel>
@@ -494,31 +494,31 @@
                             <Button x:Name="ClearDetailFiltersButton"
                                     Grid.Column="3"
                                     Command="{Binding ClearDetailFiltersCommand}"
-                                    ToolTipService.ToolTip="清除筛选">
+                                    AutomationProperties.Name="清除筛选" ToolTipService.ToolTip="清除筛选">
                                 <FontIcon Glyph="&#xE894;" FontSize="14" />
                             </Button>
                             <Button x:Name="OpenSelectedDetailSourceButton"
                                     Grid.Column="4"
                                     Command="{Binding OpenSelectedDetailSourceCommand}"
-                                    ToolTipService.ToolTip="定位源文件">
+                                    AutomationProperties.Name="定位源文件" ToolTipService.ToolTip="定位源文件">
                                 <FontIcon Glyph="&#xE838;" FontSize="14" />
                             </Button>
                             <Button x:Name="CopySelectedDetailSourcePathButton"
                                     Grid.Column="5"
                                     Command="{Binding CopySelectedDetailSourcePathCommand}"
-                                    ToolTipService.ToolTip="复制源文件路径">
+                                    AutomationProperties.Name="复制源文件路径" ToolTipService.ToolTip="复制源文件路径">
                                 <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                             </Button>
                             <Button x:Name="CopySelectedDetailButton"
                                     Grid.Column="6"
                                     Command="{Binding CopySelectedDetailCommand}"
-                                    ToolTipService.ToolTip="复制选中明细">
+                                    AutomationProperties.Name="复制选中明细" ToolTipService.ToolTip="复制选中明细">
                                 <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                             </Button>
                             <Button x:Name="CopyFilteredDetailsButton"
                                     Grid.Column="7"
                                     Command="{Binding CopyFilteredDetailsCommand}"
-                                    ToolTipService.ToolTip="复制当前结果">
+                                    AutomationProperties.Name="复制当前结果" ToolTipService.ToolTip="复制当前结果">
                                 <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                             </Button>
                             <Button x:Name="ExplainSelectedDetailButton"

@@ -20,7 +20,7 @@
             <controls:SettingsCard MinHeight="52" Padding="12,6" Header="功率因数检测">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.PowerFactorEnabled, Mode=TwoWay}" AutomationProperties.Name="功率因数检测" />
             </controls:SettingsCard>
-            <controls:SettingsCard Header="详细异常输出（报告更大）" Description="开启后会在报告中写入逐项异常详情，适合复核；报告文件会更大。">
+            <controls:SettingsCard Header="详细异常输出" Description="在报告中写入逐项异常详情，会增加文件大小。">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetailOutputEnabled, Mode=TwoWay}" AutomationProperties.Name="详细异常输出" />
             </controls:SettingsCard>
         </StackPanel>

@@ -82,6 +82,7 @@ public sealed partial class SettingsView
         if (file is not null && ViewModel is not null)
         {
             ViewModel.ConfigPath = file.Path;
+            ViewModel.LoadDetectionConfigFromPathCommand.Execute(null);
         }
     }
 
