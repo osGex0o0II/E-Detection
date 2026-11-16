@@ -113,7 +113,14 @@ public partial class MainViewModel
         ApplySettingsDefaults(_settings.CreateDefault());
         _activeDetectionConfigPath = Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath));
         ApplyDetectionConfig(_detectionConfig.CreateDefault());
+        RefreshDetectionConfigDirty();
         var thresholdsSaved = SaveDetectionConfig();
+        if (!thresholdsSaved)
+        {
+            // Do not let the in-memory reset masquerade as saved detector settings.
+            _activeDetectionConfigPath = "";
+            IsDetectionConfigDirty = true;
+        }
         SaveSettings();
         RefreshDesktopHealth();
         RefreshLocalDiagnostics();
