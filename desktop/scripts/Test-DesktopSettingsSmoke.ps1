@@ -349,19 +349,25 @@ function Expand-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$Time
     throw "Timed out waiting for expandable automation element '$Name'."
 }
 
-function Invoke-SettingsButtonByPosition([IntPtr]$RootHandle) {
-    $rect = New-Object DesktopSettingsSmokeNative+RECT
-    if (![DesktopSettingsSmokeNative]::GetWindowRect($RootHandle, [ref]$rect)) {
-        return
+function Select-SettingsCategory([IntPtr]$RootHandle, [string]$Name) {
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        $Name)
+    $matches = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+    foreach ($match in $matches) {
+        try {
+            $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
+            $pattern.Select()
+            Start-Sleep -Milliseconds 150
+            return
+        }
+        catch {
+            # A label and its ListViewItem can expose the same accessible name.
+        }
     }
 
-    $settingsX = $rect.Right - 328
-    $settingsY = $rect.Top + 32
-    [System.Windows.Forms.Cursor]::Position = [System.Drawing.Point]::new($settingsX, $settingsY)
-    [System.Windows.Forms.SendKeys]::Flush()
-    [System.Windows.Forms.Application]::DoEvents()
-    [DesktopSettingsMouseNative]::mouse_event(0x0002, 0, 0, 0, [UIntPtr]::Zero)
-    [DesktopSettingsMouseNative]::mouse_event(0x0004, 0, 0, 0, [UIntPtr]::Zero)
+    throw "Unable to select settings category '$Name'."
 }
 
 $process = $null
@@ -437,18 +443,12 @@ try {
 
     $settingsButton = Invoke-AutomationElement $mainWindow.Handle "设置" 2
     if ($settingsButton -eq $null) {
-        Invoke-SettingsButtonByPosition $mainWindow.Handle
+        throw "Settings control cannot be invoked through UI Automation."
     }
-
     $settingsTitle = Wait-ForAutomationName $mainWindow.Handle "设置" $WaitSeconds
     $settingsSearchBox = Wait-ForAutomationName $mainWindow.Handle "搜索设置" $WaitSeconds
-    $themeControl = Wait-ForAutomationName $mainWindow.Handle "应用主题" $WaitSeconds
-    $backdropControl = Wait-ForAutomationName $mainWindow.Handle "窗口背景" $WaitSeconds
-    $poetryToggle = Wait-ForAutomationName $mainWindow.Handle "顶部诗词" $WaitSeconds
-    $poetryOptionsExpander = Expand-AutomationElement $mainWindow.Handle "诗词显示选项（可选）" $WaitSeconds
-    Start-Sleep -Milliseconds 300
-    $poetryServiceControl = Wait-ForAutomationName $mainWindow.Handle "顶部诗词来源" $WaitSeconds
-    $poetryLanguageControl = Wait-ForAutomationName $mainWindow.Handle "诗词语言" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "检测"
     $defaultsSection = Wait-ForAutomationName $mainWindow.Handle "检测" $WaitSeconds
     $inputDirectoryControl = Wait-ForAutomationName $mainWindow.Handle "输入目录" $WaitSeconds
     $browseInputDirectoryButton = Wait-ForAutomationName $mainWindow.Handle "选择输入目录" $WaitSeconds
@@ -458,8 +458,6 @@ try {
     $thresholdConfigControl = Wait-ForAutomationName $mainWindow.Handle "阈值文件路径" $WaitSeconds
     $browseThresholdConfigButton = Wait-ForAutomationName $mainWindow.Handle "选择阈值文件" $WaitSeconds
     $rulesSection = Wait-ForAutomationName $mainWindow.Handle "检测规则" $WaitSeconds
-    $reportsSection = Wait-ForAutomationName $mainWindow.Handle "报告" $WaitSeconds
-    $logsSection = Wait-ForAutomationName $mainWindow.Handle "运行记录" $WaitSeconds
     $voltageMinThreshold = Wait-ForAutomationName $mainWindow.Handle "电压下限" $WaitSeconds
     $voltageMaxThreshold = Wait-ForAutomationName $mainWindow.Handle "电压上限" $WaitSeconds
     $currentMaxThreshold = Wait-ForAutomationName $mainWindow.Handle "电流上限" $WaitSeconds
@@ -483,31 +481,54 @@ try {
     $currentUnbalanceRule = Wait-ForAutomationName $mainWindow.Handle "电流不平衡检测" $WaitSeconds
     $powerFactorRule = Wait-ForAutomationName $mainWindow.Handle "功率因数检测" $WaitSeconds
     $detailOutputRule = Wait-ForAutomationName $mainWindow.Handle "详细异常输出" $WaitSeconds
+    $saveSettingsButton = Wait-ForAutomationName $mainWindow.Handle "保存检测阈值" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "报告与数据"
+    $reportsSection = Wait-ForAutomationName $mainWindow.Handle "报告" $WaitSeconds
+    $logsSection = Wait-ForAutomationName $mainWindow.Handle "运行记录" $WaitSeconds
+    $recentLimitControl = Wait-ForAutomationName $mainWindow.Handle "报告历史上限" $WaitSeconds
+    $logLimitControl = Wait-ForAutomationName $mainWindow.Handle "运行记录上限" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "常规"
+    $themeControl = Wait-ForAutomationName $mainWindow.Handle "应用主题" $WaitSeconds
+    $backdropControl = Wait-ForAutomationName $mainWindow.Handle "窗口背景" $WaitSeconds
+    $poetryToggle = Wait-ForAutomationName $mainWindow.Handle "顶部诗词" $WaitSeconds
+    $poetryOptionsExpander = Expand-AutomationElement $mainWindow.Handle "诗词显示选项（可选）" $WaitSeconds
+    Start-Sleep -Milliseconds 300
+    $poetryServiceControl = Wait-ForAutomationName $mainWindow.Handle "顶部诗词来源" $WaitSeconds
+    $poetryLanguageControl = Wait-ForAutomationName $mainWindow.Handle "诗词语言" $WaitSeconds
     $desktopNotificationToggle = Wait-ForAutomationName $mainWindow.Handle "桌面通知" $WaitSeconds
     $desktopNotificationTestButton = Wait-ForAutomationName $mainWindow.Handle "测试桌面通知" $WaitSeconds
     $openWindowsNotificationSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 通知设置" $WaitSeconds
     $startupTrayToggle = Wait-ForAutomationName $mainWindow.Handle "启动时隐藏到托盘" $WaitSeconds
     $autoStartToggle = Wait-ForAutomationName $mainWindow.Handle "登录后自动启动" $WaitSeconds
     $openWindowsStartupSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 启动应用设置" $WaitSeconds
-    $llmSection = Wait-ForAutomationName $mainWindow.Handle "智能助手集成" $WaitSeconds
-    $llmConnectionExpander = Expand-AutomationElement $mainWindow.Handle "连接与凭据（启用后生效）" $WaitSeconds
-    Start-Sleep -Milliseconds 300
-    $llmEndpointControl = Wait-ForAutomationName $mainWindow.Handle "LLM 服务地址" $WaitSeconds
-    $llmProxyToggle = Wait-ForAutomationName $mainWindow.Handle "LLM 使用网络代理" $WaitSeconds
-    $llmTestButton = Wait-ForAutomationName $mainWindow.Handle "测试 LLM 连接" $WaitSeconds
+    $resetSettingsButton = Wait-ForAutomationName $mainWindow.Handle "重置设置" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "通知"
     $ntfySection = Wait-ForAutomationName $mainWindow.Handle "外部消息推送" $WaitSeconds
     $ntfySettingsExpander = Expand-AutomationElement $mainWindow.Handle "推送服务配置（启用后生效）" $WaitSeconds
     Start-Sleep -Milliseconds 300
     $ntfyServerControl = Wait-ForAutomationName $mainWindow.Handle "ntfy 服务地址" $WaitSeconds
     $ntfyProxyToggle = Wait-ForAutomationName $mainWindow.Handle "ntfy 使用网络代理" $WaitSeconds
     $ntfyTestButton = Wait-ForAutomationName $mainWindow.Handle "发送 ntfy 测试推送" $WaitSeconds
-    $diagnosticsSection = Wait-ForAutomationName $mainWindow.Handle "维护" $WaitSeconds
-    $diagnosticsExpander = Expand-AutomationElement $mainWindow.Handle "维护详情" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "连接与集成"
+    $llmSection = Wait-ForAutomationName $mainWindow.Handle "智能助手集成" $WaitSeconds
+    $llmConnectionExpander = Expand-AutomationElement $mainWindow.Handle "连接与凭据（启用后生效）" $WaitSeconds
     Start-Sleep -Milliseconds 300
+    $llmEndpointControl = Wait-ForAutomationName $mainWindow.Handle "LLM 服务地址" $WaitSeconds
+    $llmProxyToggle = Wait-ForAutomationName $mainWindow.Handle "LLM 使用网络代理" $WaitSeconds
+    $llmTestButton = Wait-ForAutomationName $mainWindow.Handle "测试 LLM 连接" $WaitSeconds
     $proxySection = Wait-ForAutomationName $mainWindow.Handle "网络连接" $WaitSeconds
     $proxyAddressControl = Wait-ForAutomationName $mainWindow.Handle "代理地址" $WaitSeconds
     $proxyTestButton = Wait-ForAutomationName $mainWindow.Handle "测试网络代理" $WaitSeconds
     $openWindowsProxySettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 代理设置" $WaitSeconds
+
+    Select-SettingsCategory $mainWindow.Handle "更新与维护"
+    $diagnosticsSection = Wait-ForAutomationName $mainWindow.Handle "维护" $WaitSeconds
+    $diagnosticsExpander = Expand-AutomationElement $mainWindow.Handle "维护详情" $WaitSeconds
+    Start-Sleep -Milliseconds 300
     $updatesSection = Wait-ForAutomationName $mainWindow.Handle "应用更新" $WaitSeconds
     $updateStatusText = Wait-ForAutomationNameLike $mainWindow.Handle "*当前版本*" $WaitSeconds
     $checkUpdatesButton = Wait-ForAutomationName $mainWindow.Handle "检查更新" $WaitSeconds
@@ -516,11 +537,7 @@ try {
     Start-Sleep -Milliseconds 300
     $updateProxyToggle = Wait-ForAutomationName $mainWindow.Handle "更新使用网络代理" $WaitSeconds
     $updateFeedControl = Wait-ForAutomationName $mainWindow.Handle "更新源" $WaitSeconds
-    $recentLimitControl = Wait-ForAutomationName $mainWindow.Handle "报告历史保留" $WaitSeconds
-    $logLimitControl = Wait-ForAutomationName $mainWindow.Handle "运行记录保留" $WaitSeconds
     $desktopHealthSection = Wait-ForAutomationName $mainWindow.Handle "应用状态" $WaitSeconds
-    $saveSettingsButton = Wait-ForAutomationName $mainWindow.Handle "保存并校验检测设置" $WaitSeconds
-    $resetSettingsButton = Wait-ForAutomationName $mainWindow.Handle "重置设置" $WaitSeconds
     $settingsJson = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
     if ($settingsJson.SettingsVersion -ne 10) {
         throw "Settings smoke failed: SettingsVersion was '$($settingsJson.SettingsVersion)', expected '10'."
