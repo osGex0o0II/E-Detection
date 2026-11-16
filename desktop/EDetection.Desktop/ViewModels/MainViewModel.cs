@@ -101,34 +101,7 @@ public partial class MainViewModel
         var saved = _settings.Load();
         InputDirectory = saved.InputDirectory;
         OutputDirectory = saved.OutputDirectory;
-        var preferredConfigPath = DetectionConfigService.ResolveEffectiveConfigPath(saved.ConfigPath);
-        var configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out var loadedConfig, out var configError);
-        if (!configLoaded)
-        {
-            var originalPath = preferredConfigPath;
-            preferredConfigPath = _detectionConfig.EnsureUserConfig();
-            configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out loadedConfig, out var fallbackError);
-            if (!configLoaded)
-            {
-                loadedConfig = _detectionConfig.CreateDefault();
-                configError = $"配置文件无法安全加载：{originalPath}；默认配置也不可用：{fallbackError}";
-            }
-            else
-            {
-                configError = $"原阈值文件不可用，已切换到默认文件：{originalPath}";
-            }
-        }
-
-        ConfigPath = preferredConfigPath;
-        _activeDetectionConfigPath = configLoaded
-            ? Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath))
-            : "";
-        ApplyDetectionConfig(loadedConfig);
-        AcceptDetectionConfigAsSaved();
-        if (configError is not null)
-        {
-            ShowSettingsFeedback(configError, InfoBarSeverity.Warning);
-        }
+        InitializeDetectionConfig(saved.ConfigPath);
         WriteReport = saved.WriteReport;
         CloseToTrayOnClose = saved.CloseToTrayOnClose;
         StartMinimizedToTray = saved.StartMinimizedToTray;
