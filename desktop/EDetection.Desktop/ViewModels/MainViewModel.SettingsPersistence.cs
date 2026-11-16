@@ -158,6 +158,9 @@ public partial class MainViewModel
 
     private void ApplyDetectionConfig(DetectionConfigSettings config)
     {
+        _applyingDetectionConfig = true;
+        try
+        {
         VoltageMinThreshold = config.VoltageMinThreshold;
         VoltageMaxThreshold = config.VoltageMaxThreshold;
         CurrentMaxThreshold = config.CurrentMaxThreshold;
@@ -174,6 +177,28 @@ public partial class MainViewModel
         CurrentUnbalanceEnabled = config.CurrentUnbalanceEnabled;
         PowerFactorEnabled = config.PowerFactorEnabled;
         DetailOutputEnabled = config.DetailOutputEnabled;
+        }
+        finally
+        {
+            _applyingDetectionConfig = false;
+        }
+    }
+
+    private void RefreshDetectionConfigDirty()
+    {
+        if (_applyingDetectionConfig)
+        {
+            return;
+        }
+
+        IsDetectionConfigDirty = JsonSerializer.Serialize(CaptureDetectionConfig())
+            != JsonSerializer.Serialize(_loadedDetectionConfig);
+    }
+
+    private void AcceptDetectionConfigAsSaved()
+    {
+        _loadedDetectionConfig = CaptureDetectionConfig();
+        IsDetectionConfigDirty = false;
     }
 
     private DetectionConfigSettings CaptureDetectionConfig() => new()
@@ -200,11 +225,20 @@ public partial class MainViewModel
     {
         try
         {
-            var configPath = EnsureEffectiveConfigPath();
-            _detectionConfig.Save(configPath, CaptureDetectionConfig());
+            if (string.IsNullOrWhiteSpace(_activeDetectionConfigPath)
+                || !string.Equals(
+                    Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath)),
+                    _activeDetectionConfigPath,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("当前配置文件尚未安全加载，请先加载有效文件或选择另存为。");
+            }
+
+            _detectionConfig.Save(_activeDetectionConfigPath, CaptureDetectionConfig());
+            AcceptDetectionConfigAsSaved();
             return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or InvalidOperationException)
         {
             var message = $"检测阈值保存失败: {ex.Message}";
             ShowSettingsFeedback(message, InfoBarSeverity.Warning);
@@ -213,24 +247,7 @@ public partial class MainViewModel
         }
     }
 
-    private string EnsureEffectiveConfigPath()
-    {
-        var configPath = _detectionConfig.EnsureUserConfig(ConfigPath);
-        if (!string.Equals(ConfigPath, configPath, StringComparison.OrdinalIgnoreCase))
-        {
-            _suppressConfigPathReload = true;
-            try
-            {
-                ConfigPath = configPath;
-            }
-            finally
-            {
-                _suppressConfigPathReload = false;
-            }
-        }
-
-        return configPath;
-    }
+    private string EnsureEffectiveConfigPath() => _activeDetectionConfigPath;
 
     private void ShowSettingsFeedback(string message, InfoBarSeverity severity)
     {

@@ -31,17 +31,20 @@ public partial class MainViewModel
             return;
         }
 
-        if (!SaveDetectionConfig())
+        if (IsDetectionConfigDirty)
         {
-            LastFailureText = "检测阈值保存失败，请检查阈值文件路径或文件权限。";
+            LastFailureText = "检测阈值存在未保存修改。请先在设置中保存检测阈值。";
+            StatusText = "检测阈值尚未保存";
+            ShowSettingsFeedback(LastFailureText, InfoBarSeverity.Warning);
+            AddLog("设置提醒", LastFailureText);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_activeDetectionConfigPath))
+        {
+            LastFailureText = "当前阈值文件未通过校验。请先加载有效配置或另存为新文件。";
             StatusText = "无法开始检测";
-            RunTelemetry.ApplyCurrentFile("阈值设置未保存");
-            SetTaskbarProgress(TaskbarProgressKind.Error, 100);
-            RequestDesktopNotification(
-                DesktopNotificationKind.Error,
-                "无法开始检测",
-                LastFailureText,
-                ReportPath);
+            ShowSettingsFeedback(LastFailureText, InfoBarSeverity.Warning);
             return;
         }
 
