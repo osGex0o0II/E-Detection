@@ -441,7 +441,7 @@ public sealed class DetectionConfigService
             return value.ValueKind switch
             {
                 JsonValueKind.Number => value.GetDouble(),
-                JsonValueKind.String when double.TryParse(value.GetString(), out var parsed) => parsed,
+                JsonValueKind.String when TryReadNumeric(value, out var parsed) => parsed,
                 _ => fallback,
             };
         }

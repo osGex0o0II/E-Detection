@@ -408,6 +408,16 @@ public partial class MainViewModel
                 return "正在检测";
             }
 
+            if (IsDetectionConfigDirty)
+            {
+                return "检测阈值等待保存";
+            }
+
+            if (string.IsNullOrWhiteSpace(_activeDetectionConfigPath))
+            {
+                return "需要加载有效阈值文件";
+            }
+
             if (StatusText == "无法开始检测")
             {
                 return "需要处理后再开始";
@@ -446,6 +456,16 @@ public partial class MainViewModel
                 return string.IsNullOrWhiteSpace(CurrentFileText)
                     ? "检测正在运行，完成后可在右侧查看结果。"
                     : CurrentFileText;
+            }
+
+            if (IsDetectionConfigDirty)
+            {
+                return "请先在设置中保存修改后的检测阈值，再开始检测。";
+            }
+
+            if (string.IsNullOrWhiteSpace(_activeDetectionConfigPath))
+            {
+                return "当前阈值文件尚未通过校验，请在设置中加载或另存为有效文件。";
             }
 
             if (StatusText == "无法开始检测" || StatusText == "检测失败")

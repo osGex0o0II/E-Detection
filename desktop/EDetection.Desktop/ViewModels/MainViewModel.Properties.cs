@@ -55,6 +55,9 @@ public partial class MainViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DetectionConfigStatusText))]
+    [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
+    [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     public partial bool IsDetectionConfigDirty { get; set; }
 
     public bool HasPendingConfigPathChange =>

@@ -21,7 +21,10 @@ public partial class MainViewModel
         INtfyNotificationSettings,
         ILlmAssistantSettings
 {
-    private bool CanStart() => !IsRunning;
+    private bool CanStart() =>
+        !IsRunning
+        && !IsDetectionConfigDirty
+        && !string.IsNullOrWhiteSpace(_activeDetectionConfigPath);
 
     [RelayCommand(CanExecute = nameof(CanStart))]
     private async Task StartAsync()
