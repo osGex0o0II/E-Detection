@@ -1,6 +1,7 @@
 using EDetection.Desktop.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Windows.UI.ViewManagement;
 
 namespace EDetection.Desktop.Views;
 
@@ -36,6 +37,26 @@ public sealed partial class SettingsView : UserControl
 
     public event EventHandler? BackRequested;
 
+    public event EventHandler? AboutRequested;
+
+    public void FocusSearchOrNavigation()
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (SettingsSearchBox.Visibility == Visibility.Visible)
+            {
+                SettingsSearchBox.Focus(FocusState.Programmatic);
+            }
+            else
+            {
+                SettingsCategoryList.Focus(FocusState.Programmatic);
+            }
+        });
+    }
+
+    private void AboutButton_Click(object sender, RoutedEventArgs e) =>
+        AboutRequested?.Invoke(this, EventArgs.Empty);
+
     private MainViewModel? ViewModel => DataContext as MainViewModel;
 
     public void NavigateToThresholdSettings()
@@ -68,6 +89,13 @@ public sealed partial class SettingsView : UserControl
 
     public void PlayEntranceAnimation(bool forward)
     {
+        if (!new UISettings().AnimationsEnabled)
+        {
+            SettingsRoot.Opacity = 1;
+            SettingsRootTransform.TranslateX = 0;
+            return;
+        }
+
         SettingsRoot.Opacity = 0;
         SettingsRootTransform.TranslateX = forward ? 28 : -28;
 

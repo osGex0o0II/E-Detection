@@ -12,24 +12,13 @@
           Background="Transparent"
           SizeChanged="Root_SizeChanged">
         <Grid.RowDefinitions>
-            <RowDefinition Height="44" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <Grid x:Name="AppTitleBar" Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="138" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Orientation="Horizontal"
-                        Spacing="10"
-                        Margin="16,0,0,0"
-                        VerticalAlignment="Center">
-                <!-- 与 docs/images/e-detection-logo.svg 共享波形和红点造型；按当前主题呈现深/浅描边 -->
+        </Grid.RowDefinitions>        <TitleBar x:Name="AppTitleBar"
+                  Grid.Row="0"
+                  Title="E-Detection">
+            <TitleBar.LeftHeader>
                 <Viewbox Width="22" Height="22" VerticalAlignment="Center" AutomationProperties.Name="E-Detection">
                     <Canvas Width="160" Height="160">
                         <Path Data="M30,90 L54,90 L73,48 L91,110 L106,74 L116,90 L132,90"
@@ -42,35 +31,19 @@
                         <Ellipse Canvas.Left="123" Canvas.Top="53" Width="16" Height="16" Fill="#D13438" />
                     </Canvas>
                 </Viewbox>
-                <TextBlock Text="E-Detection"
-                           FontSize="14"
-                           FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
-                <TextBlock Text="原生检测工作台"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           FontSize="12"
-                           VerticalAlignment="Center" />
-            </StackPanel>
-
-            <StackPanel Grid.Column="2"
-                        Orientation="Horizontal"
-                        Height="44"
-                        VerticalAlignment="Stretch">
+            </TitleBar.LeftHeader>
+            <TitleBar.RightHeader>
                 <Button x:Name="SettingsTitleBarButton"
-                        Style="{StaticResource TitleBarIconButtonStyle}"
+                        Style="{StaticResource TitleBarActionButtonStyle}"
                         Click="SettingsButton_Click"
                         AutomationProperties.Name="设置"
                         ToolTipService.ToolTip="设置">
                     <FontIcon Glyph="&#xE713;" FontSize="14" />
                 </Button>
-                <Button Style="{StaticResource TitleBarIconButtonStyle}"
-                        Click="AboutButton_Click"
-                        AutomationProperties.Name="关于"
-                        ToolTipService.ToolTip="关于">
-                    <FontIcon Glyph="&#xE946;" FontSize="14" />
-                </Button>
-            </StackPanel>
-        </Grid>
+            </TitleBar.RightHeader>
+        </TitleBar>
+
+
 
         <Border x:Name="StatusBand"
                 Grid.Row="1"
@@ -164,9 +137,7 @@
                     </StackPanel>
                     <Button Grid.Column="2"
                             Command="{Binding RefreshPoetryStatusCommand}"
-                            Style="{StaticResource TitleBarIconButtonStyle}"
-                            Width="32"
-                            Height="32"
+                            Style="{StaticResource UtilityIconButtonStyle}"
                             AutomationProperties.Name="刷新诗词"
                             ToolTipService.ToolTip="刷新诗词">
                         <FontIcon Glyph="&#xE72C;" FontSize="12" />

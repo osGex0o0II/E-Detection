@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
+using Windows.UI.ViewManagement;
 using EDetection.Desktop.ViewModels;
 
 namespace EDetection.Desktop.Views;
@@ -21,6 +22,7 @@ public sealed partial class AppShellView : UserControl
         Loaded += AppShellView_Loaded;
         DataContextChanged += AppShellView_DataContextChanged;
         ShellSettings.BackRequested += (_, _) => ShowWorkbench();
+        ShellSettings.AboutRequested += (_, _) => AboutRequested?.Invoke(this, EventArgs.Empty);
     }
 
     public FrameworkElement TitleBarElement => AppTitleBar;
@@ -31,9 +33,6 @@ public sealed partial class AppShellView : UserControl
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e) =>
         ShowSettingsPage();
-
-    private void AboutButton_Click(object sender, RoutedEventArgs e) =>
-        AboutRequested?.Invoke(this, EventArgs.Empty);
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
 
@@ -84,7 +83,7 @@ public sealed partial class AppShellView : UserControl
         SettingsTitleBarButton.Visibility = Visibility.Collapsed;
         ShellSettings.PrepareForDisplay(initialSectionName);
         ShellSettings.PlayEntranceAnimation(forward: true);
-        ShellSettings.Focus(FocusState.Programmatic);
+        ShellSettings.FocusSearchOrNavigation();
     }
 
     public void OpenSettingsSection(string sectionName) =>
@@ -104,10 +103,18 @@ public sealed partial class AppShellView : UserControl
         SettingsTitleBarButton.Visibility = Visibility.Visible;
         ApplyResponsiveLayout(Root.ActualWidth);
         PlayWorkbenchEntranceAnimation();
+        SettingsTitleBarButton.Focus(FocusState.Programmatic);
     }
 
     private void PlayWorkbenchEntranceAnimation()
     {
+        if (!new UISettings().AnimationsEnabled)
+        {
+            StatusBand.Opacity = 1;
+            WorkbenchLayout.Opacity = 1;
+            return;
+        }
+
         StatusBand.Opacity = 0;
         WorkbenchLayout.Opacity = 0;
 
@@ -165,14 +172,10 @@ public sealed partial class AppShellView : UserControl
 
         if (compact)
         {
-            StatusTextColumn.Width = stackedStatus
+            StatusTextColumn.Width = new GridLength(1, GridUnitType.Star);
+            StatusProgressColumn.Width = showProgress
                 ? new GridLength(1, GridUnitType.Star)
-                : new GridLength(1, GridUnitType.Star);
-            StatusProgressColumn.Width = !showProgress
-                ? new GridLength(0)
-                : stackedStatus
-                ? new GridLength(1, GridUnitType.Star)
-                : new GridLength(1, GridUnitType.Star);
+                : new GridLength(0);
             StatusPoetryColumn.Width = !showProgress
                 ? new GridLength(1.4, GridUnitType.Star)
                 : stackedStatus
@@ -251,19 +254,10 @@ public sealed partial class AppShellView : UserControl
 
     private void QueueCompactScrollReset()
     {
-        DispatcherQueue.TryEnqueue(async () =>
+        DispatcherQueue.TryEnqueue(() =>
         {
-            RunSetup.Focus(FocusState.Programmatic);
-            foreach (var delay in new[] { 0, 120, 360, 800 })
-            {
-                if (delay > 0)
-                {
-                    await Task.Delay(delay);
-                }
-
-                WorkbenchScroll.UpdateLayout();
-                WorkbenchScroll.ChangeView(null, 0, null, disableAnimation: true);
-            }
+            WorkbenchScroll.UpdateLayout();
+            WorkbenchScroll.ChangeView(null, 0, null, disableAnimation: true);
         });
     }
 

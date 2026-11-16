@@ -853,6 +853,12 @@
                 </Grid.ColumnDefinitions>
                 <InfoBar x:Name="SettingsFeedbackBar" IsOpen="{Binding IsSettingsFeedbackOpen, Mode=TwoWay}" Message="{Binding SettingsFeedbackText}" Severity="{Binding SettingsFeedbackSeverity}" IsIconVisible="True" IsClosable="True" MaxWidth="520" HorizontalAlignment="Left" VerticalAlignment="Center" />
                 <StackPanel x:Name="SettingsFooterActions" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="10">
+                    <Button Click="AboutButton_Click" AutomationProperties.Name="关于" ToolTipService.ToolTip="版本与软件信息">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE946;" FontSize="14" />
+                            <TextBlock Text="关于" />
+                        </StackPanel>
+                    </Button>
                     <Button Click="ResetSettings_Click" MinWidth="120" AutomationProperties.Name="重置设置" ToolTipService.ToolTip="恢复默认值，不会删除已保存的凭据。">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE777;" FontSize="14" />
