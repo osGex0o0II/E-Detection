@@ -5,7 +5,7 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class DetectionWorkbenchView : UserControl
 {
-    private const double CompactWidth = 660;
+    private const double CompactWidth = 800;
 
     public DetectionWorkbenchView()
     {
