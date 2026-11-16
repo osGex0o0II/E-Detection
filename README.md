@@ -15,31 +15,31 @@
   <a href="docs/README.md">开发文档</a>
 </p>
 
-批量检测电力监控与 SCADA CSV 日报异常，生成 Excel 报告。
+批量检测电力监控与 SCADA CSV 日报，生成 Excel 异常报告。
 
 ## 功能
 
-- **电气异常**：检测电压、电流、功率、功率因数、温度异常，以及 CT 极性和 PT 接线异常。
-- **设备与数据状态**：识别设备离线、传感器故障或未配置、数据冻结或恒定。
-- **CSV 处理**：递归扫描目录，支持 UTF-8、GB18030、GBK 等编码及常见测点列名。
-- **检测结果**：查看异常明细、设备汇总和报告历史，按需生成 Excel 工作簿。
+- **电气异常**：电压、电流、功率、功率因数、温度，CT 极性及 PT 接线异常。
+- **设备状态**：离线、传感器故障/未配置、数据冻结/恒定。
+- **CSV 处理**：递归扫描，支持 UTF-8、GB18030、GBK 等编码与常见测点列名。
+- **结果查看**：异常明细、设备汇总、报告历史、Excel 导出。
 
 Windows 10（1809+）/ 11 · x64 · 本地运行。
 
 ## 快速开始
 
-1. 从 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest) 下载安装器（推荐）或便携 ZIP；便携版解压后运行 `Install-Desktop.ps1`。
-2. 启动程序，选择 CSV 输入目录与报告输出目录，按需调整检测阈值。
-3. 如需导出报告，开启“生成 Excel 报告”，然后点击“开始检测”。
+1. 从 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest) 下载安装器或便携 ZIP；便携版解压后运行 `Install-Desktop.ps1`。
+2. 选择 CSV 输入、报告输出目录，按需调整阈值。
+3. 导出时开启“生成 Excel 报告”，点击“开始检测”。
 
-输入 CSV 仅被读取，不会覆盖原始文件。
+CSV 只读，不覆盖原文件。
 
 ## 开发
 
-构建需要 .NET SDK 11.0.100 和 PowerShell 7。命令见 [桌面开发指南](desktop/README.md)，系统设计与数据定义见 [技术文档](docs/README.md)。
+构建需 .NET SDK 11.0.100、PowerShell 7；命令见 [桌面开发指南](desktop/README.md)，设计与数据见 [技术文档](docs/README.md)。
 
 ## 发布与许可
 
-发布物签名状态以 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest) 说明为准；未签名安装包可能触发 Windows 安全提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
+签名状态见 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest)；未签名安装包可能触发安全提示。SHA-256 仅校验完整性，不验证发布者身份。
 
-仓库尚未提供开源许可证。修改或再分发代码前，请先确认授权。
+仓库未提供开源许可证；修改或再分发前请确认授权。
