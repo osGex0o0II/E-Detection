@@ -159,29 +159,42 @@ public partial class MainViewModel
     private void InitializeDetectionConfig(string? preferredPath)
     {
         var preferredConfigPath = DetectionConfigService.ResolveEffectiveConfigPath(preferredPath);
+        var originalPath = preferredConfigPath;
+        var isCustomPath = !string.Equals(
+            Path.GetFullPath(DetectionConfigService.ResolveConfigPath(preferredConfigPath)),
+            Path.GetFullPath(DetectionConfigService.DefaultUserConfigPath),
+            StringComparison.OrdinalIgnoreCase);
         var configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out var loadedConfig, out var configError);
+        var requiresConfirmation = isCustomPath && !configLoaded;
+
         if (!configLoaded)
         {
-            var originalPath = preferredConfigPath;
             preferredConfigPath = _detectionConfig.EnsureUserConfig();
             configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out loadedConfig, out var fallbackError);
             if (!configLoaded)
             {
                 loadedConfig = _detectionConfig.CreateDefault();
-                configError = $"配置文件无法安全加载：{originalPath}；默认配置也不可用：{fallbackError}";
+                configError = $"无法安全加载阈值文件：{originalPath}；默认配置也不可用：{fallbackError}";
             }
             else
             {
-                configError = $"原阈值文件不可用，已切换到默认文件：{originalPath}";
+                configError = requiresConfirmation
+                    ? $"原阈值文件不可用：{originalPath}。已展示默认阈值，但必须重新加载有效文件后才能开始检测。"
+                    : null;
             }
         }
 
         ConfigPath = preferredConfigPath;
-        _activeDetectionConfigPath = configLoaded
+        _activeDetectionConfigPath = configLoaded && !requiresConfirmation
             ? Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath))
             : "";
         ApplyDetectionConfig(loadedConfig);
         AcceptDetectionConfigAsSaved();
+        if (requiresConfirmation)
+        {
+            PendingConfigPath = originalPath;
+        }
+
         if (configError is not null)
         {
             ShowSettingsFeedback(configError, InfoBarSeverity.Warning);
