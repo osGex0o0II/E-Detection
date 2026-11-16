@@ -487,7 +487,7 @@ jobs:
           }
 
           $notesPath = Join-Path $env:RUNNER_TEMP "desktop-release-notes.md"
-          @(
+          $releaseNotes = @(
               "Windows x64 desktop build generated from commit $buildSha."
               ""
               "Recommended for most users: download and run EDetection-Setup-win-x64.exe."
@@ -506,7 +506,18 @@ jobs:
               "SHA-256 checksums are attached as EDetection-win-x64.sha256.txt."
               "SHA-256 verifies file integrity, not publisher identity."
               "Windows checksum command: Get-FileHash .\EDetection-Setup-win-x64.exe -Algorithm SHA256"
-          ) | Set-Content -Path $notesPath -Encoding UTF8
+          )
+          if ($tag -eq "v2.0.3") {
+              $releaseNotes += @(
+                  ""
+                  "Changes in v2.0.3:"
+                  "- Reorganized settings navigation, Windows title bar, and workbench actions."
+                  "- Protected detection thresholds with explicit loading, dirty-state checks, and atomic writes with a rolling backup."
+                  "- Corrected anomaly sorting and added accessible navigation identifiers."
+                  "- Expanded regression checks for configuration validation and desktop UI automation."
+              )
+          }
+          $releaseNotes | Set-Content -Path $notesPath -Encoding UTF8
 
           $releaseViewOutput = & gh release view $tag --repo $env:GITHUB_REPOSITORY --json id,tagName 2>&1
           $releaseExitCode = $LASTEXITCODE

@@ -347,7 +347,7 @@ public partial class MainViewModel
             AddLog("更新", $"已下载更新安装向导: {installerPath}");
             OpenContainingFolder(installerPath);
             ShowSettingsFeedback(
-                "安装向导已下载。SHA-256 仅验证文件完整性，不能验证发布者身份；2.0.2 安装向导未签名，Windows 可能显示“未知发布者”。请在打开的文件夹中手动运行安装向导完成更新。",
+                "安装向导已下载。SHA-256 仅验证文件完整性，不能验证发布者身份；如安装包未签名，Windows 可能显示“未知发布者”。请核对 Release 说明，再手动运行安装向导完成更新。",
                 InfoBarSeverity.Success);
         }
         catch (Exception ex) when (ex is HttpRequestException
