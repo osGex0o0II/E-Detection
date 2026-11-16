@@ -350,24 +350,50 @@ function Expand-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$Time
 }
 
 function Select-SettingsCategory([IntPtr]$RootHandle, [string]$Name) {
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-    $matches = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
-    foreach ($match in $matches) {
-        try {
-            $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
-            $pattern.Select()
-            Start-Sleep -Milliseconds 150
-            return
-        }
-        catch {
-            # A label and its ListViewItem can expose the same accessible name.
-        }
+    $identifiers = @{
+        "检测" = "SettingsNav_Detection"
+        "报告与数据" = "SettingsNav_Reports"
+        "常规" = "SettingsNav_General"
+        "通知" = "SettingsNav_Notifications"
+        "连接与集成" = "SettingsNav_Integrations"
+        "更新与维护" = "SettingsNav_Maintenance"
     }
 
-    throw "Unable to select settings category '$Name'."
+    if (!$identifiers.ContainsKey($Name)) {
+        throw "Unknown settings category '$Name'."
+    }
+
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        $identifiers[$Name])
+    $deadline = (Get-Date).AddSeconds($WaitSeconds)
+
+    do {
+        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        if ($null -ne $match) {
+            try {
+                $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
+                if (!$pattern.Current.IsSelected) {
+                    $pattern.Select()
+                }
+                Start-Sleep -Milliseconds 200
+                if ($pattern.Current.IsSelected) {
+                    return
+                }
+            }
+            catch [System.Windows.Automation.ElementNotAvailableException] {
+                # A WinUI navigation item may be re-created while its layout updates.
+            }
+            catch [System.InvalidOperationException] {
+                throw "Settings category '$Name' has no valid UIA selection pattern."
+            }
+        }
+
+        Start-Sleep -Milliseconds 200
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Settings category '$Name' was not selected (AutomationId=$($identifiers[$Name]))."
 }
 
 $process = $null
@@ -532,6 +558,18 @@ try {
     Start-Sleep -Milliseconds 300
     $updatesSection = Wait-ForAutomationName $mainWindow.Handle "应用更新" $WaitSeconds
     $updateStatusText = Wait-ForAutomationNameLike $mainWindow.Handle "*当前版本*" $WaitSeconds
+    $releaseInfo = Join-Path (Split-Path -Parent $appFull) "release-info.txt"
+    if (Test-Path -LiteralPath $releaseInfo) {
+        $versionLine = Get-Content -LiteralPath $releaseInfo | Where-Object { $_ -like "Version=*" } | Select-Object -First 1
+        if (!$versionLine) {
+            throw "Settings smoke: release-info.txt has no Version value."
+        }
+
+        $expectedVersion = ($versionLine -replace '^Version=', '').Trim()
+        if ($updateStatusText -notmatch ("^当前版本\s+" + [regex]::Escape($expectedVersion) + "(?:\+.*)?$")) {
+            throw "Settings smoke: displayed version '$updateStatusText' differs from package version '$expectedVersion'."
+        }
+    }
     $checkUpdatesButton = Wait-ForAutomationName $mainWindow.Handle "检查更新" $WaitSeconds
     $openUpdatePageButton = Wait-ForAutomationName $mainWindow.Handle "获取更新安装向导" $WaitSeconds
     $advancedUpdateExpander = Expand-AutomationElement $mainWindow.Handle "高级更新选项" $WaitSeconds
@@ -691,3 +729,7 @@ finally {
         $env:EDETECTION_DESKTOP_SETTINGS_DIR = $previousSettingsOverride
     }
 }
+
+# schtasks.exe may return 1 when an optional startup task was absent during cleanup.
+# Any actual test or restoration exception exits before reaching this line.
+$global:LASTEXITCODE = 0

@@ -214,6 +214,18 @@ jobs:
         shell: pwsh
         run: ./artifacts/desktop/win-x64/publish/Test-DesktopPackageHealth.ps1 -PackagePath ./artifacts/desktop/win-x64/publish
 
+      - name: Upload interactive UI evidence
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.run_desktop_ui_smoke == true }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: EDetection-UI-evidence
+          path: |
+            artifacts/desktop/single-instance-smoke/**
+            artifacts/desktop/settings-smoke/**
+            artifacts/desktop/visual-smoke/**
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Install smoke
         shell: pwsh
         run: ./artifacts/desktop/win-x64/publish/Test-DesktopInstallSmoke.ps1 -PackagePath ./artifacts/desktop/win-x64/publish

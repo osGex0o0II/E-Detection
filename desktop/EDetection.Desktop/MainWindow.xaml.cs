@@ -329,7 +329,7 @@ public sealed partial class MainWindow : Window
 
     private async void ShowAboutDialog()
     {
-        var info = _appInfo.GetInfo();
+        var info = _appInfo.GetInfo(GetType().Assembly);
         var content = new StackPanel
         {
             Spacing = 8,

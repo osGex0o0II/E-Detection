@@ -244,7 +244,7 @@ public partial class MainViewModel
 
         try
         {
-            var currentVersion = new AppInfoService().GetInfo().Version;
+            var currentVersion = new AppInfoService().GetInfo(typeof(MainViewModel).Assembly).Version;
             using var handler = _networkProxy.BuildHandler(this, UseProxyForUpdates);
             var result = await _updateCheck.CheckLatestAsync(UpdateFeedUrl, currentVersion, handler);
             LatestReleaseUrl = result.ReleaseUrl;
