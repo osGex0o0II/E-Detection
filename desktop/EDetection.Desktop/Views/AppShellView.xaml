@@ -17,10 +17,10 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar"
-                  Grid.Row="0"
-                  Title="E-Detection">
-            <TitleBar.LeftHeader>
+        <views:AppTitleBar x:Name="AppTitleBar"
+                          Grid.Row="0"
+                          Title="E-Detection">
+            <views:AppTitleBar.LeftHeader>
                 <Viewbox Width="22" Height="22" VerticalAlignment="Center" AutomationProperties.Name="E-Detection">
                     <Canvas Width="160" Height="160">
                         <Path Data="M30,90 L54,90 L73,48 L91,110 L106,74 L116,90 L132,90"
@@ -33,17 +33,18 @@
                         <Ellipse Canvas.Left="123" Canvas.Top="53" Width="16" Height="16" Fill="#D13438" />
                     </Canvas>
                 </Viewbox>
-            </TitleBar.LeftHeader>
-            <TitleBar.RightHeader>
+            </views:AppTitleBar.LeftHeader>
+            <views:AppTitleBar.RightHeader>
                 <Button x:Name="SettingsTitleBarButton"
                         Style="{StaticResource TitleBarActionButtonStyle}"
                         Click="SettingsButton_Click"
+                        AutomationProperties.AutomationId="SettingsTitleBarButton"
                         AutomationProperties.Name="设置"
                         ToolTipService.ToolTip="设置">
                     <FontIcon Glyph="&#xE713;" FontSize="14" />
                 </Button>
-            </TitleBar.RightHeader>
-        </TitleBar>
+            </views:AppTitleBar.RightHeader>
+        </views:AppTitleBar>
 
         <Border x:Name="StatusBand"
                 Grid.Row="1"
@@ -123,7 +124,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <FontIcon Glyph="&#xE82D;"
-                              FontSize="15"
+                              FontSize="14"
                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                               VerticalAlignment="Center" />
                     <StackPanel Grid.Column="1" Spacing="1">
@@ -140,7 +141,7 @@
                             Style="{StaticResource UtilityIconButtonStyle}"
                             AutomationProperties.Name="刷新诗词"
                             ToolTipService.ToolTip="刷新诗词">
-                        <FontIcon Glyph="&#xE72C;" FontSize="12" />
+                        <FontIcon Glyph="&#xE72C;" FontSize="14" />
                     </Button>
                 </Grid>
             </Grid>
@@ -163,6 +164,7 @@
                                 Grid.Column="0" />
             <ScrollViewer x:Name="WorkbenchScroll"
                           Grid.Column="1"
+                          AutomationProperties.AutomationId="WorkbenchScroll"
                           HorizontalScrollBarVisibility="Disabled"
                           HorizontalScrollMode="Disabled"
                           VerticalScrollBarVisibility="Auto"

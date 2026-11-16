@@ -57,6 +57,7 @@
 
         <Grid x:Name="MetricGrid"
               Grid.Row="0"
+              AutomationProperties.AutomationId="WorkbenchMetricGrid"
               ColumnSpacing="12"
               RowSpacing="12">
             <Grid.RowDefinitions>
@@ -353,7 +354,7 @@
                     <ColumnDefinition x:Name="IssueRankColumn" Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <Grid x:Name="HighRiskPanel" RowSpacing="8">
+                <Grid x:Name="HighRiskPanel" AutomationProperties.AutomationId="WorkbenchHighRiskPanel" RowSpacing="8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />

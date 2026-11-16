@@ -11,9 +11,9 @@ public sealed partial class SettingsView
     private async void ResetSettings_Click(object sender, RoutedEventArgs e)
     {
         if (!await ConfirmActionAsync(
-                "恢复默认设置？",
+                "重置设置？",
                 "将恢复检测阈值、目录、窗口和网络偏好。已保存的 API Key、Token 与代理密码不会删除。",
-                "恢复默认"))
+                "重置设置"))
         {
             return;
         }

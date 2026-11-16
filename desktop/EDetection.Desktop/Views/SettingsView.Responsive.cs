@@ -99,10 +99,15 @@ public sealed partial class SettingsView
 
         foreach (var item in SettingsCategoryList.Items.OfType<ListViewItem>())
         {
-            var title = FindFirstTextBlockText(item.Content as DependencyObject);
+            var title = GetNavigationLabel(item);
             if (!string.IsNullOrWhiteSpace(title))
             {
                 Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, title);
+                if (item.Content is FrameworkElement content)
+                {
+                    Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(content, title);
+                }
+
                 ToolTipService.SetToolTip(item, title);
             }
 
@@ -112,11 +117,24 @@ public sealed partial class SettingsView
             item.Padding = iconOnly ? new Thickness(0) : new Thickness(12, 0, 12, 0);
             item.MinHeight = iconOnly ? 44 : 40;
 
-            if (item.Content is DependencyObject content)
+            if (item.Content is DependencyObject contentRoot)
             {
-                UpdateNavigationItemContent(content, iconOnly);
+                UpdateNavigationItemContent(contentRoot, iconOnly);
             }
         }
+    }
+
+    private static string? GetNavigationLabel(ListViewItem item)
+    {
+        if (item.Content is Panel panel)
+        {
+            return panel.Children
+                .OfType<TextBlock>()
+                .Select(static textBlock => textBlock.Text)
+                .FirstOrDefault(static text => !string.IsNullOrWhiteSpace(text));
+        }
+
+        return item.Content as string;
     }
 
     private static void UpdateNavigationItemContent(DependencyObject root, bool iconOnly)
@@ -137,31 +155,6 @@ public sealed partial class SettingsView
         {
             UpdateNavigationItemContent(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i), iconOnly);
         }
-    }
-
-    private static string? FindFirstTextBlockText(DependencyObject? root)
-    {
-        if (root is null)
-        {
-            return null;
-        }
-
-        if (root is TextBlock textBlock)
-        {
-            return textBlock.Text;
-        }
-
-        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < childCount; i++)
-        {
-            var text = FindFirstTextBlockText(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i));
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                return text;
-            }
-        }
-
-        return null;
     }
 
     private void UpdateFooterLayout(bool stack)

@@ -8,7 +8,9 @@
     mc:Ignorable="d">
 
     <Border Style="{StaticResource SettingsRailStyle}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+        <ScrollViewer x:Name="SetupScroll"
+                      AutomationProperties.AutomationId="SetupScroll"
+                      VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       HorizontalScrollMode="Disabled">
             <StackPanel Spacing="12"
@@ -42,6 +44,9 @@
                             <TextBox x:Name="InputDirectoryTextBox"
                                      Text="{Binding InputDirectory, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                      IsEnabled="{Binding CanEditRunConfiguration}"
+                                     AutomationProperties.Name="输入目录"
+                                     AutomationProperties.HelpText="{Binding InputDirectory}"
+                                     ToolTipService.ToolTip="{Binding InputDirectory}"
                                      PlaceholderText="选择包含 CSV 文件的目录" />
                             <Button x:Name="InputDirectoryButton"
                                     Grid.Column="1"
@@ -69,6 +74,9 @@
                             <TextBox x:Name="OutputDirectoryTextBox"
                                      Text="{Binding OutputDirectory, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                      IsEnabled="{Binding CanEditRunConfiguration}"
+                                     AutomationProperties.Name="报告目录"
+                                     AutomationProperties.HelpText="{Binding OutputDirectory}"
+                                     ToolTipService.ToolTip="{Binding OutputDirectory}"
                                      PlaceholderText="留空则写入输入目录" />
                             <Button x:Name="OutputDirectoryButton"
                                     Grid.Column="1"
@@ -344,6 +352,7 @@
                         </Button>
                         <Button Grid.Column="2"
                                 Click="ClearRecentReports_Click"
+                                AutomationProperties.AutomationId="ClearRecentReportsButton"
                                 AutomationProperties.Name="清空报告历史"
                                 ToolTipService.ToolTip="清空报告历史">
                             <FontIcon Glyph="&#xE894;" FontSize="14" />

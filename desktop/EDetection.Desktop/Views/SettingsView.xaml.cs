@@ -1,6 +1,7 @@
 using EDetection.Desktop.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.UI.ViewManagement;
 
 namespace EDetection.Desktop.Views;
@@ -125,6 +126,17 @@ public sealed partial class SettingsView : UserControl
 
     private void BackButton_Click(object sender, RoutedEventArgs e) =>
         BackRequested?.Invoke(this, EventArgs.Empty);
+
+    private void EscapeAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    {
+        if (Visibility != Visibility.Visible)
+        {
+            return;
+        }
+
+        args.Handled = true;
+        BackRequested?.Invoke(this, EventArgs.Empty);
+    }
 
     private void OpenThresholdSettings_Click(object sender, RoutedEventArgs e) =>
         NavigateToThresholdSettings();

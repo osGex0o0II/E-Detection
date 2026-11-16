@@ -36,6 +36,9 @@ public sealed partial class RunSetupView : UserControl
         ApplyReportFilterLayout(compact);
     }
 
+    public void ResetScroll() =>
+        SetupScroll.ChangeView(null, 0, null, disableAnimation: true);
+
     public async Task BrowseInputDirectoryAsync()
     {
         var folder = await PickFolderAsync();
@@ -154,7 +157,8 @@ public sealed partial class RunSetupView : UserControl
         Grid.SetRow(ReportFilterComboBox, compact ? 1 : 0);
         Grid.SetColumn(ReportFilterComboBox, compact ? 0 : 1);
         Grid.SetColumnSpan(ReportFilterComboBox, compact ? 2 : 1);
-        ReportFilterComboBox.MaxWidth = compact ? 180 : double.PositiveInfinity;
+        ReportFilterComboBox.MaxWidth = double.PositiveInfinity;
+        ReportFilterComboBox.HorizontalAlignment = HorizontalAlignment.Stretch;
     }
 
     private void ApplyRunCommandLayout(bool compact)

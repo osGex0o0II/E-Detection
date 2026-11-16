@@ -12,15 +12,22 @@ public sealed partial class AppShellView : UserControl
     private MainViewModel? _observedViewModel;
     private bool? _lastCompactLayout;
     private bool _isSettingsPageVisible;
+    private bool _applyingTitleBarInset;
     private const double StackedStatusWidth = 1008;
     private const double CompactShellWidth = 1080;
     private const double ComfortableShellWidth = 1100;
+    private const double CompactSetupRowWeight = 0.42;
+    private const double CompactWorkbenchRowWeight = 0.58;
+    private const double CompactSetupRowMinHeight = 190;
+    private const double CompactWorkbenchRowMinHeight = 280;
 
     public AppShellView()
     {
         InitializeComponent();
         Loaded += AppShellView_Loaded;
         DataContextChanged += AppShellView_DataContextChanged;
+        AppTitleBar.SizeChanged += (_, _) => QueueTitleBarInsetCorrection();
+        AppTitleBar.LayoutUpdated += (_, _) => ApplyTitleBarInsetCorrection();
         ShellSettings.BackRequested += (_, _) => ShowWorkbench();
         ShellSettings.AboutRequested += (_, _) => AboutRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -137,6 +144,7 @@ public sealed partial class AppShellView : UserControl
 
     private void AppShellView_Loaded(object sender, RoutedEventArgs e)
     {
+        QueueTitleBarInsetCorrection();
         if (Root.ActualWidth < CompactShellWidth)
         {
             QueueCompactScrollReset();
@@ -150,6 +158,7 @@ public sealed partial class AppShellView : UserControl
             return;
         }
 
+        QueueTitleBarInsetCorrection();
         var compact = width < CompactShellWidth;
         var reduced = width < ComfortableShellWidth;
         var showProgress = ViewModel?.IsRunning == true;
@@ -194,8 +203,10 @@ public sealed partial class AppShellView : UserControl
 
             SetupColumn.Width = new GridLength(1, GridUnitType.Star);
             WorkbenchColumn.Width = new GridLength(1, GridUnitType.Star);
-            WorkbenchLayout.RowDefinitions[0].Height = GridLength.Auto;
-            WorkbenchLayout.RowDefinitions[1].Height = new GridLength(1, GridUnitType.Star);
+            WorkbenchLayout.RowDefinitions[0].Height = new GridLength(CompactSetupRowWeight, GridUnitType.Star);
+            WorkbenchLayout.RowDefinitions[0].MinHeight = CompactSetupRowMinHeight;
+            WorkbenchLayout.RowDefinitions[1].Height = new GridLength(CompactWorkbenchRowWeight, GridUnitType.Star);
+            WorkbenchLayout.RowDefinitions[1].MinHeight = CompactWorkbenchRowMinHeight;
 
             Grid.SetRow(RunSetup, 0);
             Grid.SetColumn(RunSetup, 0);
@@ -236,7 +247,9 @@ public sealed partial class AppShellView : UserControl
         SetupColumn.Width = new GridLength(reduced ? 340 : 380);
         WorkbenchColumn.Width = new GridLength(1, GridUnitType.Star);
         WorkbenchLayout.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+        WorkbenchLayout.RowDefinitions[0].MinHeight = 0;
         WorkbenchLayout.RowDefinitions[1].Height = new GridLength(0);
+        WorkbenchLayout.RowDefinitions[1].MinHeight = 0;
 
         Grid.SetRow(RunSetup, 0);
         Grid.SetColumn(RunSetup, 0);
@@ -258,7 +271,55 @@ public sealed partial class AppShellView : UserControl
         {
             WorkbenchScroll.UpdateLayout();
             WorkbenchScroll.ChangeView(null, 0, null, disableAnimation: true);
+            RunSetup.ResetScroll();
         });
     }
 
+    private void QueueTitleBarInsetCorrection()
+    {
+        if (_isSettingsPageVisible)
+        {
+            return;
+        }
+
+        DispatcherQueue.TryEnqueue(ApplyTitleBarInsetCorrection);
+    }
+
+    private void ApplyTitleBarInsetCorrection()
+    {
+        if (_applyingTitleBarInset
+            || App.CurrentWindow is null
+            || XamlRoot is null)
+        {
+            return;
+        }
+
+        var scale = XamlRoot.RasterizationScale;
+        var rightInset = App.CurrentWindow.AppWindow.TitleBar.RightInset;
+        if (scale <= 0 || rightInset <= 0)
+        {
+            return;
+        }
+
+        // The TitleBar control currently writes the physical right inset into
+        // the XAML padding column without dividing by the rasterization scale.
+        // At non-100% DPI that pushes the right header inwards by the inset
+        // again; keep the padding in DIPs so the header stays next to the
+        // caption buttons.
+        var insetDip = rightInset / scale;
+        _applyingTitleBarInset = true;
+        try
+        {
+            if (AppTitleBar.TrySetRightPaddingDip(insetDip))
+            {
+                DispatcherQueue.TryEnqueue(
+                    Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    AppTitleBar.RecomputeDragRegions);
+            }
+        }
+        finally
+        {
+            _applyingTitleBarInset = false;
+        }
+    }
 }

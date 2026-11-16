@@ -150,6 +150,12 @@ public static class DesktopSettingsSmokeNative
     public static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
     [DllImport("user32.dll")]
@@ -159,7 +165,40 @@ public static class DesktopSettingsSmokeNative
     public static extern uint GetDpiForWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr dpiContext);
+
+    [DllImport("user32.dll")]
     public static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    public static extern bool GetClientRect(IntPtr hWnd, out RECT rect);
+
+    [DllImport("user32.dll")]
+    public static extern bool ClientToScreen(IntPtr hWnd, ref POINT point);
+
+    [DllImport("user32.dll")]
+    public static extern bool PrintWindow(IntPtr hwnd, IntPtr hdcBlt, uint nFlags);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindowDC(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
+
+    [DllImport("gdi32.dll")]
+    public static extern bool DeleteDC(IntPtr hdc);
+
+    [DllImport("gdi32.dll")]
+    public static extern IntPtr SelectObject(IntPtr hdc, IntPtr hgdiobj);
+
+    [DllImport("gdi32.dll")]
+    public static extern bool DeleteObject(IntPtr hObject);
+
+    [DllImport("dwmapi.dll")]
+    public static extern int DwmGetWindowAttribute(IntPtr hWnd, int dwAttribute, out RECT rect, int cbAttribute);
 
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT
@@ -169,8 +208,20 @@ public static class DesktopSettingsSmokeNative
         public int Right;
         public int Bottom;
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT
+    {
+        public int X;
+        public int Y;
+    }
 }
 "@
+
+# WinUI uses per-monitor DPI awareness.  A DPI-unaware test host sees the
+# virtualized 1280x752 work area and MoveWindow silently scales the request,
+# so requested DIP sizes would not be the sizes actually tested.
+[DesktopSettingsSmokeNative]::SetThreadDpiAwarenessContext([IntPtr](-4)) | Out-Null
 
 Add-Type @"
 using System;
@@ -182,6 +233,227 @@ public static class DesktopSettingsMouseNative
     public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 }
 "@
+
+$DWMWA_EXTENDED_FRAME_BOUNDS = 9
+$PW_RENDERFULLCONTENT = 0x00000002
+
+function Get-VisibleWindowRect([IntPtr]$Handle) {
+    $rect = New-Object DesktopSettingsSmokeNative+RECT
+    $result = [DesktopSettingsSmokeNative]::DwmGetWindowAttribute(
+        $Handle,
+        $DWMWA_EXTENDED_FRAME_BOUNDS,
+        [ref]$rect,
+        [System.Runtime.InteropServices.Marshal]::SizeOf([type][DesktopSettingsSmokeNative+RECT]))
+    if ($result -eq 0) {
+        return $rect
+    }
+
+    if (![DesktopSettingsSmokeNative]::GetWindowRect($Handle, [ref]$rect)) {
+        throw "Failed to read window rectangle."
+    }
+
+    return $rect
+}
+
+function Capture-WindowBitmap([IntPtr]$Handle, [DesktopSettingsSmokeNative+RECT]$Rect) {
+    $captureWidth = $Rect.Right - $Rect.Left
+    $captureHeight = $Rect.Bottom - $Rect.Top
+    if ($captureWidth -le 0 -or $captureHeight -le 0) {
+        throw "Invalid window rectangle: $captureWidth x $captureHeight"
+    }
+
+    $bufferBitmap = New-Object System.Drawing.Bitmap $captureWidth, $captureHeight
+    $bitmap = $null
+    $windowDc = [DesktopSettingsSmokeNative]::GetWindowDC($Handle)
+    $memoryDc = [IntPtr]::Zero
+    $hBitmap = [IntPtr]::Zero
+    $oldObject = [IntPtr]::Zero
+
+    try {
+        if ($windowDc -eq [IntPtr]::Zero) {
+            throw "GetWindowDC returned null."
+        }
+
+        $memoryDc = [DesktopSettingsSmokeNative]::CreateCompatibleDC($windowDc)
+        if ($memoryDc -eq [IntPtr]::Zero) {
+            throw "CreateCompatibleDC returned null."
+        }
+
+        $hBitmap = $bufferBitmap.GetHbitmap()
+        $oldObject = [DesktopSettingsSmokeNative]::SelectObject($memoryDc, $hBitmap)
+        $printed = [DesktopSettingsSmokeNative]::PrintWindow($Handle, $memoryDc, $PW_RENDERFULLCONTENT)
+        if (!$printed) {
+            $printed = [DesktopSettingsSmokeNative]::PrintWindow($Handle, $memoryDc, 0)
+        }
+
+        if (!$printed) {
+            $bitmap = $bufferBitmap
+            $bufferBitmap = $null
+            return [pscustomobject]@{
+                Bitmap = $bitmap
+                Method = "PrintWindowFailed"
+            }
+        }
+
+        $bitmap = [System.Drawing.Image]::FromHbitmap($hBitmap)
+    }
+    finally {
+        if ($oldObject -ne [IntPtr]::Zero -and $memoryDc -ne [IntPtr]::Zero) {
+            [DesktopSettingsSmokeNative]::SelectObject($memoryDc, $oldObject) | Out-Null
+        }
+
+        if ($hBitmap -ne [IntPtr]::Zero) {
+            [DesktopSettingsSmokeNative]::DeleteObject($hBitmap) | Out-Null
+        }
+
+        if ($memoryDc -ne [IntPtr]::Zero) {
+            [DesktopSettingsSmokeNative]::DeleteDC($memoryDc) | Out-Null
+        }
+
+        if ($windowDc -ne [IntPtr]::Zero) {
+            [DesktopSettingsSmokeNative]::ReleaseDC($Handle, $windowDc) | Out-Null
+        }
+
+        if ($bufferBitmap -ne $null) {
+            $bufferBitmap.Dispose()
+        }
+    }
+
+    [pscustomobject]@{
+        Bitmap = $bitmap
+        Method = "PrintWindow"
+    }
+}
+
+function Test-BitmapIsUseful([System.Drawing.Bitmap]$Bitmap) {
+    $samples = 0
+    $unique = New-Object 'System.Collections.Generic.HashSet[int]'
+    $stepX = [Math]::Max(1, [Math]::Floor($Bitmap.Width / 64))
+    $stepY = [Math]::Max(1, [Math]::Floor($Bitmap.Height / 64))
+
+    for ($y = 0; $y -lt $Bitmap.Height; $y += $stepY) {
+        for ($x = 0; $x -lt $Bitmap.Width; $x += $stepX) {
+            [void]$unique.Add($Bitmap.GetPixel($x, $y).ToArgb())
+            $samples += 1
+        }
+    }
+
+    [pscustomobject]@{
+        Samples = $samples
+        UniqueColors = $unique.Count
+        IsUseful = $Bitmap.Width -ge 900 -and $Bitmap.Height -ge 620 -and $unique.Count -gt 12
+    }
+}
+
+function Test-ElementOnScreen(
+    [System.Windows.Automation.AutomationElement]$Element,
+    [DesktopSettingsSmokeNative+RECT]$ClientRect) {
+    if ($Element -eq $null) {
+        return $false
+    }
+
+    if ($Element.Current.IsOffscreen) {
+        return $false
+    }
+
+    $bounds = $Element.Current.BoundingRectangle
+    if ([double]::IsInfinity($bounds.X) -or [double]::IsInfinity($bounds.Y) -or [double]::IsInfinity($bounds.Width) -or [double]::IsInfinity($bounds.Height) -or $bounds.Width -le 0 -or $bounds.Height -le 0) {
+        return $false
+    }
+
+    $left = [Math]::Max($bounds.Left, $ClientRect.Left)
+    $top = [Math]::Max($bounds.Top, $ClientRect.Top)
+    $right = [Math]::Min($bounds.Right, $ClientRect.Right)
+    $bottom = [Math]::Min($bounds.Bottom, $ClientRect.Bottom)
+    return $right - $left -ge [Math]::Min(8, $bounds.Width) -and $bottom - $top -ge [Math]::Min(8, $bounds.Height)
+}
+
+function Get-ElementBounds([System.Windows.Automation.AutomationElement]$Element) {
+    if ($Element -eq $null) {
+        return $null
+    }
+
+    $bounds = $Element.Current.BoundingRectangle
+    [pscustomobject]@{
+        Name = $Element.Current.Name
+        AutomationId = $Element.Current.AutomationId
+        ControlType = $Element.Current.ControlType.ProgrammaticName
+        X = [Math]::Round($bounds.X, 1)
+        Y = [Math]::Round($bounds.Y, 1)
+        Width = [Math]::Round($bounds.Width, 1)
+        Height = [Math]::Round($bounds.Height, 1)
+        IsOffscreen = $Element.Current.IsOffscreen
+    }
+}
+
+function Get-AutomationElementById([IntPtr]$RootHandle, [string]$AutomationId, [int]$TimeoutSeconds) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        $AutomationId)
+
+    do {
+        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        if ($match -ne $null) {
+            return $match
+        }
+
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Timed out waiting for automation element with AutomationId '$AutomationId'."
+}
+
+function Get-AutomationElementByName([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        $Name)
+
+    do {
+        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        if ($match -ne $null) {
+            return $match
+        }
+
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Timed out waiting for automation element '$Name'."
+}
+
+function Save-WindowScreenshot(
+    [IntPtr]$Handle,
+    [string]$OutputDirectory,
+    [string]$Label,
+    [string]$Timestamp) {
+    $rect = Get-VisibleWindowRect $Handle
+    $capture = Capture-WindowBitmap $Handle $rect
+    $bitmap = $capture.Bitmap
+    try {
+        $analysis = Test-BitmapIsUseful $bitmap
+        if (!$analysis.IsUseful) {
+            throw "Settings screenshot '$Label' appears blank or undersized."
+        }
+
+        $path = Join-Path $OutputDirectory "$Label-$Timestamp.png"
+        $bitmap.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+        return [pscustomobject]@{
+            Path = $path
+            Method = $capture.Method
+            Width = $bitmap.Width
+            Height = $bitmap.Height
+            UniqueColors = $analysis.UniqueColors
+        }
+    }
+    finally {
+        if ($bitmap -ne $null) {
+            $bitmap.Dispose()
+        }
+    }
+}
 
 function Get-WindowTitle([IntPtr]$Handle) {
     $builder = [System.Text.StringBuilder]::new(512)
@@ -467,14 +739,89 @@ try {
     [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
     Start-Sleep -Milliseconds 500
 
-    $settingsButton = Invoke-AutomationElement $mainWindow.Handle "设置" 2
-    if ($settingsButton -eq $null) {
-        throw "Settings control cannot be invoked through UI Automation."
+    $windowRect = Get-VisibleWindowRect $mainWindow.Handle
+    $clientRect = New-Object DesktopSettingsSmokeNative+RECT
+    if (![DesktopSettingsSmokeNative]::GetClientRect($mainWindow.Handle, [ref]$clientRect)) {
+        throw "Settings smoke: failed to read the client rectangle."
     }
+
+    $clientOrigin = New-Object DesktopSettingsSmokeNative+POINT
+    if (![DesktopSettingsSmokeNative]::ClientToScreen($mainWindow.Handle, [ref]$clientOrigin)) {
+        throw "Settings smoke: failed to map the client rectangle to screen coordinates."
+    }
+
+    $clientScreenRect = New-Object DesktopSettingsSmokeNative+RECT
+    $clientScreenRect.Left = $clientOrigin.X
+    $clientScreenRect.Top = $clientOrigin.Y
+    $clientScreenRect.Right = $clientOrigin.X + $clientRect.Right
+    $clientScreenRect.Bottom = $clientOrigin.Y + $clientRect.Bottom
+
+    $actualOuterWidthDip = ($windowRect.Right - $windowRect.Left) / $scale
+    $actualOuterHeightDip = ($windowRect.Bottom - $windowRect.Top) / $scale
+    $actualClientWidthDip = ($clientRect.Right - $clientRect.Left) / $scale
+    $actualClientHeightDip = ($clientRect.Bottom - $clientRect.Top) / $scale
+    $sizeToleranceDip = 24
+    $clampReasons = [System.Collections.Generic.List[string]]::new()
+    if ($requestedPhysicalWidth -gt $workArea.Width) { $clampReasons.Add("requested width exceeds the work area") }
+    if ($requestedPhysicalHeight -gt $workArea.Height) { $clampReasons.Add("requested height exceeds the work area") }
+    if ($actualOuterWidthDip -gt $Width + $sizeToleranceDip) { $clampReasons.Add("window minimum width is larger than requested") }
+    if ($actualOuterWidthDip -lt $Width - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested width") }
+    if ($actualOuterHeightDip -gt $Height + $sizeToleranceDip) { $clampReasons.Add("window minimum height is larger than requested") }
+    if ($actualOuterHeightDip -lt $Height - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested height") }
+    $sizeClamped = $clampReasons.Count -gt 0
+
+    $screenshotTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $settingsScreenshots = [ordered]@{}
+    $mainScreenshot = Save-WindowScreenshot $mainWindow.Handle $outputFull "main-before-settings" $screenshotTimestamp
+    $settingsScreenshots["Main"] = $mainScreenshot.Path
+
+    $settingsButtonElement = Get-AutomationElementById $mainWindow.Handle "SettingsTitleBarButton" 2
+    if ($settingsButtonElement -eq $null) {
+        throw "Settings control cannot be found through UI Automation."
+    }
+
+    $settingsButtonElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
     $settingsTitle = Wait-ForAutomationName $mainWindow.Handle "设置" $WaitSeconds
     $settingsSearchBox = Wait-ForAutomationName $mainWindow.Handle "搜索设置" $WaitSeconds
 
+    $settingsNavExpected = [ordered]@{
+        "SettingsNav_Detection" = "检测"
+        "SettingsNav_Reports" = "报告与数据"
+        "SettingsNav_General" = "常规"
+        "SettingsNav_Notifications" = "通知"
+        "SettingsNav_Integrations" = "连接与集成"
+        "SettingsNav_Maintenance" = "更新与维护"
+    }
+    $settingsNavigationNames = [ordered]@{}
+    foreach ($entry in $settingsNavExpected.GetEnumerator()) {
+        $navElement = Get-AutomationElementById $mainWindow.Handle $entry.Key $WaitSeconds
+        $settingsNavigationNames[$entry.Key] = $navElement.Current.Name
+        if ($navElement.Current.Name -ne $entry.Value) {
+            throw "Settings smoke: navigation item $($entry.Key) is named '$($navElement.Current.Name)', expected '$($entry.Value)'."
+        }
+    }
+
+    $backElement = Get-AutomationElementByName $mainWindow.Handle "返回工作台" $WaitSeconds
+    $backBounds = Get-ElementBounds $backElement
+    $windowCenterX = ($windowRect.Left + $windowRect.Right) / 2
+    $backIsTopLeft = $backBounds.X -lt $windowCenterX
+    if (!$backIsTopLeft) {
+        throw "Settings smoke: the back button is not in the top-left region (X=$($backBounds.X), center=$windowCenterX)."
+    }
+
+    $settingsSearchVisible = Test-ElementOnScreen (Get-AutomationElementByName $mainWindow.Handle "搜索设置" $WaitSeconds) $clientScreenRect
+
     Select-SettingsCategory $mainWindow.Handle "检测"
+    Start-Sleep -Milliseconds 500
+    $settingsScreenshots["Detection"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-detection" $screenshotTimestamp).Path
+    $saveSettingsElement = Get-AutomationElementByName $mainWindow.Handle "保存检测阈值" $WaitSeconds
+    $resetSettingsElement = Get-AutomationElementByName $mainWindow.Handle "重置设置" $WaitSeconds
+    $settingsSaveVisible = Test-ElementOnScreen $saveSettingsElement $clientScreenRect
+    $settingsResetVisible = Test-ElementOnScreen $resetSettingsElement $clientScreenRect
+    if (!$settingsSaveVisible -or !$settingsResetVisible -or !$settingsSearchVisible) {
+        throw "Settings smoke: key settings controls are not on-screen at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP."
+    }
+
     $defaultsSection = Wait-ForAutomationName $mainWindow.Handle "检测" $WaitSeconds
     $openThresholdSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开阈值设置" $WaitSeconds
     $openDetectionRulesButton = Wait-ForAutomationName $mainWindow.Handle "打开检测规则" $WaitSeconds
@@ -514,6 +861,7 @@ try {
     $logsSection = Wait-ForAutomationName $mainWindow.Handle "运行记录" $WaitSeconds
     $recentLimitControl = Wait-ForAutomationName $mainWindow.Handle "报告历史上限" $WaitSeconds
     $logLimitControl = Wait-ForAutomationName $mainWindow.Handle "运行记录上限" $WaitSeconds
+    $settingsScreenshots["Reports"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-reports" $screenshotTimestamp).Path
 
     Select-SettingsCategory $mainWindow.Handle "常规"
     $themeControl = Wait-ForAutomationName $mainWindow.Handle "应用主题" $WaitSeconds
@@ -523,6 +871,7 @@ try {
     Start-Sleep -Milliseconds 300
     $poetryServiceControl = Wait-ForAutomationName $mainWindow.Handle "顶部诗词来源" $WaitSeconds
     $poetryLanguageControl = Wait-ForAutomationName $mainWindow.Handle "诗词语言" $WaitSeconds
+    $settingsScreenshots["General"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-general" $screenshotTimestamp).Path
 
     $startupTrayToggle = Wait-ForAutomationName $mainWindow.Handle "启动时隐藏到托盘" $WaitSeconds
     $autoStartToggle = Wait-ForAutomationName $mainWindow.Handle "登录后自动启动" $WaitSeconds
@@ -539,6 +888,7 @@ try {
     $ntfyServerControl = Wait-ForAutomationName $mainWindow.Handle "ntfy 服务地址" $WaitSeconds
     $ntfyProxyToggle = Wait-ForAutomationName $mainWindow.Handle "ntfy 使用网络代理" $WaitSeconds
     $ntfyTestButton = Wait-ForAutomationName $mainWindow.Handle "发送 ntfy 测试推送" $WaitSeconds
+    $settingsScreenshots["Notifications"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-notifications" $screenshotTimestamp).Path
 
     Select-SettingsCategory $mainWindow.Handle "连接与集成"
     $llmSection = Wait-ForAutomationName $mainWindow.Handle "智能助手集成" $WaitSeconds
@@ -551,6 +901,7 @@ try {
     $proxyAddressControl = Wait-ForAutomationName $mainWindow.Handle "代理地址" $WaitSeconds
     $proxyTestButton = Wait-ForAutomationName $mainWindow.Handle "测试网络代理" $WaitSeconds
     $openWindowsProxySettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 代理设置" $WaitSeconds
+    $settingsScreenshots["Integrations"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-integrations" $screenshotTimestamp).Path
 
     Select-SettingsCategory $mainWindow.Handle "更新与维护"
     $diagnosticsSection = Wait-ForAutomationName $mainWindow.Handle "维护" $WaitSeconds
@@ -558,6 +909,41 @@ try {
     Start-Sleep -Milliseconds 300
     $updatesSection = Wait-ForAutomationName $mainWindow.Handle "应用更新" $WaitSeconds
     $updateStatusText = Wait-ForAutomationNameLike $mainWindow.Handle "*当前版本*" $WaitSeconds
+    $updateStatusElement = Get-AutomationElementByName $mainWindow.Handle $updateStatusText $WaitSeconds
+    $updateStatusVisibleText = $updateStatusText
+    try {
+        $textPattern = [System.Windows.Automation.TextPattern]$updateStatusElement.GetCurrentPattern(
+            [System.Windows.Automation.TextPattern]::Pattern)
+        $visibleText = $textPattern.DocumentRange.GetText(-1)
+        if (![string]::IsNullOrWhiteSpace($visibleText)) {
+            $updateStatusVisibleText = $visibleText.Trim()
+        }
+    }
+    catch {
+        # TextBlock may not expose TextPattern in every WinUI build; the
+        # automation name is still checked below.
+    }
+
+    $fullVersionHash = $null
+    $shortVersionHash = $null
+    if ($updateStatusText -match '^当前版本\s+\S+\+([0-9a-fA-F]+)$') {
+        $fullVersionHash = $Matches[1]
+        if ($fullVersionHash.Length -lt 7) {
+            throw "Settings smoke: automation version '$updateStatusText' does not contain a usable commit hash."
+        }
+
+        if ($updateStatusVisibleText -match '\+([0-9a-fA-F]+)$') {
+            $shortVersionHash = $Matches[1]
+            if ($shortVersionHash.Length -ne 7) {
+                throw "Settings smoke: visible version '$updateStatusVisibleText' does not use a 7-character short hash."
+            }
+
+            if (!$fullVersionHash.StartsWith($shortVersionHash, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Settings smoke: visible short hash '$shortVersionHash' is not a prefix of the full hash '$fullVersionHash'."
+            }
+        }
+    }
+
     $releaseInfo = Join-Path (Split-Path -Parent $appFull) "release-info.txt"
     if (Test-Path -LiteralPath $releaseInfo) {
         $versionLine = Get-Content -LiteralPath $releaseInfo | Where-Object { $_ -like "Version=*" } | Select-Object -First 1
@@ -570,13 +956,47 @@ try {
             throw "Settings smoke: displayed version '$updateStatusText' differs from package version '$expectedVersion'."
         }
     }
+
     $checkUpdatesButton = Wait-ForAutomationName $mainWindow.Handle "检查更新" $WaitSeconds
-    $openUpdatePageButton = Wait-ForAutomationName $mainWindow.Handle "获取更新安装向导" $WaitSeconds
+    $openUpdatePageButton = Wait-ForAutomationName $mainWindow.Handle "获取更新" $WaitSeconds
     $advancedUpdateExpander = Expand-AutomationElement $mainWindow.Handle "高级更新选项" $WaitSeconds
     Start-Sleep -Milliseconds 300
     $updateProxyToggle = Wait-ForAutomationName $mainWindow.Handle "更新使用网络代理" $WaitSeconds
     $updateFeedControl = Wait-ForAutomationName $mainWindow.Handle "更新源" $WaitSeconds
     $desktopHealthSection = Wait-ForAutomationName $mainWindow.Handle "应用状态" $WaitSeconds
+    $settingsScreenshots["Maintenance"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-maintenance" $screenshotTimestamp).Path
+
+    # Escape must close Settings and return focus to the title-bar gear, so a
+    # keyboard user is not stranded on a collapsed page.
+    $escapeNav = Get-AutomationElementById $mainWindow.Handle "SettingsNav_Detection" $WaitSeconds
+    $escapeNav.SetFocus()
+    Start-Sleep -Milliseconds 300
+    [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
+    Start-Sleep -Milliseconds 300
+    if ([DesktopSettingsSmokeNative]::GetForegroundWindow() -eq $mainWindow.Handle) {
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    }
+    else {
+        [DesktopSettingsSmokeNative]::PostMessage($mainWindow.Handle, 0x0100, [IntPtr]0x1B, [IntPtr]0) | Out-Null
+    }
+
+    Start-Sleep -Milliseconds 900
+    $rootAfterEscape = [System.Windows.Automation.AutomationElement]::FromHandle($mainWindow.Handle)
+    $backAfterEscape = $rootAfterEscape.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        (New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+            "SettingsBackButton")))
+    $settingsClosedByEscape = $backAfterEscape -eq $null -or $backAfterEscape.Current.IsOffscreen
+    $focusedAfterEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $focusRestoredAfterEscape = ($focusedAfterEscape -ne $null) -and ($focusedAfterEscape.Current.AutomationId -eq "SettingsTitleBarButton")
+    if (!$settingsClosedByEscape) {
+        throw "Settings smoke: Escape did not close the Settings page."
+    }
+
+    if (!$focusRestoredAfterEscape) {
+        throw "Settings smoke: Escape did not restore focus to the title-bar Settings button."
+    }
     $settingsJson = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
     if ($settingsJson.SettingsVersion -ne 10) {
         throw "Settings smoke failed: SettingsVersion was '$($settingsJson.SettingsVersion)', expected '10'."
@@ -667,6 +1087,9 @@ try {
         UpdatesSection = $updatesSection
         AdvancedUpdateExpander = $advancedUpdateExpander
         UpdateStatusText = $updateStatusText
+        UpdateStatusVisibleText = $updateStatusVisibleText
+        UpdateFullVersionHash = $fullVersionHash
+        UpdateShortVersionHash = $shortVersionHash
         UpdateProxyToggle = $updateProxyToggle
         CheckUpdatesButton = $checkUpdatesButton
         OpenUpdatePageButton = $openUpdatePageButton
@@ -679,18 +1102,40 @@ try {
         LogLimitControl = $logLimitControl
         SaveSettingsButton = $saveSettingsButton
         ResetSettingsButton = $resetSettingsButton
+        SettingsNavigationNames = $settingsNavigationNames
+        SettingsBackButtonBounds = $backBounds
+        SettingsBackButtonIsTopLeft = $backIsTopLeft
+        SettingsSearchVisible = $settingsSearchVisible
+        SettingsSaveVisible = $settingsSaveVisible
+        SettingsResetVisible = $settingsResetVisible
+        SettingsClosedByEscape = $settingsClosedByEscape
+        FocusRestoredAfterEscape = $focusRestoredAfterEscape
+        Screenshots = $settingsScreenshots
         Dpi = $dpi
         RequestedDipWidth = $Width
         RequestedDipHeight = $Height
         TargetWidth = $targetWidth
         TargetHeight = $targetHeight
-        ResponsiveMode = if ($Width -le 700) { "compact" } else { "comfortable" }
+        ActualOuterWidthDip = [Math]::Round($actualOuterWidthDip, 1)
+        ActualOuterHeightDip = [Math]::Round($actualOuterHeightDip, 1)
+        ActualClientWidthDip = [Math]::Round($actualClientWidthDip, 1)
+        ActualClientHeightDip = [Math]::Round($actualClientHeightDip, 1)
+        RequestedSizeClamped = $sizeClamped
+        RequestedSizeVerified = -not $sizeClamped
+        ClampReasons = @($clampReasons)
+        EffectiveTestedDipWidth = [Math]::Round($actualClientWidthDip, 1)
+        EffectiveTestedDipHeight = [Math]::Round($actualClientHeightDip, 1)
+        ResponsiveMode = if ($actualClientWidthDip -lt 1080) { "compact" } else { "comfortable" }
         Trigger = "Title bar settings button after writing persisted settings"
         Passed = $true
         CapturedAt = (Get-Date).ToString("o")
-    } | ConvertTo-Json | Set-Content -Path $resultPath -Encoding UTF8
+    } | ConvertTo-Json -Depth 6 | Set-Content -Path $resultPath -Encoding UTF8
 
-    Write-Host "Settings smoke passed: $resultPath"
+    if ($sizeClamped) {
+        Write-Host "Requested $($Width)x$($Height) DIP was clamped to $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client area ($($clampReasons -join '; ')). This run verifies only the clamped size."
+    }
+
+    Write-Host "Settings smoke passed at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client: $resultPath"
 }
 finally {
     if ($process -ne $null -and !$process.HasExited) {

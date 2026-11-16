@@ -258,10 +258,10 @@ public partial class MainViewModel
                 : " · 打开发布页面获取安装包";
             UpdateStatusText = result.IsUpdateAvailable
                 ? $"发现新版本 {result.LatestVersion}{publishedText}{installerText}"
-                : $"已是最新版本 {currentVersion}";
+                : $"已是最新版本 {AppInfoService.FormatDisplayVersion(currentVersion)}";
             AddLog("更新", result.IsUpdateAvailable
                 ? BuildUpdateAvailableLogText(result)
-                : $"已是最新版本 {currentVersion}");
+                : $"已是最新版本 {AppInfoService.FormatDisplayVersion(currentVersion)}");
             return result;
         }
         catch (Exception ex) when (ex is HttpRequestException

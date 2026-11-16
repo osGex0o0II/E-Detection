@@ -180,6 +180,12 @@ public partial class MainViewModel
     public partial string UpdateStatusText { get; set; } = "尚未检查更新";
 
     [ObservableProperty]
+    public partial string UpdateStatusToolTipText { get; set; } = "尚未检查更新";
+
+    partial void OnUpdateStatusTextChanged(string value) =>
+        UpdateStatusToolTipText = value;
+
+    [ObservableProperty]
     public partial string LatestReleaseUrl { get; set; } = "";
 
     [ObservableProperty]

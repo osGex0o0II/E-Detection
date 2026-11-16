@@ -126,7 +126,9 @@ public partial class MainViewModel
         UseProxyForUpdates = saved.UseProxyForUpdates;
         SelectedUpdateChannelIndex = Math.Clamp(saved.SelectedUpdateChannelIndex, 0, 1);
         UpdateFeedUrl = saved.UpdateFeedUrl;
-        UpdateStatusText = $"当前版本 {new AppInfoService().GetInfo(typeof(MainViewModel).Assembly).Version}";
+        var fullVersion = new AppInfoService().GetInfo(typeof(MainViewModel).Assembly).Version;
+        UpdateStatusText = $"当前版本 {AppInfoService.FormatDisplayVersion(fullVersion)}";
+        UpdateStatusToolTipText = $"当前版本 {fullVersion}";
         RefreshSecureCredentialStatus();
         RuntimeLogs.SelectedRetentionIndex = Math.Clamp(saved.SelectedLogRetentionIndex, 0, 3);
         SelectedThemeIndex = Math.Clamp(saved.SelectedThemeIndex, 0, 2);
