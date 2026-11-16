@@ -40,6 +40,6 @@ CSV 只读，不覆盖原文件。
 
 ## 发布与许可
 
-签名状态见 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest)；未签名安装包可能触发安全提示。SHA-256 仅校验完整性，不验证发布者身份。
+签名状态见 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest)；未签名安装包可能触发安全提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
 
 仓库未提供开源许可证；修改或再分发前请确认授权。

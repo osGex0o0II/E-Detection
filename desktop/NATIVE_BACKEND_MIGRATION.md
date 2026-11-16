@@ -30,7 +30,7 @@ E-Detection 已从 Python 进程桥接迁移至进程内 C# + .NET 11 后端。`
 ## 发布约束
 
 - 发布与安装命令固定使用 `native`；包健康检查拒绝 `python-runtime`、`python-wheelhouse`、`core`、`e_detection` 等旧资产。
-- `v2.0.2` GitHub Release 有意保持未签名，并须通过安装器烟测与发布姿态门禁；SHA-256 仅校验完整性，不验证发布者身份。
+- `v2.0.2` GitHub Release 有意保持未签名，并须通过安装器烟测与发布姿态门禁；SHA-256 仅验证文件完整性，不能验证发布者身份。
 - 真实数据目录只读审计属于发布验证；审计工件不得包含输入路径、设备名或遥测明文。
 - 原生核心烟测在启动时断言未加载 `Microsoft.WindowsAppRuntime`、`Microsoft.UI.Xaml` 或 `WinUIEx`；CI 不得以延长超时替代该隔离验证。
 
