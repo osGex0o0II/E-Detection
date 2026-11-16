@@ -501,18 +501,36 @@ jobs:
               "- 安装器冒烟"
               ""
               "SHA-256 校验值（仅验证文件完整性，不能验证发布者身份）："
-              "- EDetection-Setup-win-x64.exe: $setupSha"
-              "- EDetection-win-x64.zip: $zipSha"
+              "GitHub 也会为上传的发布资产记录 SHA-256 摘要；下面的校验块可直接保存为 SHA256SUMS。"
               ""
-              "Windows 校验命令：Get-FileHash .\EDetection-Setup-win-x64.exe -Algorithm SHA256"
+              '```text'
+              "$setupSha  EDetection-Setup-win-x64.exe"
+              "$zipSha  EDetection-win-x64.zip"
+              '```'
+              ""
+              "Windows 校验命令："
+              ""
+              '```powershell'
+              "Get-FileHash .\EDetection-Setup-win-x64.exe -Algorithm SHA256"
+              '```'
+              ""
+              "Linux / macOS 校验命令："
+              ""
+              '```bash'
+              "sha256sum -c SHA256SUMS"
+              '```'
           )
           if ($tag -eq "v2.0.3") {
               $releaseNotes += @(
                   ""
-                  "v2.0.3 变更："
+                  "### 变更"
                   "- 重新组织设置导航、Windows 标题栏和工作台操作。"
                   "- 为检测阈值增加显式加载、脏状态检查和带滚动备份的原子写入。"
+                  ""
+                  "### 修复"
                   "- 修正异常排序并增加可访问导航标识。"
+                  ""
+                  "### 验证"
                   "- 扩展配置校验与桌面 UI 自动化回归检查。"
               )
           }
@@ -541,8 +559,8 @@ jobs:
               }
 
               $assetLabels = @{
-                  "EDetection-Setup-win-x64.exe" = "Windows 安装包（推荐）"
-                  "EDetection-win-x64.zip" = "便携版 ZIP（高级用户）"
+                  "EDetection-Setup-win-x64.exe" = "EDetection Windows Installer (Recommended)"
+                  "EDetection-win-x64.zip" = "EDetection Portable ZIP"
               }
               $releaseAssets = (& gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets | ConvertFrom-Json).assets
               if ($LASTEXITCODE -ne 0) {
@@ -555,7 +573,7 @@ jobs:
                   }
                   & gh api --method PATCH "repos/$env:GITHUB_REPOSITORY/releases/assets/$($asset.id)" -f "label=$($assetLabels[$assetName])" | Out-Null
                   if ($LASTEXITCODE -ne 0) {
-                      throw "Failed to set the Chinese label for release asset $assetName."
+                      throw "Failed to set the label for release asset $assetName."
                   }
               }
           }
