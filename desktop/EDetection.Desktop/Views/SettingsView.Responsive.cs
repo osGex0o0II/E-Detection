@@ -30,7 +30,7 @@ public sealed partial class SettingsView
     private static bool TryCreateSettingRowState(Grid grid, out SettingRowLayoutState rowState)
     {
         rowState = default!;
-        if (grid.MinHeight < 64 || grid.ColumnDefinitions.Count != 2 || grid.RowDefinitions.Count > 0)
+        if (grid.MinHeight < 56 || grid.ColumnDefinitions.Count != 2 || grid.RowDefinitions.Count > 0)
         {
             return false;
         }

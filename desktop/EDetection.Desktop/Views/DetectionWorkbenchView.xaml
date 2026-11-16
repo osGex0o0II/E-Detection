@@ -590,7 +590,7 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="time">
+                                            CommandParameter="recommendation">
                                         <TextBlock Text="建议" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                 </Grid>
