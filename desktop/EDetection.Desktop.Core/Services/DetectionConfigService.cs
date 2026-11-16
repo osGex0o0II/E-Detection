@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using EDetection.Desktop.Models;
 
@@ -82,47 +83,45 @@ public sealed class DetectionConfigService
         }
     }
 
+    private static readonly Dictionary<string, (double Min, double Max)> NumericBounds = new(StringComparer.Ordinal)
+    {
+        [VoltageMinThresholdKey] = (0, 1000),
+        [VoltageMaxThresholdKey] = (0, 1000),
+        [CurrentMaxThresholdKey] = (0, 100000),
+        [CurrentUnbalanceMaxThresholdKey] = (0, 1),
+        [ActivePowerMinThresholdKey] = (double.NegativeInfinity, double.PositiveInfinity),
+        [PowerFactorMinThresholdKey] = (0, 1),
+        [TemperatureMinThresholdKey] = (-50, 200),
+        [TemperatureMaxThresholdKey] = (-50, 200),
+        [CurrentActiveMinThresholdKey] = (0.001, 100000),
+        [FreezeCountThresholdKey] = (1, 1000),
+        [FreezeStdThresholdKey] = (0, 1),
+        [VoltageImbalanceThresholdKey] = (0.001, 1),
+    };
+
+    private static readonly HashSet<string> BooleanKeys = new(StringComparer.Ordinal)
+    {
+        CurrentOverloadKey,
+        CurrentUnbalanceKey,
+        LegacyCurrentKey,
+        PowerFactorKey,
+        DetailOutputKey,
+    };
+
     public DetectionConfigSettings Load(string path)
     {
-        var settings = CreateDefault();
         try
         {
             var resolvedPath = ResolveConfigPath(path);
             if (!File.Exists(resolvedPath))
             {
-                return settings;
+                return CreateDefault();
             }
 
             using var document = JsonDocument.Parse(File.ReadAllText(resolvedPath));
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                return settings;
-            }
-
-            var root = document.RootElement;
-            settings.VoltageMinThreshold = GetDouble(root, VoltageMinThresholdKey, settings.VoltageMinThreshold);
-            settings.VoltageMaxThreshold = GetDouble(root, VoltageMaxThresholdKey, settings.VoltageMaxThreshold);
-            settings.CurrentMaxThreshold = GetDouble(root, CurrentMaxThresholdKey, settings.CurrentMaxThreshold);
-            settings.CurrentUnbalanceMaxThreshold = GetDouble(root, CurrentUnbalanceMaxThresholdKey, settings.CurrentUnbalanceMaxThreshold);
-            settings.ActivePowerMinThreshold = GetDouble(root, ActivePowerMinThresholdKey, settings.ActivePowerMinThreshold);
-            settings.PowerFactorMinThreshold = GetDouble(root, PowerFactorMinThresholdKey, settings.PowerFactorMinThreshold);
-            settings.TemperatureMinThreshold = GetDouble(root, TemperatureMinThresholdKey, settings.TemperatureMinThreshold);
-            settings.TemperatureMaxThreshold = GetDouble(root, TemperatureMaxThresholdKey, settings.TemperatureMaxThreshold);
-            settings.CurrentActiveMinThreshold = GetDouble(root, CurrentActiveMinThresholdKey, settings.CurrentActiveMinThreshold);
-            settings.FreezeCountThreshold = GetDouble(root, FreezeCountThresholdKey, settings.FreezeCountThreshold);
-            settings.FreezeStdThreshold = GetDouble(root, FreezeStdThresholdKey, settings.FreezeStdThreshold);
-            settings.VoltageImbalanceThreshold = GetDouble(root, VoltageImbalanceThresholdKey, settings.VoltageImbalanceThreshold);
-            settings.CurrentOverloadEnabled = GetBool(root, CurrentOverloadKey, settings.CurrentOverloadEnabled);
-            settings.CurrentUnbalanceEnabled = GetBool(root, CurrentUnbalanceKey, settings.CurrentUnbalanceEnabled);
-            settings.PowerFactorEnabled = GetBool(root, PowerFactorKey, settings.PowerFactorEnabled);
-            settings.DetailOutputEnabled = GetBool(root, DetailOutputKey, settings.DetailOutputEnabled);
-
-            if (root.TryGetProperty(LegacyCurrentKey, out var legacyCurrent)
-                && legacyCurrent.ValueKind is JsonValueKind.True or JsonValueKind.False)
-            {
-                settings.CurrentOverloadEnabled = legacyCurrent.GetBoolean();
-                settings.CurrentUnbalanceEnabled = legacyCurrent.GetBoolean();
-            }
+            return document.RootElement.ValueKind == JsonValueKind.Object
+                ? Normalize(ParseSettings(document.RootElement))
+                : CreateDefault();
         }
         catch (Exception ex) when (ex is IOException
                                    or UnauthorizedAccessException
@@ -133,50 +132,84 @@ public sealed class DetectionConfigService
         {
             return CreateDefault();
         }
-
-        return Normalize(settings);
     }
 
-    public static string? ValidateConfigFile(string path)
+    public bool TryLoadValidated(string path, out DetectionConfigSettings settings, out string? error)
     {
-        string resolvedPath;
+        error = ReadValidatedFile(path, out settings);
+        return error is null;
+    }
+
+    public static string? ValidateConfigFile(string path) => ReadValidatedFile(path, out _);
+
+    private static string? ReadValidatedFile(string path, out DetectionConfigSettings settings)
+    {
+        settings = new DetectionConfigSettings();
         try
         {
-            resolvedPath = ResolveConfigPath(path);
-        }
-        catch (Exception ex) when (ex is ArgumentException
-                                   or NotSupportedException
-                                   or PathTooLongException)
-        {
-            return $"阈值配置文件路径无效: {ex.Message}";
-        }
+            var resolvedPath = ResolveConfigPath(path);
+            if (!File.Exists(resolvedPath))
+            {
+                return $"阈值配置文件不存在: {resolvedPath}";
+            }
 
-        if (!File.Exists(resolvedPath))
-        {
-            return $"阈值配置文件不存在: {resolvedPath}";
-        }
-
-        try
-        {
             using var document = JsonDocument.Parse(File.ReadAllText(resolvedPath));
             if (document.RootElement.ValueKind != JsonValueKind.Object)
             {
-                return $"阈值配置文件格式错误: {resolvedPath}";
+                return "阈值配置文件必须是 JSON 对象。";
             }
 
             var root = document.RootElement;
-            var thresholds = new DetectionConfigSettings
+            var seenKeys = new HashSet<string>(StringComparer.Ordinal);
+            var recognizedFields = 0;
+            foreach (var item in root.EnumerateObject())
             {
-                VoltageMinThreshold = GetDouble(root, VoltageMinThresholdKey, 353.0),
-                VoltageMaxThreshold = GetDouble(root, VoltageMaxThresholdKey, 430.0),
-                TemperatureMinThreshold = GetDouble(root, TemperatureMinThresholdKey, 0.0),
-                TemperatureMaxThreshold = GetDouble(root, TemperatureMaxThresholdKey, 70.0),
-            };
-            return ValidateThresholdOrder(thresholds);
+                if (NumericBounds.TryGetValue(item.Name, out var bounds))
+                {
+                    recognizedFields++;
+                    if (!seenKeys.Add(item.Name))
+                    {
+                        return $"阈值配置字段重复: {item.Name}";
+                    }
+
+                    if (!TryReadNumeric(item.Value, out var value)
+                        || !double.IsFinite(value)
+                        || value < bounds.Min
+                        || value > bounds.Max
+                        || (item.NameEquals(FreezeCountThresholdKey) && value != Math.Truncate(value)))
+                    {
+                        return $"阈值配置字段无效或超出范围: {item.Name}";
+                    }
+                }
+                else if (BooleanKeys.Contains(item.Name))
+                {
+                    recognizedFields++;
+                    if (!seenKeys.Add(item.Name)
+                        || item.Value.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                    {
+                        return $"阈值配置布尔字段无效或重复: {item.Name}";
+                    }
+                }
+            }
+
+            if (recognizedFields == 0)
+            {
+                return "阈值配置文件没有可识别的检测参数。";
+            }
+
+            var parsed = ParseSettings(root);
+            var validationError = ValidateSettingsValues(parsed);
+            if (validationError is not null)
+            {
+                return validationError;
+            }
+
+            settings = parsed;
+            return null;
         }
         catch (JsonException ex)
         {
-            return $"阈值配置文件无法解析: {resolvedPath} · {ex.Message}";
+            return $"阈值配置文件无法解析: {ex.Message}";
         }
         catch (Exception ex) when (ex is IOException
                                    or UnauthorizedAccessException
@@ -184,15 +217,93 @@ public sealed class DetectionConfigService
                                    or NotSupportedException
                                    or PathTooLongException)
         {
-            return $"阈值配置文件不可读取: {ex.Message}";
+            return $"阈值配置文件不可读取或路径无效: {ex.Message}";
         }
+    }
+
+    private static bool TryReadNumeric(JsonElement value, out double parsed)
+    {
+        if (value.ValueKind == JsonValueKind.Number)
+        {
+            return value.TryGetDouble(out parsed);
+        }
+
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            return double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out parsed)
+                || double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.CurrentCulture, out parsed);
+        }
+
+        parsed = default;
+        return false;
+    }
+
+    private static DetectionConfigSettings ParseSettings(JsonElement root)
+    {
+        var settings = new DetectionConfigSettings();
+        settings.VoltageMinThreshold = GetDouble(root, VoltageMinThresholdKey, settings.VoltageMinThreshold);
+        settings.VoltageMaxThreshold = GetDouble(root, VoltageMaxThresholdKey, settings.VoltageMaxThreshold);
+        settings.CurrentMaxThreshold = GetDouble(root, CurrentMaxThresholdKey, settings.CurrentMaxThreshold);
+        settings.CurrentUnbalanceMaxThreshold = GetDouble(root, CurrentUnbalanceMaxThresholdKey, settings.CurrentUnbalanceMaxThreshold);
+        settings.ActivePowerMinThreshold = GetDouble(root, ActivePowerMinThresholdKey, settings.ActivePowerMinThreshold);
+        settings.PowerFactorMinThreshold = GetDouble(root, PowerFactorMinThresholdKey, settings.PowerFactorMinThreshold);
+        settings.TemperatureMinThreshold = GetDouble(root, TemperatureMinThresholdKey, settings.TemperatureMinThreshold);
+        settings.TemperatureMaxThreshold = GetDouble(root, TemperatureMaxThresholdKey, settings.TemperatureMaxThreshold);
+        settings.CurrentActiveMinThreshold = GetDouble(root, CurrentActiveMinThresholdKey, settings.CurrentActiveMinThreshold);
+        settings.FreezeCountThreshold = GetDouble(root, FreezeCountThresholdKey, settings.FreezeCountThreshold);
+        settings.FreezeStdThreshold = GetDouble(root, FreezeStdThresholdKey, settings.FreezeStdThreshold);
+        settings.VoltageImbalanceThreshold = GetDouble(root, VoltageImbalanceThresholdKey, settings.VoltageImbalanceThreshold);
+        settings.CurrentOverloadEnabled = GetBool(root, CurrentOverloadKey, settings.CurrentOverloadEnabled);
+        settings.CurrentUnbalanceEnabled = GetBool(root, CurrentUnbalanceKey, settings.CurrentUnbalanceEnabled);
+        settings.PowerFactorEnabled = GetBool(root, PowerFactorKey, settings.PowerFactorEnabled);
+        settings.DetailOutputEnabled = GetBool(root, DetailOutputKey, settings.DetailOutputEnabled);
+
+        if (root.TryGetProperty(LegacyCurrentKey, out var legacyCurrent)
+                && legacyCurrent.ValueKind is JsonValueKind.True or JsonValueKind.False)
+        {
+            settings.CurrentOverloadEnabled = legacyCurrent.GetBoolean();
+            settings.CurrentUnbalanceEnabled = legacyCurrent.GetBoolean();
+        }
+
+        return settings;
+    }
+
+    private static string? ValidateSettingsValues(DetectionConfigSettings settings)
+    {
+        (string Name, double Value)[] values =
+        [
+            (VoltageMinThresholdKey, settings.VoltageMinThreshold),
+            (VoltageMaxThresholdKey, settings.VoltageMaxThreshold),
+            (CurrentMaxThresholdKey, settings.CurrentMaxThreshold),
+            (CurrentUnbalanceMaxThresholdKey, settings.CurrentUnbalanceMaxThreshold),
+            (ActivePowerMinThresholdKey, settings.ActivePowerMinThreshold),
+            (PowerFactorMinThresholdKey, settings.PowerFactorMinThreshold),
+            (TemperatureMinThresholdKey, settings.TemperatureMinThreshold),
+            (TemperatureMaxThresholdKey, settings.TemperatureMaxThreshold),
+            (CurrentActiveMinThresholdKey, settings.CurrentActiveMinThreshold),
+            (FreezeCountThresholdKey, settings.FreezeCountThreshold),
+            (FreezeStdThresholdKey, settings.FreezeStdThreshold),
+            (VoltageImbalanceThresholdKey, settings.VoltageImbalanceThreshold),
+        ];
+
+        foreach (var (name, value) in values)
+        {
+            var (min, max) = NumericBounds[name];
+            if (!double.IsFinite(value) || value < min || value > max
+                || (name == FreezeCountThresholdKey && value != Math.Truncate(value)))
+            {
+                return $"检测阈值超出允许范围: {name}";
+            }
+        }
+
+        return ValidateThresholdOrder(settings);
     }
 
     public void Save(string path, DetectionConfigSettings settings)
     {
         var resolvedPath = ResolveConfigPath(path);
+        var thresholdIssue = ValidateSettingsValues(settings);
         var normalized = Normalize(settings);
-        var thresholdIssue = ValidateThresholdOrder(normalized);
         if (thresholdIssue is not null)
         {
             throw new ArgumentException(thresholdIssue, nameof(settings));
@@ -224,9 +335,30 @@ public sealed class DetectionConfigService
             Directory.CreateDirectory(directory);
         }
 
-        File.WriteAllText(
-            resolvedPath,
-            JsonSerializer.Serialize(config, JsonOptions) + Environment.NewLine);
+        // Stage the complete file in the same directory, then atomically swap it.
+        // Keep the previous valid file as a recoverable .bak on every replacement.
+        var temporaryPath = resolvedPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            File.WriteAllText(
+                temporaryPath,
+                JsonSerializer.Serialize(config, JsonOptions) + Environment.NewLine);
+            if (File.Exists(resolvedPath))
+            {
+                File.Replace(temporaryPath, resolvedPath, resolvedPath + ".bak", ignoreMetadataErrors: true);
+            }
+            else
+            {
+                File.Move(temporaryPath, resolvedPath);
+            }
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
     }
 
     public static string ResolveConfigPath(string path)
@@ -309,7 +441,7 @@ public sealed class DetectionConfigService
             return value.ValueKind switch
             {
                 JsonValueKind.Number => value.GetDouble(),
-                JsonValueKind.String when double.TryParse(value.GetString(), out var parsed) => parsed,
+                JsonValueKind.String when TryReadNumeric(value, out var parsed) => parsed,
                 _ => fallback,
             };
         }

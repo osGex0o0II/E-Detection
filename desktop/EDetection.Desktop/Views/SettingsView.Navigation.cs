@@ -53,9 +53,9 @@ public sealed partial class SettingsView
                 : Visibility.Collapsed;
         }
 
-        SaveDetectionSettingsButton.Visibility = categorySectionName == "DefaultsSection"
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        var showDetectionActions = categorySectionName == "DefaultsSection";
+        SaveDetectionSettingsButton.Visibility = showDetectionActions ? Visibility.Visible : Visibility.Collapsed;
+        SaveAsDetectionConfigButton.Visibility = showDetectionActions ? Visibility.Visible : Visibility.Collapsed;
         SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
     }
 

@@ -21,46 +21,110 @@ public partial class MainViewModel
         INtfyNotificationSettings,
         ILlmAssistantSettings
 {
-    [RelayCommand]
-    private void LoadDetectionConfigFromPath()
+    public bool TryLoadPendingDetectionConfig(bool discardUnsavedChanges)
+    {
+        if (IsRunning)
+        {
+            ShowSettingsFeedback("检测运行中不可切换阈值文件。", InfoBarSeverity.Warning);
+            return false;
+        }
+
+        if (IsDetectionConfigDirty && !discardUnsavedChanges)
+        {
+            ShowSettingsFeedback("当前阈值尚未保存，请先保存或确认丢弃。", InfoBarSeverity.Warning);
+            return false;
+        }
+
+        if (!_detectionConfig.TryLoadValidated(PendingConfigPath, out var config, out var error))
+        {
+            ShowSettingsFeedback(error ?? "阈值文件无法加载。", InfoBarSeverity.Warning);
+            return false;
+        }
+
+        var path = Path.GetFullPath(DetectionConfigService.ResolveConfigPath(PendingConfigPath));
+        _activeDetectionConfigPath = path;
+        ConfigPath = path;
+        ApplyDetectionConfig(config);
+        AcceptDetectionConfigAsSaved();
+        SaveSettings();
+        NotifyDetectionConfigSessionChanged();
+        RefreshLocalDiagnostics();
+        ShowSettingsFeedback("已加载阈值文件。", InfoBarSeverity.Success);
+        return true;
+    }
+
+    public bool TrySaveDetectionConfigAs(string path)
+    {
+        if (IsRunning)
+        {
+            ShowSettingsFeedback("检测运行中不可保存阈值文件。", InfoBarSeverity.Warning);
+            return false;
+        }
+
+        try
+        {
+            if (!string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("阈值文件必须为 .json 格式。", nameof(path));
+            }
+
+            var target = Path.GetFullPath(DetectionConfigService.ResolveConfigPath(path));
+            _detectionConfig.Save(target, CaptureDetectionConfig());
+            _activeDetectionConfigPath = target;
+            ConfigPath = target;
+            AcceptDetectionConfigAsSaved();
+            SaveSettings();
+            NotifyDetectionConfigSessionChanged();
+            ShowSettingsFeedback("已将检测阈值另存为新文件。", InfoBarSeverity.Success);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            ShowSettingsFeedback($"另存为失败：{ex.Message}", InfoBarSeverity.Warning);
+            return false;
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditRunConfiguration))]
+    private void SaveSettingsFromPage()
     {
         if (IsRunning)
         {
             return;
         }
 
-        var validationError = DetectionConfigService.ValidateConfigFile(ConfigPath);
-        if (validationError is not null)
-        {
-            ShowSettingsFeedback(validationError, InfoBarSeverity.Warning);
-            return;
-        }
-
-        ApplyDetectionConfig(_detectionConfig.Load(ConfigPath));
-        RefreshLocalDiagnostics();
-        ShowSettingsFeedback("已加载阈值文件，请检查参数后保存。", InfoBarSeverity.Success);
-    }
-
-    [RelayCommand]
-    private void SaveSettingsFromPage()
-    {
-        SaveSettings();
         var thresholdsSaved = SaveDetectionConfig();
         RefreshDesktopHealth();
         RefreshLocalDiagnostics();
         if (thresholdsSaved)
         {
-            ShowSettingsFeedback("检测阈值已校验并保存。", InfoBarSeverity.Success);
+            SaveSettings();
+            ShowSettingsFeedback("已保存至当前生效阈值文件。", InfoBarSeverity.Success);
             AddLog("设置", "设置已保存。");
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanEditRunConfiguration))]
     private void ResetSettingsToDefaults()
     {
+        if (IsRunning)
+        {
+            return;
+        }
+
         ApplySettingsDefaults(_settings.CreateDefault());
+        _activeDetectionConfigPath = Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath));
         ApplyDetectionConfig(_detectionConfig.CreateDefault());
+        RefreshDetectionConfigDirty();
         var thresholdsSaved = SaveDetectionConfig();
+        if (!thresholdsSaved)
+        {
+            // Do not let the in-memory reset masquerade as saved detector settings.
+            _activeDetectionConfigPath = "";
+            IsDetectionConfigDirty = true;
+        }
+
+        NotifyDetectionConfigSessionChanged();
         SaveSettings();
         RefreshDesktopHealth();
         RefreshLocalDiagnostics();

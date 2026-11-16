@@ -45,7 +45,32 @@ public partial class MainViewModel
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
+    [NotifyPropertyChangedFor(nameof(DetectionConfigStatusText))]
     public partial string ConfigPath { get; set; } = "config.json";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPendingConfigPathChange))]
+    [NotifyPropertyChangedFor(nameof(DetectionConfigStatusText))]
+    public partial string PendingConfigPath { get; set; } = "config.json";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DetectionConfigStatusText))]
+    [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
+    [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
+    [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    public partial bool IsDetectionConfigDirty { get; set; }
+
+    public bool HasPendingConfigPathChange =>
+        !string.Equals(ConfigPath, PendingConfigPath, StringComparison.OrdinalIgnoreCase);
+
+    public string DetectionConfigStatusText =>
+        string.IsNullOrWhiteSpace(_activeDetectionConfigPath)
+            ? $"阈值配置尚未确认，请加载有效文件或另存为。待选择：{PendingConfigPath}"
+            : IsDetectionConfigDirty
+            ? $"阈值有未保存的修改。当前文件：{ConfigPath}"
+            : HasPendingConfigPathChange
+                ? $"待加载文件尚未生效。当前文件：{ConfigPath}"
+                : $"当前生效文件：{ConfigPath}";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
@@ -193,6 +218,8 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SaveSettingsFromPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ResetSettingsToDefaultsCommand))]
     [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
     [NotifyCanExecuteChangedFor(nameof(UseSelectedReportDirectoriesCommand))]
     [NotifyCanExecuteChangedFor(nameof(CopyCompletionSummaryCommand))]
@@ -668,11 +695,30 @@ public partial class MainViewModel
 
     partial void OnConfigPathChanged(string value)
     {
-        // Editing a destination must not reload incomplete paths or reset live thresholds.
+        PendingConfigPath = value;
+        OnPropertyChanged(nameof(HasPendingConfigPathChange));
+        OnPropertyChanged(nameof(DetectionConfigStatusText));
         RefreshLocalDiagnostics();
         RefreshFirstRunGuide();
         SavePreferenceSettings();
     }
+
+    partial void OnVoltageMinThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnVoltageMaxThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnCurrentMaxThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnCurrentUnbalanceMaxThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnActivePowerMinThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnPowerFactorMinThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnTemperatureMinThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnTemperatureMaxThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnCurrentActiveMinThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnFreezeCountThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnFreezeStdThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnVoltageImbalanceThresholdChanged(double value) => RefreshDetectionConfigDirty();
+    partial void OnCurrentOverloadEnabledChanged(bool value) => RefreshDetectionConfigDirty();
+    partial void OnCurrentUnbalanceEnabledChanged(bool value) => RefreshDetectionConfigDirty();
+    partial void OnPowerFactorEnabledChanged(bool value) => RefreshDetectionConfigDirty();
+    partial void OnDetailOutputEnabledChanged(bool value) => RefreshDetectionConfigDirty();
 
     partial void OnSelectedReportChanged(RecentReport? value)
     {

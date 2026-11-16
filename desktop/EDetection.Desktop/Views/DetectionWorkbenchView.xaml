@@ -511,10 +511,10 @@
                                  </Button>
                                 <Button AutomationProperties.Name="更多明细操作" ToolTipService.ToolTip="更多明细操作">
                                     <Button.Flyout>
-                                        <MenuFlyout>
-                                            <MenuFlyoutItem Text="复制源文件路径" Command="{Binding CopySelectedDetailSourcePathCommand}" />
-                                            <MenuFlyoutItem Text="复制筛选结果" Command="{Binding CopyFilteredDetailsCommand}" />
-                                            <MenuFlyoutItem Text="智能解读选中异常" Command="{Binding ExplainSelectedDetailCommand}" />
+                                        <MenuFlyout Opening="DetailActionsFlyout_Opening">
+                                            <MenuFlyoutItem x:Name="CopyDetailPathMenuItem" Text="复制源文件路径" Click="CopyDetailPathMenuItem_Click" />
+                                            <MenuFlyoutItem x:Name="CopyFilteredDetailsMenuItem" Text="复制筛选结果" Click="CopyFilteredDetailsMenuItem_Click" />
+                                            <MenuFlyoutItem x:Name="ExplainSelectedDetailMenuItem" Text="智能解读选中异常" Click="ExplainSelectedDetailMenuItem_Click" />
                                         </MenuFlyout>
                                     </Button.Flyout>
                                     <StackPanel Orientation="Horizontal" Spacing="6">

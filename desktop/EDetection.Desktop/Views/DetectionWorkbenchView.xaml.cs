@@ -7,6 +7,34 @@ public sealed partial class DetectionWorkbenchView : UserControl
 {
     private const double CompactWidth = 800;
 
+    private EDetection.Desktop.ViewModels.MainViewModel? ViewModel =>
+        DataContext as EDetection.Desktop.ViewModels.MainViewModel;
+
+    private void DetailActionsFlyout_Opening(object sender, object e)
+    {
+        CopyDetailPathMenuItem.IsEnabled = ViewModel?.CopySelectedDetailSourcePathCommand.CanExecute(null) == true;
+        CopyFilteredDetailsMenuItem.IsEnabled = ViewModel?.CopyFilteredDetailsCommand.CanExecute(null) == true;
+        ExplainSelectedDetailMenuItem.IsEnabled = ViewModel?.ExplainSelectedDetailCommand.CanExecute(null) == true;
+    }
+
+    private void CopyDetailPathMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var command = ViewModel?.CopySelectedDetailSourcePathCommand;
+        if (command?.CanExecute(null) == true) command.Execute(null);
+    }
+
+    private void CopyFilteredDetailsMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var command = ViewModel?.CopyFilteredDetailsCommand;
+        if (command?.CanExecute(null) == true) command.Execute(null);
+    }
+
+    private void ExplainSelectedDetailMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        var command = ViewModel?.ExplainSelectedDetailCommand;
+        if (command?.CanExecute(null) == true) command.Execute(null);
+    }
+
     public DetectionWorkbenchView()
     {
         InitializeComponent();
