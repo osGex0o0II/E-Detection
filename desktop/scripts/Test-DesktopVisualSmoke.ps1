@@ -16,6 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $scriptDir "DesktopUiAutomation.ps1")
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 
 if (![string]::IsNullOrWhiteSpace($PackagePath) -and [string]::IsNullOrWhiteSpace($AppPath)) {
@@ -162,12 +163,6 @@ function Get-MainWindowHandle([System.Diagnostics.Process]$Process, [int]$Timeou
     throw "Timed out waiting for the main window handle."
 }
 
-function Get-WindowTitle([IntPtr]$Handle) {
-    $builder = [System.Text.StringBuilder]::new(512)
-    [DesktopSmokeNative]::GetWindowText($Handle, $builder, $builder.Capacity) | Out-Null
-    $builder.ToString()
-}
-
 function Get-VisibleWindowRect([IntPtr]$Handle) {
     $rect = New-Object DesktopSmokeNative+RECT
     $result = [DesktopSmokeNative]::DwmGetWindowAttribute(
@@ -184,30 +179,6 @@ function Get-VisibleWindowRect([IntPtr]$Handle) {
     }
 
     $rect
-}
-
-function Wait-ForAutomationName([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
-    $element = Wait-ForAutomationElement $RootHandle $Name $TimeoutSeconds
-    return $element.Current.Name
-}
-
-function Wait-ForAutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-
-    do {
-        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($match -ne $null) {
-            return $match
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for automation element '$Name'."
 }
 
 function Find-AutomationElementById([IntPtr]$RootHandle, [string]$AutomationId, [int]$TimeoutSeconds) {

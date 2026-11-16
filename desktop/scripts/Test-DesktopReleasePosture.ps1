@@ -94,6 +94,7 @@ Assert-Contains $publish '"PackageContents=Native C# + .NET runtime only"' "rele
 Assert-Contains $publish '$zipPath = Join-Path $artifactRoot "EDetection-$RuntimeIdentifier.zip"' "publish must use the stable native archive name."
 Assert-Contains $publish '$installerName = "EDetection-Setup-$RuntimeIdentifier.exe"' "publish must use the stable native installer name."
 Assert-Contains $publish '"DesktopPathSafety.ps1"' "publish must include the shared path-safety helper."
+Assert-Contains $publish '"DesktopUiAutomation.ps1"' "publish must include the shared UI-automation helper."
 Assert-Contains $publish '"Test-DesktopScriptSafetySmoke.ps1"' "publish must include the script-safety smoke."
 foreach ($removedPublishToken in @("PackageProfile", "python-runtime", "python-wheelhouse", "BundledPython", "PythonPath", "SkipPythonWheelhouse")) {
     Assert-NotContains $publish $removedPublishToken "publish must not retain '$removedPublishToken'."

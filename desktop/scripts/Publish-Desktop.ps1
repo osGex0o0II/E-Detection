@@ -94,6 +94,7 @@ if (!(Test-Path $runningIconPath)) {
 
 $commonDeliveryScripts = @(
     "DesktopPathSafety.ps1",
+    "DesktopUiAutomation.ps1",
     "Install-Desktop.ps1",
     "Uninstall-Desktop.ps1",
     "Test-DesktopPackageHealth.ps1",

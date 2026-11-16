@@ -12,6 +12,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $scriptDir "DesktopUiAutomation.ps1")
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 
 if (![string]::IsNullOrWhiteSpace($PackagePath) -and [string]::IsNullOrWhiteSpace($AppPath)) {
@@ -87,49 +88,6 @@ public static class DesktopSingleInstanceSmokeNative
     }
 }
 "@
-
-function Get-WindowTitle([IntPtr]$Handle) {
-    $builder = [System.Text.StringBuilder]::new(512)
-    [DesktopSingleInstanceSmokeNative]::GetWindowText($Handle, $builder, $builder.Capacity) | Out-Null
-    $builder.ToString()
-}
-
-function Get-ProcessWindows([int]$ProcessId) {
-    $windows = [System.Collections.Generic.List[object]]::new()
-    $callback = [DesktopSingleInstanceSmokeNative+EnumWindowsProc]{
-        param([IntPtr]$hWnd, [IntPtr]$lParam)
-        $windowProcessId = 0
-        [DesktopSingleInstanceSmokeNative]::GetWindowThreadProcessId($hWnd, [ref]$windowProcessId) | Out-Null
-        if ($windowProcessId -eq $ProcessId -and [DesktopSingleInstanceSmokeNative]::IsWindowVisible($hWnd)) {
-            $title = Get-WindowTitle $hWnd
-            if (![string]::IsNullOrWhiteSpace($title)) {
-                $windows.Add([pscustomobject]@{
-                    Handle = $hWnd
-                    Title = $title
-                })
-            }
-        }
-
-        return $true
-    }
-
-    [DesktopSingleInstanceSmokeNative]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
-    $windows
-}
-
-function Wait-ForWindowTitle([int]$ProcessId, [string]$Pattern, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    do {
-        $match = Get-ProcessWindows $ProcessId | Where-Object { $_.Title -like $Pattern } | Select-Object -First 1
-        if ($match -ne $null) {
-            return $match
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for window title pattern '$Pattern'."
-}
 
 function Test-WindowTitle([int]$ProcessId, [string]$Pattern) {
     Get-ProcessWindows $ProcessId | Where-Object { $_.Title -like $Pattern } | Select-Object -First 1

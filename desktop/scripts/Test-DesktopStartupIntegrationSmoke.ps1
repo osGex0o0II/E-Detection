@@ -16,6 +16,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $scriptDir "DesktopUiAutomation.ps1")
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 
 if (![string]::IsNullOrWhiteSpace($PackagePath) -and [string]::IsNullOrWhiteSpace($AppPath)) {
@@ -292,68 +293,6 @@ public static class DesktopStartupIntegrationSmokeNative
     public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 }
 "@
-
-function Get-WindowTitle([IntPtr]$Handle) {
-    $builder = [System.Text.StringBuilder]::new(512)
-    [DesktopStartupIntegrationSmokeNative]::GetWindowText($Handle, $builder, $builder.Capacity) | Out-Null
-    $builder.ToString()
-}
-
-function Get-ProcessWindows([int]$ProcessId) {
-    $windows = [System.Collections.Generic.List[object]]::new()
-    $callback = [DesktopStartupIntegrationSmokeNative+EnumWindowsProc]{
-        param([IntPtr]$hWnd, [IntPtr]$lParam)
-        $windowProcessId = 0
-        [DesktopStartupIntegrationSmokeNative]::GetWindowThreadProcessId($hWnd, [ref]$windowProcessId) | Out-Null
-        if ($windowProcessId -eq $ProcessId -and [DesktopStartupIntegrationSmokeNative]::IsWindowVisible($hWnd)) {
-            $title = Get-WindowTitle $hWnd
-            if (![string]::IsNullOrWhiteSpace($title)) {
-                $windows.Add([pscustomobject]@{
-                    Handle = $hWnd
-                    Title = $title
-                })
-            }
-        }
-
-        return $true
-    }
-
-    [DesktopStartupIntegrationSmokeNative]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
-    $windows
-}
-
-function Wait-ForWindowTitle([int]$ProcessId, [string]$Pattern, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    do {
-        $match = Get-ProcessWindows $ProcessId | Where-Object { $_.Title -like $Pattern } | Select-Object -First 1
-        if ($match -ne $null) {
-            return $match
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for window title pattern '$Pattern'."
-}
-
-function Find-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-
-    do {
-        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($match -ne $null) {
-            return $match
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for automation element '$Name'."
-}
 
 function Find-AutomationElementByAutomationId([IntPtr]$RootHandle, [string]$AutomationId, [int]$TimeoutSeconds) {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)

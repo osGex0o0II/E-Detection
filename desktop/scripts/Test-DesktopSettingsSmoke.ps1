@@ -18,6 +18,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $scriptDir "DesktopUiAutomation.ps1")
 $repoRoot = Resolve-Path (Join-Path $scriptDir "..\..")
 
 if (![string]::IsNullOrWhiteSpace($PackagePath) -and [string]::IsNullOrWhiteSpace($AppPath)) {
@@ -455,68 +456,6 @@ function Save-WindowScreenshot(
     }
 }
 
-function Get-WindowTitle([IntPtr]$Handle) {
-    $builder = [System.Text.StringBuilder]::new(512)
-    [DesktopSettingsSmokeNative]::GetWindowText($Handle, $builder, $builder.Capacity) | Out-Null
-    $builder.ToString()
-}
-
-function Get-ProcessWindows([int]$ProcessId) {
-    $windows = [System.Collections.Generic.List[object]]::new()
-    $callback = [DesktopSettingsSmokeNative+EnumWindowsProc]{
-        param([IntPtr]$hWnd, [IntPtr]$lParam)
-        $windowProcessId = 0
-        [DesktopSettingsSmokeNative]::GetWindowThreadProcessId($hWnd, [ref]$windowProcessId) | Out-Null
-        if ($windowProcessId -eq $ProcessId -and [DesktopSettingsSmokeNative]::IsWindowVisible($hWnd)) {
-            $title = Get-WindowTitle $hWnd
-            if (![string]::IsNullOrWhiteSpace($title)) {
-                $windows.Add([pscustomobject]@{
-                    Handle = $hWnd
-                    Title = $title
-                })
-            }
-        }
-
-        return $true
-    }
-
-    [DesktopSettingsSmokeNative]::EnumWindows($callback, [IntPtr]::Zero) | Out-Null
-    $windows
-}
-
-function Wait-ForWindowTitle([int]$ProcessId, [string]$Pattern, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    do {
-        $match = Get-ProcessWindows $ProcessId | Where-Object { $_.Title -like $Pattern } | Select-Object -First 1
-        if ($match -ne $null) {
-            return $match
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for window title pattern '$Pattern'."
-}
-
-function Wait-ForAutomationName([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-
-    do {
-        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($match -ne $null) {
-            return $match.Current.Name
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    throw "Timed out waiting for automation element '$Name'."
-}
-
 function Bring-AutomationElementIntoView([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
@@ -566,27 +505,6 @@ function Wait-ForAutomationNameLike([IntPtr]$RootHandle, [string]$Pattern, [int]
     } while ((Get-Date) -lt $deadline)
 
     throw "Timed out waiting for automation element pattern '$Pattern'."
-}
-
-function Invoke-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-
-    do {
-        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($match -ne $null) {
-            $pattern = $match.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
-            $pattern.Invoke()
-            return $match.Current.Name
-        }
-
-        Start-Sleep -Milliseconds 250
-    } while ((Get-Date) -lt $deadline)
-
-    return $null
 }
 
 function Expand-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
