@@ -161,22 +161,22 @@ public partial class MainViewModel
         _applyingDetectionConfig = true;
         try
         {
-        VoltageMinThreshold = config.VoltageMinThreshold;
-        VoltageMaxThreshold = config.VoltageMaxThreshold;
-        CurrentMaxThreshold = config.CurrentMaxThreshold;
-        CurrentUnbalanceMaxThreshold = config.CurrentUnbalanceMaxThreshold;
-        ActivePowerMinThreshold = config.ActivePowerMinThreshold;
-        PowerFactorMinThreshold = config.PowerFactorMinThreshold;
-        TemperatureMinThreshold = config.TemperatureMinThreshold;
-        TemperatureMaxThreshold = config.TemperatureMaxThreshold;
-        CurrentActiveMinThreshold = config.CurrentActiveMinThreshold;
-        FreezeCountThreshold = config.FreezeCountThreshold;
-        FreezeStdThreshold = config.FreezeStdThreshold;
-        VoltageImbalanceThreshold = config.VoltageImbalanceThreshold;
-        CurrentOverloadEnabled = config.CurrentOverloadEnabled;
-        CurrentUnbalanceEnabled = config.CurrentUnbalanceEnabled;
-        PowerFactorEnabled = config.PowerFactorEnabled;
-        DetailOutputEnabled = config.DetailOutputEnabled;
+            VoltageMinThreshold = config.VoltageMinThreshold;
+            VoltageMaxThreshold = config.VoltageMaxThreshold;
+            CurrentMaxThreshold = config.CurrentMaxThreshold;
+            CurrentUnbalanceMaxThreshold = config.CurrentUnbalanceMaxThreshold;
+            ActivePowerMinThreshold = config.ActivePowerMinThreshold;
+            PowerFactorMinThreshold = config.PowerFactorMinThreshold;
+            TemperatureMinThreshold = config.TemperatureMinThreshold;
+            TemperatureMaxThreshold = config.TemperatureMaxThreshold;
+            CurrentActiveMinThreshold = config.CurrentActiveMinThreshold;
+            FreezeCountThreshold = config.FreezeCountThreshold;
+            FreezeStdThreshold = config.FreezeStdThreshold;
+            VoltageImbalanceThreshold = config.VoltageImbalanceThreshold;
+            CurrentOverloadEnabled = config.CurrentOverloadEnabled;
+            CurrentUnbalanceEnabled = config.CurrentUnbalanceEnabled;
+            PowerFactorEnabled = config.PowerFactorEnabled;
+            DetailOutputEnabled = config.DetailOutputEnabled;
         }
         finally
         {
