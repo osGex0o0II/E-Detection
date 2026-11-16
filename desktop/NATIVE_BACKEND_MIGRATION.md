@@ -1,8 +1,6 @@
 # 原生后端迁移记录（历史）
 
-> 归档：2026-11-16
-> 本文记录从 Python JSON Lines 进程桥接到进程内原生后端的迁移结果，仅作历史说明，不是当前执行策略。
-> 当前架构、运行生命周期和发布模型以 [`../docs/architecture.md`](../docs/architecture.md) 为准；字段与报告模型见 [`../docs/data-model.md`](../docs/data-model.md)。
+> 历史记录：Python 进程桥接迁移至 C# 原生后端。现行设计见 [架构](../docs/architecture.md) 与 [数据模型](../docs/data-model.md)。
 
 ## 迁移结论
 

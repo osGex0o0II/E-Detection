@@ -1,6 +1,6 @@
 # E-Detection 数据模型
 
-本文覆盖 CSV 输入、规则管线、检测请求/事件、报告 DTO、设置与密钥、工作簿列、异常/严重等级/传感器模型，以及运行状态。架构与线程模型见 [`architecture.md`](architecture.md)。
+本文件定义 CSV 输入、检测规则、事件、报告和设置的数据契约。模块与线程模型见 [架构](architecture.md)。
 
 ## 数据流总览
 
@@ -282,7 +282,11 @@ $env:EDETECTION_NATIVE_PARITY_TRACE = "<本地随机密钥>"
 ### 报告文本与历史 DTO
 
 - `ReportSummaryContext` 是 `ReportSummaryComposer` 的无状态输入快照，包含输入目录、明细、高风险设备、Top 问题、文件/异常/跳过计数、设备数、传感器计数、耗时和报告路径。
-- `RecentReport` 保存报告历史：`Path`、`CreatedAt`、`CompletedAt`、输入/输出目录、文件/异常/跳过计数、耗时、设备数、高风险设备、Top 问题、传感器总览、明细预览、`DetailPreviewCount`；`IsLatest` 与文件名/状态文本为计算属性。
+- `RecentReport` 保存报告历史，主要字段包括：
+  - 路径与时间：`Path`、`CreatedAt`、`CompletedAt`、输入与输出目录。
+  - 统计结果：文件、异常、跳过计数、耗时、设备数、高风险设备和主要异常类型。
+  - 展示数据：传感器总览、明细预览、`DetailPreviewCount`。
+  - 计算属性：`IsLatest`、文件名和状态文本。
 - `ReportHistoryService` 按路径去重、插入到最前、按最近报告上限裁剪，并重新标记 `IsLatest`。
 
 ## 设置模型
@@ -431,9 +435,42 @@ $env:EDETECTION_NATIVE_PARITY_TRACE = "<本地随机密钥>"
 
 ### `检测配置`
 
-两列 `配置项` / `值`，依次写入：
+工作表包含 `配置项` 和 `值` 两列，依次写入以下内容：
 
-`backend_mode=native`、`report_backend=NativeDetectionBackendService`、`V_MIN_THRESHOLD`、`V_MAX_THRESHOLD`、`V_IMBALANCE_THRESHOLD`、`I_MAX_THRESHOLD`、`I_UNBALANCE_MAX_THRESHOLD`、`I_MIN_ACTIVE_THRESHOLD`、`P_ACTIVE_MIN_THRESHOLD`、`PF_MIN_THRESHOLD`、`T_MIN_THRESHOLD`、`T_MAX_THRESHOLD`、`current_overload`、`current_unbalance`、`power_factor`、`detail_output`、`FREEZE_COUNT_THRESHOLD`、`FREEZE_STD_THRESHOLD`；空行后写运行信息 `input_dir`、`output_dir`、`total_files`、`processed_files`、`normal_files`、`anomaly_files`、`anomaly_records`、`skipped_files`、`generated_at`。
+```text
+backend_mode=native
+report_backend=NativeDetectionBackendService
+V_MIN_THRESHOLD
+V_MAX_THRESHOLD
+V_IMBALANCE_THRESHOLD
+I_MAX_THRESHOLD
+I_UNBALANCE_MAX_THRESHOLD
+I_MIN_ACTIVE_THRESHOLD
+P_ACTIVE_MIN_THRESHOLD
+PF_MIN_THRESHOLD
+T_MIN_THRESHOLD
+T_MAX_THRESHOLD
+current_overload
+current_unbalance
+power_factor
+detail_output
+FREEZE_COUNT_THRESHOLD
+FREEZE_STD_THRESHOLD
+```
+
+空行之后依次写入运行信息：
+
+```text
+input_dir
+output_dir
+total_files
+processed_files
+normal_files
+anomaly_files
+anomaly_records
+skipped_files
+generated_at
+```
 
 ### 发布安全
 
@@ -594,4 +631,7 @@ DetectionRowRulePipeline.Evaluate → rowTypes
 | 失败 | `error` 或退出码非 0/未处理异常 | 状态“检测失败”，错误日志与通知，任务栏错误。 |
 | 取消 | 二次确认后 `CancellationToken` | 状态“检测已取消”，任务栏暂停，不再发完成通知。 |
 
-`RunStateService` 生成运行汇总/报告摘要快照；`RunTelemetryService` 维护耗时、剩余时间、当前文件和处理速率；`ReportHistoryService` 在 `report_written` 或汇总时写入最近报告。运行事件与 UI 动作的映射由 `RunEventService` 统一处理，避免视图模型重复解析字符串事件。
+- `RunStateService`：生成运行汇总和报告摘要。
+- `RunTelemetryService`：维护耗时、剩余时间、当前文件和处理速率。
+- `ReportHistoryService`：在 `report_written` 或汇总时更新最近报告。
+- `RunEventService`：映射运行事件与 UI 动作。

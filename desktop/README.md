@@ -1,10 +1,10 @@
-# E-Detection Desktop
+# 桌面开发指南
 
 C# / .NET 11 / WinUI 3 Windows 桌面应用。检测核心位于 `EDetection.NativeCore`，不依赖 WinUI 运行时。
 
 ## 环境
 
-- Windows 10 1809+ x64（Windows 11 推荐）
+- Windows 10（1809 及以上）或 Windows 11（x64）
 - .NET SDK `11.0.100`
 - PowerShell 7（`pwsh`）
 - Inno Setup 7.1.1（仅构建安装器时需要；构建脚本兼容 Inno Setup 6）
@@ -32,7 +32,7 @@ pwsh -File .\desktop\scripts\Test-DesktopArchitecture.ps1 -NoBuild
 pwsh -File .\desktop\scripts\Test-DesktopNativeBackendSmoke.ps1 -NoBuild
 ```
 
-完整的 Windows CI 检查见 [`desktop.yml`](../.github/workflows/desktop.yml)。交互式 UI 烟测需要有桌面会话的 Windows 环境。
+完整检查见 [Windows CI 工作流](../.github/workflows/desktop.yml)。交互式 UI 检查需要 Windows 桌面会话。
 
 ## 发布
 
@@ -59,4 +59,4 @@ pwsh -File .\desktop\scripts\Test-DesktopInstallerSmoke.ps1 -InstallerPath .\art
 | 发布包缺少 WinAppSDK DLL | 检查 `WindowsAppSDKSelfContained=true`，重新运行发布脚本 |
 | 安装文件清单不一致 | 重新发布后构建安装器，不要手工修改 `install-files.txt` |
 
-更多信息：[架构](../docs/architecture.md) · [数据模型](../docs/data-model.md) · [交接](../docs/交接.md)。
+技术参考：[架构](../docs/architecture.md) · [数据模型](../docs/data-model.md) · [维护说明](../docs/交接.md)。
