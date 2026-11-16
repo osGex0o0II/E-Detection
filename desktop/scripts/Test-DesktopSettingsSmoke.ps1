@@ -566,7 +566,7 @@ try {
         }
 
         $expectedVersion = ($versionLine -replace '^Version=', '').Trim()
-        if ($updateStatusText -notmatch ("^当前版本\\s+" + [regex]::Escape($expectedVersion) + "(?:\\+.*)?$")) {
+        if ($updateStatusText -notmatch ("^当前版本\s+" + [regex]::Escape($expectedVersion) + "(?:\+.*)?$")) {
             throw "Settings smoke: displayed version '$updateStatusText' differs from package version '$expectedVersion'."
         }
     }
