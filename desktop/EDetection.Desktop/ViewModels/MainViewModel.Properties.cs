@@ -668,11 +668,7 @@ public partial class MainViewModel
 
     partial void OnConfigPathChanged(string value)
     {
-        if (!_suppressConfigPathReload)
-        {
-            ApplyDetectionConfig(_detectionConfig.Load(value));
-        }
-
+        // Editing a destination must not reload incomplete paths or reset live thresholds.
         RefreshLocalDiagnostics();
         RefreshFirstRunGuide();
         SavePreferenceSettings();

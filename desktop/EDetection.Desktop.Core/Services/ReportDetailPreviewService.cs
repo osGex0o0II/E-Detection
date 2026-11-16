@@ -59,6 +59,7 @@ public sealed class ReportDetailPreviewService
             "time" => filtered.OrderByDescending(item => item.TimeText).ThenBy(item => item.LocationText),
             "issue" => filtered.OrderBy(item => item.IssueText).ThenBy(item => item.LocationText),
             "value" => filtered.OrderBy(item => item.ValueText).ThenBy(item => item.LocationText),
+            "recommendation" => filtered.OrderBy(item => item.RecommendedAction).ThenBy(item => item.LocationText),
             _ => filtered,
         };
 

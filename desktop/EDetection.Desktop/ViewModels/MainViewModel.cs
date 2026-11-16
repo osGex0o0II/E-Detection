@@ -245,6 +245,7 @@ public partial class MainViewModel
         "time" => "按时间排序",
         "issue" => "按异常排序",
         "value" => "按异常值排序",
+        "recommendation" => "按建议排序",
         _ => "默认顺序",
     };
 

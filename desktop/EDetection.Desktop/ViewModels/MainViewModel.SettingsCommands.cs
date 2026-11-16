@@ -22,6 +22,26 @@ public partial class MainViewModel
         ILlmAssistantSettings
 {
     [RelayCommand]
+    private void LoadDetectionConfigFromPath()
+    {
+        if (IsRunning)
+        {
+            return;
+        }
+
+        var validationError = DetectionConfigService.ValidateConfigFile(ConfigPath);
+        if (validationError is not null)
+        {
+            ShowSettingsFeedback(validationError, InfoBarSeverity.Warning);
+            return;
+        }
+
+        ApplyDetectionConfig(_detectionConfig.Load(ConfigPath));
+        RefreshLocalDiagnostics();
+        ShowSettingsFeedback("已加载阈值文件，请检查参数后保存。", InfoBarSeverity.Success);
+    }
+
+    [RelayCommand]
     private void SaveSettingsFromPage()
     {
         SaveSettings();
@@ -30,7 +50,7 @@ public partial class MainViewModel
         RefreshLocalDiagnostics();
         if (thresholdsSaved)
         {
-            ShowSettingsFeedback("设置已保存。", InfoBarSeverity.Success);
+            ShowSettingsFeedback("检测阈值已校验并保存。", InfoBarSeverity.Success);
             AddLog("设置", "设置已保存。");
         }
     }

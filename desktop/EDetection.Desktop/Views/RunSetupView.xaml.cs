@@ -72,6 +72,29 @@ public sealed partial class RunSetupView : UserControl
         }
     }
 
+    private async void ClearRecentReports_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel?.ClearRecentReportsCommand.CanExecute(null) != true)
+        {
+            return;
+        }
+
+        var dialog = new ContentDialog
+        {
+            Title = "清空报告历史？",
+            Content = "将清除历史列表，不会删除磁盘上的 Excel 报告。",
+            PrimaryButtonText = "清空历史",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            ViewModel?.ClearRecentReportsCommand.Execute(null);
+        }
+    }
+
     private static async Task<StorageFolder?> PickFolderAsync()
     {
         var picker = new FolderPicker();
