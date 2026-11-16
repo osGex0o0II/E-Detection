@@ -9,12 +9,31 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class RunSetupView : UserControl
 {
+    // The setup pane is full width in the compact shell, so compact field
+    // layout has to follow the pane itself instead of the shell breakpoint.
+    // Stay below the narrowest wide-shell column (340 DIP).
+    private const double CompactSetupPaneWidth = 320;
+
+    private bool? _lastCompactLayout;
+
     public RunSetupView()
     {
         InitializeComponent();
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
+
+    private void RunSetupRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        var compact = e.NewSize.Width < CompactSetupPaneWidth;
+        if (_lastCompactLayout == compact)
+        {
+            return;
+        }
+
+        _lastCompactLayout = compact;
+        SetCompactLayout(compact);
+    }
 
     public void SetCompactLayout(bool compact)
     {

@@ -10,7 +10,9 @@ param(
 
     [int]$Height = 1000,
 
-    [int]$WaitSeconds = 5
+    [int]$WaitSeconds = 5,
+
+    [switch]$AllowClampedSize
 )
 
 $ErrorActionPreference = "Stop"
@@ -439,13 +441,31 @@ try {
     }
 
     $scale = $dpi / 96.0
-    $requestedPhysicalWidth = [Math]::Ceiling($Width * $scale)
-    $requestedPhysicalHeight = [Math]::Ceiling($Height * $scale)
     $workArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $targetX = $workArea.Left
     $targetY = $workArea.Top
-    $targetWidth = [Math]::Min($requestedPhysicalWidth, $workArea.Width)
-    $targetHeight = [Math]::Min($requestedPhysicalHeight, $workArea.Height)
+
+    # Measure the non-client frame before resizing so the requested size is a
+    # client-size request.  MoveWindow sizes the outer window; without this the
+    # reported client area is always smaller than the request by the frame.
+    $initialWindowRect = New-Object DesktopSmokeNative+RECT
+    if (![DesktopSmokeNative]::GetWindowRect($handle, [ref]$initialWindowRect)) {
+        throw "Failed to read the initial window rectangle."
+    }
+
+    $initialClientRect = New-Object DesktopSmokeNative+RECT
+    if (![DesktopSmokeNative]::GetClientRect($handle, [ref]$initialClientRect)) {
+        throw "Failed to read the initial client rectangle."
+    }
+
+    $frameWidthPhysical = ($initialWindowRect.Right - $initialWindowRect.Left) - ($initialClientRect.Right - $initialClientRect.Left)
+    $frameHeightPhysical = ($initialWindowRect.Bottom - $initialWindowRect.Top) - ($initialClientRect.Bottom - $initialClientRect.Top)
+    $requestedClientWidthPhysical = [Math]::Ceiling($Width * $scale)
+    $requestedClientHeightPhysical = [Math]::Ceiling($Height * $scale)
+    $desiredOuterWidth = $requestedClientWidthPhysical + [Math]::Max(0, $frameWidthPhysical)
+    $desiredOuterHeight = $requestedClientHeightPhysical + [Math]::Max(0, $frameHeightPhysical)
+    $targetWidth = [Math]::Min($desiredOuterWidth, $workArea.Width)
+    $targetHeight = [Math]::Min($desiredOuterHeight, $workArea.Height)
 
     [DesktopSmokeNative]::ShowWindow($handle, 9) | Out-Null
     [DesktopSmokeNative]::MoveWindow($handle, $targetX, $targetY, $targetWidth, $targetHeight, $true) | Out-Null
@@ -461,8 +481,15 @@ try {
 
     $startElement = Find-AutomationElementById $handle "RunStartButton" $WaitSeconds
     $settingsElement = Find-AutomationElementById $handle "SettingsTitleBarButton" $WaitSeconds
+    $processedMetricElement = Wait-ForAutomationElement $handle "文件" $WaitSeconds
     $metricElement = Wait-ForAutomationElement $handle "异常文件" $WaitSeconds
+    $anomalyRecordsMetricElement = Wait-ForAutomationElement $handle "异常记录" $WaitSeconds
+    $skippedMetricElement = Wait-ForAutomationElement $handle "跳过" $WaitSeconds
     $highRiskElement = Wait-ForAutomationElement $handle "高风险设备" $WaitSeconds
+    $issueRankElement = Wait-ForAutomationElement $handle "异常类型排行" $WaitSeconds
+    $detailSearchElement = Wait-ForAutomationElement $handle "搜索异常明细" $WaitSeconds
+    $severityFilterElement = Wait-ForAutomationElement $handle "筛选异常等级" $WaitSeconds
+    $issueTypeFilterElement = Wait-ForAutomationElement $handle "筛选异常类型" $WaitSeconds
     $setupScrollElement = Find-AutomationElementById $handle "SetupScroll" $WaitSeconds
     $workbenchScrollElement = Find-AutomationElementById $handle "WorkbenchScroll" $WaitSeconds
 
@@ -487,13 +514,13 @@ try {
     $actualOuterHeightDip = ($rect.Bottom - $rect.Top) / $scale
     $actualClientWidthDip = ($clientRect.Right - $clientRect.Left) / $scale
     $actualClientHeightDip = ($clientRect.Bottom - $clientRect.Top) / $scale
-    $sizeToleranceDip = 24
-    $widthClampedByWorkArea = $requestedPhysicalWidth -gt $workArea.Width
-    $heightClampedByWorkArea = $requestedPhysicalHeight -gt $workArea.Height
-    $widthClampedByMinimum = $actualOuterWidthDip -gt $Width + $sizeToleranceDip
-    $widthClampedByResize = $actualOuterWidthDip -lt $Width - $sizeToleranceDip
-    $heightClampedByMinimum = $actualOuterHeightDip -gt $Height + $sizeToleranceDip
-    $heightClampedByResize = $actualOuterHeightDip -lt $Height - $sizeToleranceDip
+    $sizeToleranceDip = 2
+    $widthClampedByWorkArea = $desiredOuterWidth -gt $workArea.Width
+    $heightClampedByWorkArea = $desiredOuterHeight -gt $workArea.Height
+    $widthClampedByMinimum = $actualClientWidthDip -gt $Width + $sizeToleranceDip
+    $widthClampedByResize = $actualClientWidthDip -lt $Width - $sizeToleranceDip
+    $heightClampedByMinimum = $actualClientHeightDip -gt $Height + $sizeToleranceDip
+    $heightClampedByResize = $actualClientHeightDip -lt $Height - $sizeToleranceDip
 
     $clampReasons = [System.Collections.Generic.List[string]]::new()
     if ($widthClampedByWorkArea) { $clampReasons.Add("requested width exceeds the work area") }
@@ -505,6 +532,19 @@ try {
     $sizeClamped = $clampReasons.Count -gt 0
 
     $startVisible = Test-ElementOnScreen $startElement $clientScreenRect
+    $startEnabled = $startElement.Current.IsEnabled
+    $startClickable = $false
+    if ($startEnabled) {
+        try {
+            $startInvokePattern = [System.Windows.Automation.InvokePattern]$startElement.GetCurrentPattern(
+                [System.Windows.Automation.InvokePattern]::Pattern)
+            $startClickable = $null -ne $startInvokePattern
+        }
+        catch {
+            $startClickable = $false
+        }
+    }
+
     $settingsVisible = Test-ElementOnScreen $settingsElement $clientScreenRect
     $settingsBounds = Get-ElementBounds $settingsElement
     if ($settingsBounds.ControlType -ne "ControlType.Button") {
@@ -512,26 +552,46 @@ try {
     }
 
     $settingsInCaptionRegion = $settingsVisible -and (($settingsBounds.X - $clientScreenRect.Left) -ge ($clientScreenRect.Right - $clientScreenRect.Left) * 0.70)
-    $metricVisible = Test-ElementOnScreen $metricElement $clientScreenRect
-    $highRiskVisible = Test-ElementOnScreen $highRiskElement $clientScreenRect
-
-    $setupScrollState = Get-AutomationScrollState $setupScrollElement
-    if ($setupScrollState -eq $null -or !$setupScrollState.VerticallyScrollable) {
-        throw "Visual smoke failed: the setup pane is not scrollable, so content below the fold is unreachable."
-    }
-
-    $setupStartReachable = $startVisible
-    if (!$setupStartReachable) {
-        foreach ($scrollPercent in 20, 30, 40, 50, 60, 70, 80, 90) {
-            [void](Set-AutomationScrollPercent $setupScrollElement $scrollPercent)
-            if (Test-ElementOnScreen $startElement $clientScreenRect) {
-                $setupStartReachable = $true
-                break
-            }
+    $metricElements = @(
+        $processedMetricElement,
+        $metricElement,
+        $anomalyRecordsMetricElement,
+        $skippedMetricElement
+    )
+    $metricBoundsList = @($metricElements | ForEach-Object { Get-ElementBounds $_ })
+    $metricVisible = $true
+    foreach ($element in $metricElements) {
+        if (!(Test-ElementOnScreen $element $clientScreenRect)) {
+            $metricVisible = $false
+            break
         }
     }
 
-    [void](Set-AutomationScrollPercent $setupScrollElement 100)
+    $metricYValues = @($metricBoundsList | ForEach-Object { $_.Y })
+    $metricYMaximum = ($metricYValues | Measure-Object -Maximum).Maximum
+    $metricYMinimum = ($metricYValues | Measure-Object -Minimum).Minimum
+    $metricYSpread = $metricYMaximum - $metricYMinimum
+    $metricLayout = if ($metricYSpread -le (12 * $scale)) { "4-across" } else { "2x2" }
+    # WorkbenchScroll carries the workbench content; DetectionWorkbenchView
+    # adds a 20 DIP right margin for the vertical scrollbar gutter.
+    $workbenchBounds = Get-ElementBounds $workbenchScrollElement
+    $workbenchWidthDip = ($workbenchBounds.Width / $scale) - 20
+    $expectedMetricLayout = if ($workbenchWidthDip -ge 700) { "4-across" } else { "2x2" }
+    $metricLayoutMatches = $metricLayout -eq $expectedMetricLayout
+    $workbenchPaneVisible = Test-ElementOnScreen $workbenchScrollElement $clientScreenRect
+
+    $highRiskVisible = Test-ElementOnScreen $highRiskElement $clientScreenRect
+    $highRiskBounds = Get-ElementBounds $highRiskElement
+    $issueRankBounds = Get-ElementBounds $issueRankElement
+    $riskLayout = if ([Math]::Abs($highRiskBounds.Y - $issueRankBounds.Y) -le (20 * $scale)) { "side-by-side" } else { "stacked" }
+    $expectedRiskLayout = if ($workbenchWidthDip -ge 900) { "side-by-side" } else { "stacked" }
+    $riskLayoutMatches = $riskLayout -eq $expectedRiskLayout
+
+    $setupScrollState = Get-AutomationScrollState $setupScrollElement
+    if ($setupScrollState -ne $null -and $setupScrollState.VerticallyScrollable) {
+        [void](Set-AutomationScrollPercent $setupScrollElement 100)
+    }
+
     $clearHistoryElement = Find-AutomationElementById $handle "ClearRecentReportsButton" $WaitSeconds
     if (!(Test-ElementOnScreen $clearHistoryElement $clientScreenRect)) {
         [void](Bring-AutomationElementIntoView $clearHistoryElement)
@@ -547,15 +607,37 @@ try {
     $setupBitmap.Dispose()
     $settingsElement.SetFocus()
     Start-Sleep -Milliseconds 200
-    [void](Set-AutomationScrollPercent $setupScrollElement 0)
-
-    $workbenchScrollState = Get-AutomationScrollState $workbenchScrollElement
-    if ($workbenchScrollState -eq $null -or !$workbenchScrollState.VerticallyScrollable) {
-        throw "Visual smoke failed: the workbench pane is not scrollable."
+    if ($setupScrollState -ne $null -and $setupScrollState.VerticallyScrollable) {
+        [void](Set-AutomationScrollPercent $setupScrollElement 0)
     }
 
-    [void](Set-AutomationScrollPercent $workbenchScrollElement 100)
+    $workbenchScrollState = Get-AutomationScrollState $workbenchScrollElement
+    $workbenchScrollable = $workbenchScrollState -ne $null -and $workbenchScrollState.VerticallyScrollable
+    if ($workbenchScrollable) {
+        [void](Set-AutomationScrollPercent $workbenchScrollElement 100)
+        Start-Sleep -Milliseconds 600
+    }
+
+    # The detail filters live below the initial workbench fold. Bring them into
+    # view before reading bounds so UIA reports real rectangles for every field.
+    [void](Bring-AutomationElementIntoView $detailSearchElement)
+    Start-Sleep -Milliseconds 500
+    $detailSearchBounds = Get-ElementBounds $detailSearchElement
+    $severityFilterBounds = Get-ElementBounds $severityFilterElement
+    $issueTypeFilterBounds = Get-ElementBounds $issueTypeFilterElement
+    $filterYValues = @($detailSearchBounds.Y, $severityFilterBounds.Y, $issueTypeFilterBounds.Y)
+    $filterYMaximum = ($filterYValues | Measure-Object -Maximum).Maximum
+    $filterYMinimum = ($filterYValues | Measure-Object -Minimum).Minimum
+    $filterYSpread = $filterYMaximum - $filterYMinimum
+    $filterLayout = if ($filterYSpread -le (12 * $scale)) { "one-row" } else { "wrapped" }
+    $expectedFilterLayout = if ($workbenchWidthDip -ge 720) { "one-row" } else { "wrapped" }
+    $filterLayoutMatches = $filterLayout -eq $expectedFilterLayout
+
     $eventLogElement = Wait-ForAutomationElement $handle "运行记录" $WaitSeconds
+    if (!(Test-ElementOnScreen $eventLogElement $clientScreenRect)) {
+        [void](Bring-AutomationElementIntoView $eventLogElement)
+    }
+
     $workbenchTabReachable = Test-ElementOnScreen $eventLogElement $clientScreenRect
 
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -567,8 +649,12 @@ try {
 
     $settingsElement.SetFocus()
     Start-Sleep -Milliseconds 200
-    [void](Set-AutomationScrollPercent $workbenchScrollElement 0)
-    [void](Set-AutomationScrollPercent $setupScrollElement 0)
+    if ($workbenchScrollable) {
+        [void](Set-AutomationScrollPercent $workbenchScrollElement 0)
+    }
+    if ($setupScrollState -ne $null -and $setupScrollState.VerticallyScrollable) {
+        [void](Set-AutomationScrollPercent $setupScrollElement 0)
+    }
     Start-Sleep -Milliseconds 300
 
     $capture = Capture-WindowBitmap $handle $rect
@@ -583,6 +669,19 @@ try {
 
     $screenshotPath = Join-Path $outputFull "main-window-$timestamp.png"
     $bitmap.Save($screenshotPath, [System.Drawing.Imaging.ImageFormat]::Png)
+
+    $layoutChecksPassed = $analysis.IsUseful `
+        -and $settingsInCaptionRegion `
+        -and $startVisible `
+        -and $startClickable `
+        -and $metricVisible `
+        -and $workbenchPaneVisible `
+        -and $metricLayoutMatches `
+        -and $riskLayoutMatches `
+        -and $filterLayoutMatches `
+        -and $setupBottomReachable `
+        -and $workbenchTabReachable
+    $runStatus = if ($sizeClamped) { "Skipped-ClampedRequestedSize" } elseif ($layoutChecksPassed) { "Passed" } else { "Failed" }
 
     $result = [pscustomobject]@{
         AppPath = $appFull
@@ -614,23 +713,42 @@ try {
         SettingsAction = $settingsAction
         EventLogTab = $eventLogTab
         StartVisible = $startVisible
+        StartEnabled = $startEnabled
+        StartClickable = $startClickable
         SettingsVisible = $settingsVisible
         SettingsInCaptionRegion = $settingsInCaptionRegion
         SettingsButtonBounds = $settingsBounds
+        WorkbenchWidthDip = [Math]::Round($workbenchWidthDip, 1)
+        WorkbenchPaneVisible = $workbenchPaneVisible
         MetricVisible = $metricVisible
+        MetricLayout = $metricLayout
+        ExpectedMetricLayout = $expectedMetricLayout
+        MetricLayoutMatches = $metricLayoutMatches
+        RiskLayout = $riskLayout
+        ExpectedRiskLayout = $expectedRiskLayout
+        RiskLayoutMatches = $riskLayoutMatches
+        FilterLayout = $filterLayout
+        ExpectedFilterLayout = $expectedFilterLayout
+        FilterLayoutMatches = $filterLayoutMatches
+        DetailSearchBounds = $detailSearchBounds
+        SeverityFilterBounds = $severityFilterBounds
+        IssueTypeFilterBounds = $issueTypeFilterBounds
         HighRiskVisible = $highRiskVisible
         SetupScroll = $setupScrollState
-        SetupStartReachable = $setupStartReachable
         SetupBottomReachable = $setupBottomReachable
         WorkbenchScroll = $workbenchScrollState
         WorkbenchTabReachable = $workbenchTabReachable
         StartButtonBounds = Get-ElementBounds $startElement
         MetricBounds = Get-ElementBounds $metricElement
-        HighRiskBounds = Get-ElementBounds $highRiskElement
+        MetricBoundsAll = @($metricBoundsList)
+        HighRiskBounds = $highRiskBounds
+        IssueRankBounds = $issueRankBounds
         EventLogTabBounds = Get-ElementBounds $eventLogElement
         Samples = $analysis.Samples
         UniqueColors = $analysis.UniqueColors
-        Passed = $analysis.IsUseful -and $settingsInCaptionRegion -and $metricVisible -and $highRiskVisible -and $setupStartReachable -and $setupBottomReachable -and $workbenchTabReachable
+        Status = $runStatus
+        PassedAtActualSize = $layoutChecksPassed
+        Passed = (-not $sizeClamped) -and $layoutChecksPassed
         CapturedAt = (Get-Date).ToString("o")
     }
 
@@ -641,24 +759,48 @@ try {
         throw "Visual smoke failed: screenshot appears blank or undersized. See $screenshotPath"
     }
 
-    if (!$metricVisible -or !$highRiskVisible) {
-        throw "Visual smoke failed: the workbench metrics/high-risk panel is not on-screen at the actual size ($([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP). See $screenshotPath"
+    if (!$startVisible -or !$startClickable) {
+        throw "Visual smoke failed: the primary Start button is not initially visible and clickable at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP (visible=$startVisible, enabled=$startEnabled, clickable=$startClickable). See $screenshotPath"
+    }
+
+    if (!$workbenchPaneVisible -or !$metricVisible) {
+        throw "Visual smoke failed: the workbench pane or its metric cards are not on-screen at the actual size ($([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP). See $screenshotPath"
+    }
+
+    if (!$metricLayoutMatches) {
+        throw "Visual smoke failed: workbench metrics use '$metricLayout' at $([Math]::Round($workbenchWidthDip, 1)) DIP width, expected '$expectedMetricLayout'."
+    }
+
+    if (!$riskLayoutMatches) {
+        throw "Visual smoke failed: the risk panels use '$riskLayout' at $([Math]::Round($workbenchWidthDip, 1)) DIP width, expected '$expectedRiskLayout'."
+    }
+
+    if (!$filterLayoutMatches) {
+        throw "Visual smoke failed: detail filters use '$filterLayout' at $([Math]::Round($workbenchWidthDip, 1)) DIP width, expected '$expectedFilterLayout'."
     }
 
     if (!$settingsInCaptionRegion) {
         throw "Visual smoke failed: the title-bar Settings button is not aligned with the caption-button region (X=$($settingsBounds.X), client width=$($clientScreenRect.Right - $clientScreenRect.Left))."
     }
 
-    if (!$setupStartReachable -or !$setupBottomReachable) {
-        throw "Visual smoke failed: setup content is not reachable by scrolling. See $screenshotPath"
+    if (!$setupBottomReachable) {
+        throw "Visual smoke failed: setup content is not reachable. See $screenshotPath"
     }
 
     if (!$workbenchTabReachable) {
-        throw "Visual smoke failed: the workbench tabs are not reachable by scrolling. See $workbenchBottomScreenshotPath"
+        throw "Visual smoke failed: the workbench tabs are not reachable. See $workbenchBottomScreenshotPath"
     }
 
     if ($sizeClamped) {
-        Write-Host "Requested $($Width)x$($Height) DIP was clamped to $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client area ($($clampReasons -join '; ')). This run verifies only the clamped size."
+        $clampDetail = "Requested $($Width)x$($Height) DIP produced a $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client area ($($clampReasons -join '; '))."
+        if (!$AllowClampedSize) {
+            throw "Visual smoke invalid for the requested size: $clampDetail Re-run with -AllowClampedSize only for clamped-size layout evidence."
+        }
+
+        Write-Warning "SKIPPED requested-size verification: $clampDetail Layout assertions passed at the clamped size only."
+        Write-Host "Visual smoke clamped-size evidence captured at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client: $screenshotPath"
+        Write-Host "Result: $resultPath"
+        return
     }
 
     Write-Host "Visual smoke passed at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client: $screenshotPath"

@@ -12,7 +12,11 @@ param(
 
     [int]$WaitSeconds = 8,
 
-    [switch]$SkipStartupIntegrationMutation
+    [int]$ThemeIndex = 0,
+
+    [switch]$SkipStartupIntegrationMutation,
+
+    [switch]$AllowClampedSize
 )
 
 $ErrorActionPreference = "Stop"
@@ -586,6 +590,96 @@ function Select-SettingsCategory([IntPtr]$RootHandle, [string]$Name) {
     throw "Settings category '$Name' was not selected (AutomationId=$($identifiers[$Name]))."
 }
 
+function Test-SettingsPageVisible([IntPtr]$RootHandle) {
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $back = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        (New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+            "SettingsBackButton")))
+    return $back -ne $null -and !$back.Current.IsOffscreen
+}
+
+function Test-EscapePopupVisible([IntPtr]$RootHandle) {
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $match = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        (New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::NameProperty,
+            "Esc")))
+    return $match -ne $null -and !$match.Current.IsOffscreen
+}
+
+function Send-EscapeToWindow([IntPtr]$Handle) {
+    [DesktopSettingsSmokeNative]::SetForegroundWindow($Handle) | Out-Null
+    Start-Sleep -Milliseconds 250
+    if ([DesktopSettingsSmokeNative]::GetForegroundWindow() -eq $Handle) {
+        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    }
+    else {
+        [DesktopSettingsSmokeNative]::PostMessage($Handle, 0x0100, [IntPtr]0x1B, [IntPtr]0) | Out-Null
+    }
+
+    Start-Sleep -Milliseconds 900
+}
+
+function Open-SettingsFromGear([IntPtr]$RootHandle) {
+    $gear = Get-AutomationElementById $RootHandle "SettingsTitleBarButton" $WaitSeconds
+    $gear.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    [void](Wait-ForAutomationName $RootHandle "搜索设置" $WaitSeconds)
+    Start-Sleep -Milliseconds 300
+}
+
+function Get-AutomationElementByNameAndControlType(
+    [IntPtr]$RootHandle,
+    [string]$Name,
+    [string]$ControlTypeProgrammaticName,
+    [int]$TimeoutSeconds) {
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        $Name)
+
+    do {
+        $matches = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        foreach ($match in $matches) {
+            if ($match.Current.ControlType.ProgrammaticName -eq $ControlTypeProgrammaticName) {
+                return $match
+            }
+        }
+
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Timed out waiting for automation element '$Name' of type '$ControlTypeProgrammaticName'."
+}
+
+function Set-SettingsSearchFocus([IntPtr]$RootHandle) {
+    $search = Get-AutomationElementByName $RootHandle "搜索设置" $WaitSeconds
+    try {
+        $search.SetFocus()
+        return $true
+    }
+    catch {
+        # AutoSuggestBox exposes its text editor as a child element.
+        $editCondition = New-Object System.Windows.Automation.PropertyCondition(
+            [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+            [System.Windows.Automation.ControlType]::Edit)
+        $edit = $search.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $editCondition)
+        if ($edit -ne $null) {
+            try {
+                $edit.SetFocus()
+                return $true
+            }
+            catch {
+            }
+        }
+    }
+
+    return $false
+}
+
 $process = $null
 
 try {
@@ -629,7 +723,7 @@ try {
         UpdateFeedUrl = "https://github.com/osGex0o0II/E-Detection/releases/latest"
         SelectedLogRetentionIndex = 2
         SelectedRecentReportLimitIndex = 2
-        SelectedThemeIndex = 0
+        SelectedThemeIndex = $ThemeIndex
         SelectedBackdropIndex = 0
         EnablePoetryStatus = $true
         PoetryServiceUrl = "https://poetry.palemoky.com/"
@@ -648,14 +742,31 @@ try {
     }
 
     $scale = $dpi / 96.0
-    $requestedPhysicalWidth = [Math]::Ceiling($Width * $scale)
-    $requestedPhysicalHeight = [Math]::Ceiling($Height * $scale)
     $workArea = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
-    $targetWidth = [Math]::Min($requestedPhysicalWidth, $workArea.Width)
-    $targetHeight = [Math]::Min($requestedPhysicalHeight, $workArea.Height)
+
+    # Measure the non-client frame before resizing so the requested size is a
+    # client-size request. MoveWindow sizes the outer window.
+    $initialWindowRect = New-Object DesktopSettingsSmokeNative+RECT
+    if (![DesktopSettingsSmokeNative]::GetWindowRect($mainWindow.Handle, [ref]$initialWindowRect)) {
+        throw "Settings smoke: failed to read the initial window rectangle."
+    }
+
+    $initialClientRect = New-Object DesktopSettingsSmokeNative+RECT
+    if (![DesktopSettingsSmokeNative]::GetClientRect($mainWindow.Handle, [ref]$initialClientRect)) {
+        throw "Settings smoke: failed to read the initial client rectangle."
+    }
+
+    $frameWidthPhysical = ($initialWindowRect.Right - $initialWindowRect.Left) - ($initialClientRect.Right - $initialClientRect.Left)
+    $frameHeightPhysical = ($initialWindowRect.Bottom - $initialWindowRect.Top) - ($initialClientRect.Bottom - $initialClientRect.Top)
+    $requestedClientWidthPhysical = [Math]::Ceiling($Width * $scale)
+    $requestedClientHeightPhysical = [Math]::Ceiling($Height * $scale)
+    $desiredOuterWidth = $requestedClientWidthPhysical + [Math]::Max(0, $frameWidthPhysical)
+    $desiredOuterHeight = $requestedClientHeightPhysical + [Math]::Max(0, $frameHeightPhysical)
+    $targetWidth = [Math]::Min($desiredOuterWidth, $workArea.Width)
+    $targetHeight = [Math]::Min($desiredOuterHeight, $workArea.Height)
     [DesktopSettingsSmokeNative]::MoveWindow($mainWindow.Handle, $workArea.Left, $workArea.Top, $targetWidth, $targetHeight, $true) | Out-Null
     [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds 700
 
     $windowRect = Get-VisibleWindowRect $mainWindow.Handle
     $clientRect = New-Object DesktopSettingsSmokeNative+RECT
@@ -678,14 +789,14 @@ try {
     $actualOuterHeightDip = ($windowRect.Bottom - $windowRect.Top) / $scale
     $actualClientWidthDip = ($clientRect.Right - $clientRect.Left) / $scale
     $actualClientHeightDip = ($clientRect.Bottom - $clientRect.Top) / $scale
-    $sizeToleranceDip = 24
+    $sizeToleranceDip = 2
     $clampReasons = [System.Collections.Generic.List[string]]::new()
-    if ($requestedPhysicalWidth -gt $workArea.Width) { $clampReasons.Add("requested width exceeds the work area") }
-    if ($requestedPhysicalHeight -gt $workArea.Height) { $clampReasons.Add("requested height exceeds the work area") }
-    if ($actualOuterWidthDip -gt $Width + $sizeToleranceDip) { $clampReasons.Add("window minimum width is larger than requested") }
-    if ($actualOuterWidthDip -lt $Width - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested width") }
-    if ($actualOuterHeightDip -gt $Height + $sizeToleranceDip) { $clampReasons.Add("window minimum height is larger than requested") }
-    if ($actualOuterHeightDip -lt $Height - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested height") }
+    if ($desiredOuterWidth -gt $workArea.Width) { $clampReasons.Add("requested width exceeds the work area") }
+    if ($desiredOuterHeight -gt $workArea.Height) { $clampReasons.Add("requested height exceeds the work area") }
+    if ($actualClientWidthDip -gt $Width + $sizeToleranceDip) { $clampReasons.Add("window minimum width is larger than requested") }
+    if ($actualClientWidthDip -lt $Width - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested width") }
+    if ($actualClientHeightDip -gt $Height + $sizeToleranceDip) { $clampReasons.Add("window minimum height is larger than requested") }
+    if ($actualClientHeightDip -lt $Height - $sizeToleranceDip) { $clampReasons.Add("window manager reduced the requested height") }
     $sizeClamped = $clampReasons.Count -gt 0
 
     $screenshotTimestamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -884,36 +995,149 @@ try {
     $desktopHealthSection = Wait-ForAutomationName $mainWindow.Handle "应用状态" $WaitSeconds
     $settingsScreenshots["Maintenance"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-maintenance" $screenshotTimestamp).Path
 
-    # Escape must close Settings and return focus to the title-bar gear, so a
-    # keyboard user is not stranded on a collapsed page.
-    $escapeNav = Get-AutomationElementById $mainWindow.Handle "SettingsNav_Detection" $WaitSeconds
-    $escapeNav.SetFocus()
-    Start-Sleep -Milliseconds 300
-    [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
-    Start-Sleep -Milliseconds 300
-    if ([DesktopSettingsSmokeNative]::GetForegroundWindow() -eq $mainWindow.Handle) {
-        [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
+    # Escape must close Settings from any focused control and return focus to
+    # the title-bar gear, so a keyboard user is not stranded on a collapsed page.
+    $escapeSearch = Get-AutomationElementByName $mainWindow.Handle "搜索设置" $WaitSeconds
+    $escapeSearchFocused = Set-SettingsSearchFocus $mainWindow.Handle
+    if (!$escapeSearchFocused) {
+        throw "Settings smoke: could not focus the Settings search box through UI Automation."
     }
-    else {
-        [DesktopSettingsSmokeNative]::PostMessage($mainWindow.Handle, 0x0100, [IntPtr]0x1B, [IntPtr]0) | Out-Null
+    Start-Sleep -Milliseconds 400
+    $stuckEscBeforeSearchEscape = Test-EscapePopupVisible $mainWindow.Handle
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsClosedBySearchEscape = -not (Test-SettingsPageVisible $mainWindow.Handle)
+    $focusedAfterSearchEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $focusRestoredAfterSearchEscape = ($focusedAfterSearchEscape -ne $null) -and ($focusedAfterSearchEscape.Current.AutomationId -eq "SettingsTitleBarButton")
+    $stuckEscAfterSearchEscape = Test-EscapePopupVisible $mainWindow.Handle
+    if (!$settingsClosedBySearchEscape) {
+        throw "Settings smoke: Escape did not close the Settings page from the search box."
     }
 
-    Start-Sleep -Milliseconds 900
-    $rootAfterEscape = [System.Windows.Automation.AutomationElement]::FromHandle($mainWindow.Handle)
-    $backAfterEscape = $rootAfterEscape.FindFirst(
-        [System.Windows.Automation.TreeScope]::Descendants,
-        (New-Object System.Windows.Automation.PropertyCondition(
-            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
-            "SettingsBackButton")))
-    $settingsClosedByEscape = $backAfterEscape -eq $null -or $backAfterEscape.Current.IsOffscreen
+    if (!$focusRestoredAfterSearchEscape) {
+        throw "Settings smoke: Escape from the search box did not restore focus to the title-bar Settings button."
+    }
+
+    if ($stuckEscBeforeSearchEscape -or $stuckEscAfterSearchEscape) {
+        throw "Settings smoke: a stray 'Esc' accelerator popup is visible over the page."
+    }
+
+    # Ctrl+, is the conventional Settings shortcut and must work from the shell.
+    [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
+    Start-Sleep -Milliseconds 300
+    $ctrlCommaTested = [DesktopSettingsSmokeNative]::GetForegroundWindow() -eq $mainWindow.Handle
+    $ctrlCommaOpenedSettings = $false
+    if ($ctrlCommaTested) {
+        [System.Windows.Forms.SendKeys]::SendWait("^,")
+        Start-Sleep -Milliseconds 900
+        $ctrlCommaOpenedSettings = Test-SettingsPageVisible $mainWindow.Handle
+        if (!$ctrlCommaOpenedSettings) {
+            throw "Settings smoke: Ctrl+, did not open the Settings page."
+        }
+    }
+    else {
+        Open-SettingsFromGear $mainWindow.Handle
+    }
+
+    # Alt+Left returns from Settings to the workbench.
+    $altLeftTested = [DesktopSettingsSmokeNative]::GetForegroundWindow() -eq $mainWindow.Handle
+    $altLeftClosedSettings = $false
+    if ($altLeftTested) {
+        [System.Windows.Forms.SendKeys]::SendWait("%{LEFT}")
+        Start-Sleep -Milliseconds 900
+        $altLeftClosedSettings = -not (Test-SettingsPageVisible $mainWindow.Handle)
+        if (!$altLeftClosedSettings) {
+            throw "Settings smoke: Alt+Left did not return to the workbench."
+        }
+    }
+    else {
+        $escapeNavButton = Get-AutomationElementByName $mainWindow.Handle "返回工作台" $WaitSeconds
+        $escapeNavButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+        Start-Sleep -Milliseconds 700
+        $altLeftClosedSettings = $false
+    }
+
+    if (!(Test-SettingsPageVisible $mainWindow.Handle)) {
+        Open-SettingsFromGear $mainWindow.Handle
+    }
+
+    # Escape must also work after focus moved through navigation.
+    $escapeNav = Get-AutomationElementById $mainWindow.Handle "SettingsNav_Detection" $WaitSeconds
+    $escapeNav.SetFocus()
+    Start-Sleep -Milliseconds 400
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsClosedByEscape = -not (Test-SettingsPageVisible $mainWindow.Handle)
     $focusedAfterEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
     $focusRestoredAfterEscape = ($focusedAfterEscape -ne $null) -and ($focusedAfterEscape.Current.AutomationId -eq "SettingsTitleBarButton")
     if (!$settingsClosedByEscape) {
-        throw "Settings smoke: Escape did not close the Settings page."
+        throw "Settings smoke: Escape did not close the Settings page from navigation."
     }
 
     if (!$focusRestoredAfterEscape) {
-        throw "Settings smoke: Escape did not restore focus to the title-bar Settings button."
+        throw "Settings smoke: Escape from navigation did not restore focus to the title-bar Settings button."
+    }
+
+    # A focused ComboBox and a focused TextBox must also hand Escape to the page.
+    Open-SettingsFromGear $mainWindow.Handle
+    Select-SettingsCategory $mainWindow.Handle "报告与数据"
+    $settingsComboBox = Get-AutomationElementByNameAndControlType $mainWindow.Handle "报告历史上限" "ControlType.ComboBox" $WaitSeconds
+    $settingsComboBox.SetFocus()
+    Start-Sleep -Milliseconds 300
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsClosedByComboEscape = -not (Test-SettingsPageVisible $mainWindow.Handle)
+    $focusedAfterComboEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $focusRestoredAfterComboEscape = ($focusedAfterComboEscape -ne $null) -and ($focusedAfterComboEscape.Current.AutomationId -eq "SettingsTitleBarButton")
+    if (!$settingsClosedByComboEscape) {
+        throw "Settings smoke: Escape did not close the Settings page from a ComboBox."
+    }
+
+    if (!$focusRestoredAfterComboEscape) {
+        throw "Settings smoke: Escape from a ComboBox did not restore focus to the title-bar Settings button."
+    }
+
+    Open-SettingsFromGear $mainWindow.Handle
+    Select-SettingsCategory $mainWindow.Handle "更新与维护"
+    $settingsTextBox = Get-AutomationElementByNameAndControlType $mainWindow.Handle "更新源" "ControlType.Edit" $WaitSeconds
+    $settingsTextBox.SetFocus()
+    Start-Sleep -Milliseconds 300
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsClosedByTextBoxEscape = -not (Test-SettingsPageVisible $mainWindow.Handle)
+    $focusedAfterTextBoxEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $focusRestoredAfterTextBoxEscape = ($focusedAfterTextBoxEscape -ne $null) -and ($focusedAfterTextBoxEscape.Current.AutomationId -eq "SettingsTitleBarButton")
+    if (!$settingsClosedByTextBoxEscape) {
+        throw "Settings smoke: Escape did not close the Settings page from a TextBox."
+    }
+
+    if (!$focusRestoredAfterTextBoxEscape) {
+        throw "Settings smoke: Escape from a TextBox did not restore focus to the title-bar Settings button."
+    }
+
+    # After a ContentDialog closes, focus returns inside Settings and Escape
+    # must still close the page rather than being swallowed by the dialog host.
+    Open-SettingsFromGear $mainWindow.Handle
+    $aboutButton = Get-AutomationElementByName $mainWindow.Handle "关于" $WaitSeconds
+    $aboutButton.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep -Milliseconds 900
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsOpenAfterDialogEscape = Test-SettingsPageVisible $mainWindow.Handle
+    if (!$settingsOpenAfterDialogEscape) {
+        throw "Settings smoke: the About dialog did not close before Settings, or the dialog did not open."
+    }
+
+    Send-EscapeToWindow $mainWindow.Handle
+    $settingsClosedAfterDialogEscape = -not (Test-SettingsPageVisible $mainWindow.Handle)
+    $focusedAfterDialogEscape = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $focusRestoredAfterDialogEscape = ($focusedAfterDialogEscape -ne $null) -and ($focusedAfterDialogEscape.Current.AutomationId -eq "SettingsTitleBarButton")
+    if (!$settingsClosedAfterDialogEscape) {
+        throw "Settings smoke: Escape did not close the Settings page after the About dialog closed."
+    }
+
+    if (!$focusRestoredAfterDialogEscape) {
+        throw "Settings smoke: Escape after the About dialog did not restore focus to the title-bar Settings button."
+    }
+
+    $stuckEscAfterAllEscape = Test-EscapePopupVisible $mainWindow.Handle
+    if ($stuckEscAfterAllEscape) {
+        throw "Settings smoke: a stray 'Esc' accelerator popup remained after closing Settings."
     }
     $settingsJson = Get-Content -Path $settingsPath -Raw | ConvertFrom-Json
     if ($settingsJson.SettingsVersion -ne 10) {
@@ -1015,6 +1239,7 @@ try {
         RemovedShortcutSettingsPersisted = @($removedShortcutSettings | Where-Object { $settingsJson.PSObject.Properties.Name -contains $_ })
         SettingsVersion = $settingsJson.SettingsVersion
         SkipStartupIntegrationMutation = [bool]$SkipStartupIntegrationMutation
+        ThemeIndex = $ThemeIndex
         DesktopHealthSection = $desktopHealthSection
         RecentLimitControl = $recentLimitControl
         LogLimitControl = $logLimitControl
@@ -1026,8 +1251,24 @@ try {
         SettingsSearchVisible = $settingsSearchVisible
         SettingsSaveVisible = $settingsSaveVisible
         SettingsResetVisible = $settingsResetVisible
+        SettingsClosedBySearchEscape = $settingsClosedBySearchEscape
+        FocusRestoredAfterSearchEscape = $focusRestoredAfterSearchEscape
+        StuckEscapePopupBeforeSearchEscape = $stuckEscBeforeSearchEscape
+        StuckEscapePopupAfterSearchEscape = $stuckEscAfterSearchEscape
+        CtrlCommaTested = $ctrlCommaTested
+        CtrlCommaOpenedSettings = $ctrlCommaOpenedSettings
+        AltLeftTested = $altLeftTested
+        AltLeftClosedSettings = $altLeftClosedSettings
         SettingsClosedByEscape = $settingsClosedByEscape
         FocusRestoredAfterEscape = $focusRestoredAfterEscape
+        SettingsClosedByComboEscape = $settingsClosedByComboEscape
+        FocusRestoredAfterComboEscape = $focusRestoredAfterComboEscape
+        SettingsClosedByTextBoxEscape = $settingsClosedByTextBoxEscape
+        FocusRestoredAfterTextBoxEscape = $focusRestoredAfterTextBoxEscape
+        SettingsOpenAfterDialogEscape = $settingsOpenAfterDialogEscape
+        SettingsClosedAfterDialogEscape = $settingsClosedAfterDialogEscape
+        FocusRestoredAfterDialogEscape = $focusRestoredAfterDialogEscape
+        StuckEscapePopupAfterAllEscape = $stuckEscAfterAllEscape
         Screenshots = $settingsScreenshots
         Dpi = $dpi
         RequestedDipWidth = $Width
@@ -1045,12 +1286,20 @@ try {
         EffectiveTestedDipHeight = [Math]::Round($actualClientHeightDip, 1)
         ResponsiveMode = if ($actualClientWidthDip -lt 1080) { "compact" } else { "comfortable" }
         Trigger = "Title bar settings button after writing persisted settings"
-        Passed = $true
+        Status = if ($sizeClamped) { "Skipped-ClampedRequestedSize" } else { "Passed" }
+        Passed = -not $sizeClamped
         CapturedAt = (Get-Date).ToString("o")
     } | ConvertTo-Json -Depth 6 | Set-Content -Path $resultPath -Encoding UTF8
 
     if ($sizeClamped) {
-        Write-Host "Requested $($Width)x$($Height) DIP was clamped to $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client area ($($clampReasons -join '; ')). This run verifies only the clamped size."
+        $clampDetail = "Requested $($Width)x$($Height) DIP produced a $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client area ($($clampReasons -join '; '))."
+        if (!$AllowClampedSize) {
+            throw "Settings smoke invalid for the requested size: $clampDetail Re-run with -AllowClampedSize only for clamped-size evidence."
+        }
+
+        Write-Warning "SKIPPED requested-size verification: $clampDetail Checks passed at the clamped size only."
+        Write-Host "Settings smoke clamped-size evidence captured at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client: $resultPath"
+        return
     }
 
     Write-Host "Settings smoke passed at $([Math]::Round($actualClientWidthDip, 1))x$([Math]::Round($actualClientHeightDip, 1)) DIP client: $resultPath"

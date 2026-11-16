@@ -8,11 +8,19 @@
     mc:Ignorable="d">
 
     <Border Style="{StaticResource SettingsRailStyle}">
-        <ScrollViewer x:Name="SetupScroll"
-                      AutomationProperties.AutomationId="SetupScroll"
-                      VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      HorizontalScrollMode="Disabled">
+        <Grid x:Name="RunSetupRoot"
+              RowSpacing="12"
+              SizeChanged="RunSetupRoot_SizeChanged">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <ScrollViewer x:Name="SetupScroll"
+                          Grid.Row="0"
+                          AutomationProperties.AutomationId="SetupScroll"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          HorizontalScrollMode="Disabled">
             <StackPanel Spacing="12"
                         Margin="0,0,20,0">
                 <StackPanel Spacing="4">
@@ -91,42 +99,6 @@
                     <ToggleSwitch Header="生成 Excel 报告"
                                   IsOn="{Binding WriteReport, Mode=TwoWay}"
                                   IsEnabled="{Binding IsIdle}" />
-
-                    <Grid x:Name="RunCommandGrid"
-                          ColumnSpacing="8"
-                          RowSpacing="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="0" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition x:Name="RunPrimaryCommandColumn" Width="*" />
-                            <ColumnDefinition x:Name="RunSecondaryCommandColumn" Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Button x:Name="RunStartButton"
-                                Command="{Binding StartCommand}"
-                                Style="{StaticResource AccentButtonStyle}"
-                                HorizontalAlignment="Stretch"
-                                AutomationProperties.Name="开始检测"
-                                ToolTipService.ToolTip="开始检测">
-                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                <FontIcon Glyph="&#xE768;" FontSize="14" />
-                                <TextBlock Text="开始检测" />
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="RunCancelButton"
-                                Grid.Column="1"
-                                Command="{Binding CancelCommand}"
-                                Visibility="{Binding CancelCommandVisibility}"
-                                HorizontalAlignment="Stretch"
-                                AutomationProperties.Name="{Binding CancelButtonText}"
-                                ToolTipService.ToolTip="{Binding CancelButtonText}">
-                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                                <FontIcon Glyph="&#xE711;" FontSize="14" />
-                                <TextBlock Text="{Binding CancelButtonText}" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
 
                     <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,1,0,0"
@@ -360,6 +332,48 @@
                     </Grid>
                 </StackPanel>
             </StackPanel>
-        </ScrollViewer>
+            </ScrollViewer>
+            <Border Grid.Row="1"
+                    Margin="0,0,20,0"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="0,1,0,0"
+                    Padding="0,10,0,0">
+                <Grid x:Name="RunCommandGrid"
+                      ColumnSpacing="8"
+                      RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="0" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="RunPrimaryCommandColumn" Width="*" />
+                        <ColumnDefinition x:Name="RunSecondaryCommandColumn" Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="RunStartButton"
+                            Command="{Binding StartCommand}"
+                            Style="{StaticResource AccentButtonStyle}"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.Name="开始检测"
+                            ToolTipService.ToolTip="开始检测">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE768;" FontSize="14" />
+                            <TextBlock Text="开始检测" />
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="RunCancelButton"
+                            Grid.Column="1"
+                            Command="{Binding CancelCommand}"
+                            Visibility="{Binding CancelCommandVisibility}"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.Name="{Binding CancelButtonText}"
+                            ToolTipService.ToolTip="{Binding CancelButtonText}">
+                        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                            <FontIcon Glyph="&#xE711;" FontSize="14" />
+                            <TextBlock Text="{Binding CancelButtonText}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
     </Border>
 </UserControl>

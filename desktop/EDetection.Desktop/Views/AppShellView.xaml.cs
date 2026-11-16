@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Windows.UI.ViewManagement;
 using EDetection.Desktop.ViewModels;
@@ -24,6 +25,7 @@ public sealed partial class AppShellView : UserControl
     public AppShellView()
     {
         InitializeComponent();
+        ConfigureKeyboardShortcuts();
         Loaded += AppShellView_Loaded;
         DataContextChanged += AppShellView_DataContextChanged;
         AppTitleBar.SizeChanged += (_, _) => QueueTitleBarInsetCorrection();
@@ -48,6 +50,41 @@ public sealed partial class AppShellView : UserControl
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e) =>
         ShowSettingsPage();
+
+    private void ConfigureKeyboardShortcuts()
+    {
+        // Windows.System.VirtualKey has no comma member, so the OEM comma key
+        // code is used directly for the conventional Ctrl+, Settings shortcut.
+        var settingsAccelerator = new KeyboardAccelerator
+        {
+            Key = (Windows.System.VirtualKey)0xBC,
+            Modifiers = Windows.System.VirtualKeyModifiers.Control,
+        };
+        settingsAccelerator.Invoked += (_, args) =>
+        {
+            args.Handled = true;
+            if (!_isSettingsPageVisible)
+            {
+                ShowSettingsPage();
+            }
+        };
+        Root.KeyboardAccelerators.Add(settingsAccelerator);
+
+        var backAccelerator = new KeyboardAccelerator
+        {
+            Key = Windows.System.VirtualKey.Left,
+            Modifiers = Windows.System.VirtualKeyModifiers.Menu,
+        };
+        backAccelerator.Invoked += (_, args) =>
+        {
+            args.Handled = true;
+            if (_isSettingsPageVisible)
+            {
+                ShowWorkbench();
+            }
+        };
+        Root.KeyboardAccelerators.Add(backAccelerator);
+    }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
 
@@ -223,7 +260,6 @@ public sealed partial class AppShellView : UserControl
             Grid.SetRow(WorkbenchScroll, 1);
             Grid.SetColumn(WorkbenchScroll, 0);
             Grid.SetColumnSpan(WorkbenchScroll, 2);
-            RunSetup.SetCompactLayout(true);
             if (layoutModeChanged)
             {
                 QueueCompactScrollReset();
@@ -266,7 +302,6 @@ public sealed partial class AppShellView : UserControl
         Grid.SetRow(WorkbenchScroll, 0);
         Grid.SetColumn(WorkbenchScroll, 1);
         Grid.SetColumnSpan(WorkbenchScroll, 1);
-        RunSetup.SetCompactLayout(false);
         if (layoutModeChanged)
         {
             WorkbenchScroll.ChangeView(null, 0, null, disableAnimation: true);

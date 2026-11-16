@@ -5,7 +5,13 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class DetectionWorkbenchView : UserControl
 {
-    private const double CompactWidth = 800;
+    // The workbench is sized by its own pane, not by the shell.  These
+    // thresholds keep each dense region readable independently: metrics fit
+    // four-across much earlier than the two risk panels or the filter row.
+    private const double WideMetricsWidth = 700;
+    private const double WideRiskWidth = 900;
+    private const double WideFilterWidth = 720;
+    private const double WideTelemetryWidth = 800;
 
     private EDetection.Desktop.ViewModels.MainViewModel? ViewModel =>
         DataContext as EDetection.Desktop.ViewModels.MainViewModel;
@@ -45,18 +51,17 @@ public sealed partial class DetectionWorkbenchView : UserControl
 
     private void ApplyResponsiveLayout(double width)
     {
-        var compact = width < CompactWidth;
-        ApplyMetricState(compact);
-        ApplyTelemetryLayout(compact);
-        ApplyActionLayouts(compact);
-        ApplyRiskLayout(compact);
-        ApplyDetailFilterLayout(compact);
+        ApplyMetricState(width >= WideMetricsWidth);
+        ApplyTelemetryLayout(width < WideTelemetryWidth);
+        ApplyActionLayouts(width < WideTelemetryWidth);
+        ApplyRiskLayout(width < WideRiskWidth);
+        ApplyDetailFilterLayout(width < WideFilterWidth);
     }
 
-    private void ApplyMetricState(bool compact)
+    private void ApplyMetricState(bool wide)
     {
-        WideMetricsTrigger.IsActive = !compact;
-        CompactMetricsTrigger.IsActive = compact;
+        WideMetricsTrigger.IsActive = wide;
+        CompactMetricsTrigger.IsActive = !wide;
     }
 
     private void ApplyTelemetryLayout(bool compact)

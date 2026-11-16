@@ -9,7 +9,8 @@
     mc:Ignorable="d">
 
     <Grid x:Name="Root"
-          SizeChanged="Root_SizeChanged">
+          SizeChanged="Root_SizeChanged"
+          KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />

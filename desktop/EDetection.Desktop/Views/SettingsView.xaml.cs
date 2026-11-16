@@ -127,14 +127,18 @@ public sealed partial class SettingsView : UserControl
     private void BackButton_Click(object sender, RoutedEventArgs e) =>
         BackRequested?.Invoke(this, EventArgs.Empty);
 
-    private void EscapeAccelerator_Invoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    private void SettingsRoot_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
     {
-        if (Visibility != Visibility.Visible)
+        if (e.Key != Windows.System.VirtualKey.Escape || Visibility != Visibility.Visible)
         {
             return;
         }
 
-        args.Handled = true;
+        // PreviewKeyDown tunnels through the page before controls such as
+        // AutoSuggestBox, TextBox, and ComboBox consume Escape.  A keyboard
+        // accelerator on the root only fired when focus was outside those
+        // controls and also rendered a stray accelerator tooltip.
+        e.Handled = true;
         BackRequested?.Invoke(this, EventArgs.Empty);
     }
 
