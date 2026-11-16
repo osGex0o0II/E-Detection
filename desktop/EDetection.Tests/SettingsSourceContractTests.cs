@@ -62,6 +62,30 @@ public sealed class SettingsSourceContractTests
         Assert.DoesNotContain("Command=\"{Binding CopyFilteredDetailsCommand}\"", xaml);
     }
 
+    [Fact]
+    public void SettingsNavigation_ExposesStableUiAutomationIdentifiers()
+    {
+        var xaml = ReadSource("desktop/EDetection.Desktop/Views/SettingsView.xaml");
+        var smoke = ReadSource("desktop/scripts/Test-DesktopSettingsSmoke.ps1");
+
+        foreach (var id in new[]
+        {
+            "SettingsNav_Detection",
+            "SettingsNav_Reports",
+            "SettingsNav_General",
+            "SettingsNav_Notifications",
+            "SettingsNav_Integrations",
+            "SettingsNav_Maintenance",
+        })
+        {
+            Assert.Contains($"AutomationProperties.AutomationId=\"{id}\"", xaml);
+            Assert.Contains($"\"{id}\"", smoke);
+        }
+
+        Assert.Contains("AutomationIdProperty", smoke);
+        Assert.Contains("SelectionItemPattern", smoke);
+    }
+
     private static string ReadSource(string relativePath, [CallerFilePath] string sourcePath = "")
     {
         var testsDirectory = Path.GetDirectoryName(sourcePath)!;

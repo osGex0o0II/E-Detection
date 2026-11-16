@@ -350,24 +350,50 @@ function Expand-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$Time
 }
 
 function Select-SettingsCategory([IntPtr]$RootHandle, [string]$Name) {
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
-    $condition = New-Object System.Windows.Automation.PropertyCondition(
-        [System.Windows.Automation.AutomationElement]::NameProperty,
-        $Name)
-    $matches = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
-    foreach ($match in $matches) {
-        try {
-            $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
-            $pattern.Select()
-            Start-Sleep -Milliseconds 150
-            return
-        }
-        catch {
-            # A label and its ListViewItem can expose the same accessible name.
-        }
+    $identifiers = @{
+        "检测" = "SettingsNav_Detection"
+        "报告与数据" = "SettingsNav_Reports"
+        "常规" = "SettingsNav_General"
+        "通知" = "SettingsNav_Notifications"
+        "连接与集成" = "SettingsNav_Integrations"
+        "更新与维护" = "SettingsNav_Maintenance"
     }
 
-    throw "Unable to select settings category '$Name'."
+    if (!$identifiers.ContainsKey($Name)) {
+        throw "Unknown settings category '$Name'."
+    }
+
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle($RootHandle)
+    $condition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        $identifiers[$Name])
+    $deadline = (Get-Date).AddSeconds($WaitSeconds)
+
+    do {
+        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        if ($null -ne $match) {
+            try {
+                $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
+                if (!$pattern.Current.IsSelected) {
+                    $pattern.Select()
+                }
+                Start-Sleep -Milliseconds 200
+                if ($pattern.Current.IsSelected) {
+                    return
+                }
+            }
+            catch [System.Windows.Automation.ElementNotAvailableException] {
+                # A WinUI navigation item may be re-created while its layout updates.
+            }
+            catch [System.InvalidOperationException] {
+                throw "Settings category '$Name' has no valid UIA selection pattern."
+            }
+        }
+
+        Start-Sleep -Milliseconds 200
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Settings category '$Name' was not selected (AutomationId=$($identifiers[$Name]))."
 }
 
 $process = $null
