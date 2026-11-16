@@ -25,7 +25,7 @@ public sealed partial class SettingsView
             return;
         }
 
-        NavigateToElementByName(sectionName);
+        ShowCategory(sectionName);
     }
 
     private void SelectCategoryBySection(string sectionName)
@@ -39,9 +39,25 @@ public sealed partial class SettingsView
                 _suppressCategoryScroll = true;
                 SettingsCategoryList.SelectedIndex = i;
                 _suppressCategoryScroll = false;
+                ShowCategory(categorySectionName);
                 return;
             }
         }
+    }
+
+    private void ShowCategory(string categorySectionName)
+    {
+        foreach (var section in GetSettingSections())
+        {
+            section.Visibility = GetCategorySectionName(section.Name) == categorySectionName
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        SaveDetectionSettingsButton.Visibility = categorySectionName == "DefaultsSection"
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
     }
 
     private void NavigateToElementByName(string elementName)
@@ -98,6 +114,7 @@ public sealed partial class SettingsView
     private void SettingsView_Loaded(object sender, RoutedEventArgs e)
     {
         CacheSettingRows();
+        SelectCategoryBySection("DefaultsSection");
         UpdateResponsiveLayout();
     }
 
@@ -123,7 +140,6 @@ public sealed partial class SettingsView
         }
 
         _suppressScrollSync = false;
-        UpdateSelectedCategoryFromScroll();
     }
 
     private void UpdateSelectedCategoryFromScroll()
@@ -198,9 +214,9 @@ public sealed partial class SettingsView
         {
             "ThresholdsSection" or "DetectionRulesSection" => "DefaultsSection",
             "LogsSection" => "ReportsSection",
-            "NotificationsSection" => "LlmSection",
-            "UpdatesSection" => "ProxySection",
-            "AdvancedSection" => "LlmSection",
+            "AppearanceSection" => "WindowSection",
+            "ProxySection" => "LlmSection",
+            "AdvancedSection" => "UpdatesSection",
             _ => sectionName,
         };
 }

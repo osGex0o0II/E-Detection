@@ -75,6 +75,7 @@ public sealed partial class SettingsView : UserControl
         _suppressScrollSync = true;
         SettingsCategoryList.SelectedIndex = 0;
         _suppressCategoryScroll = false;
+        SelectCategoryBySection("DefaultsSection");
         SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
         DispatcherQueue.TryEnqueue(() =>
         {

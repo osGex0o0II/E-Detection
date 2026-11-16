@@ -91,36 +91,36 @@
                     <ListViewItem Tag="ReportsSection">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE9F9;" FontSize="15" />
-                            <TextBlock Text="报告与记录" />
+                            <TextBlock Text="报告与数据" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem Tag="WindowSection">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE7F4;" FontSize="15" />
-                            <TextBlock Text="通知与窗口" />
+                            <TextBlock Text="常规" />
+                        </StackPanel>
+                    </ListViewItem>
+                    <ListViewItem Tag="NotificationsSection">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon Glyph="&#xE7F7;" FontSize="15" />
+                            <TextBlock Text="通知" />
                         </StackPanel>
                     </ListViewItem>
                     <ListViewItem Tag="LlmSection">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE713;" FontSize="15" />
-                            <TextBlock Text="智能助手与推送" />
+                            <FontIcon Glyph="&#xE774;" FontSize="15" />
+                            <TextBlock Text="连接与集成" />
                         </StackPanel>
                     </ListViewItem>
-                    <ListViewItem Tag="ProxySection">
+                    <ListViewItem Tag="UpdatesSection">
                         <StackPanel Orientation="Horizontal" Spacing="10">
                             <FontIcon Glyph="&#xE895;" FontSize="15" />
-                            <TextBlock Text="更新与网络" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="AppearanceSection">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE790;" FontSize="15" />
-                            <TextBlock Text="外观" />
+                            <TextBlock Text="更新与维护" />
                         </StackPanel>
                     </ListViewItem>
                 </ListView>
             </Grid>
-            <ScrollViewer x:Name="SettingsScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" ViewChanged="SettingsScroll_ViewChanged" SizeChanged="SettingsScroll_SizeChanged">
+            <ScrollViewer x:Name="SettingsScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" SizeChanged="SettingsScroll_SizeChanged">
                 <StackPanel x:Name="SettingsContentStack" MaxWidth="900" HorizontalAlignment="Stretch" Spacing="14" Padding="0,0,16,20">
                     <StackPanel x:Name="DefaultsSection" Spacing="8">
                         <TextBlock Text="检测" Style="{StaticResource SectionTitleTextStyle}" />
@@ -303,7 +303,7 @@
                     <StackPanel x:Name="ReportsSection" Spacing="8">
                         <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
                         <StackPanel Spacing="4">
-                            <controls:SettingsCard Header="生成 Excel 报告（建议开启）" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
+                            <controls:SettingsCard Header="生成 Excel 报告" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
                                 <ToggleSwitch IsOn="{x:Bind ViewModel.WriteReport, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="报告历史保留">
@@ -353,8 +353,8 @@
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="关闭按钮最小化到托盘" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="开启后，点击窗口关闭按钮不会退出程序。" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding CloseToTrayOnClose, Mode=TwoWay}" AutomationProperties.Name="关闭后最小化到托盘" />
+                                    <TextBlock Text="关闭窗口时隐藏到托盘" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="开启后，点击窗口关闭按钮不会退出程序。" />
+                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding CloseToTrayOnClose, Mode=TwoWay}" AutomationProperties.Name="关闭窗口时隐藏到托盘" />
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                 <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
@@ -865,10 +865,10 @@
                             <TextBlock Text="恢复默认" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding SaveSettingsFromPageCommand}" Style="{StaticResource AccentButtonStyle}" MinWidth="156" AutomationProperties.Name="保存并校验检测设置" ToolTipService.ToolTip="保存当前设置并校验检测阈值文件。">
+                    <Button x:Name="SaveDetectionSettingsButton" Command="{Binding SaveSettingsFromPageCommand}" Style="{StaticResource AccentButtonStyle}" MinWidth="120" AutomationProperties.Name="保存检测阈值" ToolTipService.ToolTip="校验并保存检测阈值；其他偏好自动保存。">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE74E;" FontSize="14" />
-                            <TextBlock Text="保存并校验检测设置" />
+                            <TextBlock Text="保存检测阈值" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
