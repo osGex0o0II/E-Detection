@@ -86,10 +86,16 @@ public sealed class SettingsSourceContractTests
         Assert.Contains("SelectionItemPattern", smoke);
     }
 
-    private static string ReadSource(string relativePath, [CallerFilePath] string sourcePath = "")
+    private static string ReadSource(string relativePath)
     {
-        var testsDirectory = Path.GetDirectoryName(sourcePath)!;
-        var repositoryRoot = Path.GetFullPath(Path.Combine(testsDirectory, "..", ".."));
-        return File.ReadAllText(Path.Combine(repositoryRoot, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "desktop", "EDetection.Desktop.slnx")))
+            {
+                return File.ReadAllText(Path.Combine(directory.FullName, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            }
+        }
+
+        throw new DirectoryNotFoundException($"Could not locate the repository root from '{AppContext.BaseDirectory}'.");
     }
 }
