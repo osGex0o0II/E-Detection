@@ -259,76 +259,15 @@ reportDetails（按严重等级排序的全部明细）
 
 ## 发布与打包模型
 
-### 发布属性
+桌面端使用 `dotnet publish` 自包含发布，并由 Inno Setup 生成按用户安装器。关键属性：
 
-`EDetection.Desktop.csproj` 的关键属性：
+- `WindowsPackageType=None`：未打包 WinUI 3 应用。
+- `WindowsAppSDKSelfContained=true`：发布包携带 Windows App SDK 运行时。
+- `PublishSingleFile=false`、`PublishTrimmed=false`：保留 WinUI 资源和依赖文件。
+- Windows CI 验证构建、测试、包健康和安装器；交互式 UI 烟测默认跳过。
 
-```xml
-<TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
-<TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-<WindowsPackageType>None</WindowsPackageType>
-<SelfContained>true</SelfContained>
-<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
-<PublishReadyToRun>false</PublishReadyToRun>
-<PublishSingleFile>false</PublishSingleFile>
-<PublishTrimmed>false</PublishTrimmed>
-```
-
-`WindowsAppSDKSelfContained=true` 让 Windows App SDK 二进制进入发布目录；否则干净机器需要预装 Windows App Runtime，而安装器不会代装。`PublishSingleFile=false` 保持 `.xbf` / `.pri` 与依赖 DLL 的可检查布局。
-
-### 产物
-
-| 路径 | 内容 |
-| --- | --- |
-| `artifacts/desktop/win-x64/publish/` | 自包含应用、WinAppSDK 运行时、WinUI 资源、`config.json`、交付脚本、`release-info.txt`、`INSTALL.txt`、`install-files.txt`。 |
-| `artifacts/desktop/win-x64/EDetection-win-x64.zip` | 便携包。 |
-| `artifacts/desktop/win-x64/installer/EDetection-Setup-win-x64.exe` | Inno Setup 安装器。 |
-
-`Publish-Desktop.ps1` 会清理并重建 `publish` 目录，校验 `EDetection.exe`、图标、`App.xbf`、`MainWindow.xbf`、`EDetection.pri`、`Styles/Common.xbf` 和 5 个视图/设置 `.xbf`（`AppShellView`、`DetectionWorkbenchView`、`RunSetupView`、`SettingsView`、`Settings/DetectionRulesSettingsSection`），复制 `config.json` 与交付脚本，写入 `release-info.txt` / `INSTALL.txt`，生成 `install-files.txt`，随后调用包健康检查并压缩 ZIP。包健康脚本同样要求 `Views/Settings/DetectionRulesSettingsSection.xbf`。
-
-### 安装器
-
-- 默认安装到 `%LOCALAPPDATA%\Programs\EDetection`，`PrivilegesRequired=lowest`，按用户安装，不需要管理员权限。
-- `ArchitecturesAllowed=x64compatible`；当前发布工作流只产出 `win-x64`。
-- 拒绝安装到磁盘根目录、用户根目录、桌面、`Program Files` 等不安全位置，也拒绝覆盖包含其他文件的普通目录。
-- 升级时按 `install-files.txt` 删除旧产品文件，并清理旧的 `core`、`e_detection`、`python-runtime`、`python-wheelhouse` 目录。
-- 卸载时运行 `Uninstall-Desktop.ps1 -CleanupOnly -Quiet` 清理注册表启动项和计划任务；用户设置默认保留，只有显式 `-RemoveSettings` 才删除。
-- CI 固定安装 Inno Setup 7.1.1 并校验安装器 SHA-256；本地脚本优先查找 Inno Setup 7，找不到时兼容 Inno Setup 6。
-
-### 发布门禁
-
-`.github/workflows/desktop.yml` 在 `windows-latest` 上执行：
-
-1. 包健康 fixture。
-2. `dotnet restore` / `dotnet build`。
-3. `dotnet format --verify-no-changes`。
-4. 架构门禁 + xUnit。
-5. 原生后端控制台冒烟（20 项）。
-6. 设置迁移、脚本安全、诊断脱敏、发布姿态烟测。
-7. 自包含发布、包健康、便携安装与安装器静态/安装/升级烟测。
-8. 仅在推送 `v*` 标签或手动指定 `release_tag` 时发布 GitHub Release。
-
-`v2.0.2` 发布物有意保持未签名；如果未配置签名证书，工作流也会生成未签名产物。SHA-256 仅验证文件完整性，不能验证发布者身份。
+详细命令、产物路径和故障处理见 [桌面开发指南](../desktop/README.md)。`v2.0.2` 未签名；SHA-256 仅验证文件完整性，不能验证发布者身份。
 
 ## 架构门禁与已知约束
 
-`Test-DesktopArchitecture.ps1` 检查：
-
-| 检查 | 规则 |
-| --- | --- |
-| 必需文件 | `Directory.Build.props`、`Directory.Packages.props`、Domain/Infrastructure/Tests 的 `csproj` 必须存在。 |
-| 旧产物 | `git ls-files build/E-Detection` 必须为空。 |
-| 中央包管理 | `desktop/**/*.csproj` 不允许出现带 `Version=` 的 `PackageReference`。 |
-| WinUI-free | `EDetection.Domain` 与 `EDetection.Desktop.Core` 的 `csproj` 不得包含 `Microsoft.WindowsAppSDK`、`Microsoft.WinUI` 或 `UseWinUI`。 |
-| 行数上限 | `MainViewModel.cs` ≤ 600；`NativeDetectionBackendService.cs` ≤ 120；每个 `SettingsView*.cs` ≤ 450；每个后端 partial ≤ 800；每个 `MainViewModel*.cs` partial ≤ 800。 |
-| 构建与测试 | 默认先 `dotnet build`，再 `dotnet test`；`-NoBuild` 可跳过构建。 |
-
-当前已知约束：
-
-- **未签名发布**：`v2.0.2` 没有 Authenticode 证书，Windows 可能显示未知发布者或 SmartScreen 提示。
-- **许可证未声明**：仓库当前没有 `LICENSE` 文件。
-- **UI 烟测依赖交互桌面**：默认 CI 跳过单实例、设置页和视觉烟测；只在 `workflow_dispatch` 且 `run_desktop_ui_smoke=true` 时运行。
-- **GitHub 语言统计滞后**：仓库主体是 C#，但 GitHub Linguist 缓存仍可能显示旧的 HTML 统计。
-- **安装路径受限**：安装器只接受空目录或既有 EDetection 产品目录，不能安装到受保护目录。
-- **ARM64 未形成发布链**：脚本和项目支持 `win-arm64`，但安装器与发布工作流当前只验证 `win-x64`。
-- **`Domain` 仍是骨架**：当前只有标记程序集，领域模型尚未从 `NativeCore` / `Desktop.Core` 迁移出来。
+`Test-DesktopArchitecture.ps1` 检查模块依赖、中央包管理、源文件行数上限及旧构建产物。变更涉及规则、设置迁移或发布流程时应执行相应回归测试。当前限制见 [状态](状态.md)。
