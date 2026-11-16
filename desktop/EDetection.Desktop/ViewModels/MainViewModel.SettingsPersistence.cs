@@ -158,34 +158,34 @@ public partial class MainViewModel
 
     private void InitializeDetectionConfig(string? preferredPath)
     {
-            var preferredConfigPath = DetectionConfigService.ResolveEffectiveConfigPath(saved.ConfigPath);
-            var configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out var loadedConfig, out var configError);
+        var preferredConfigPath = DetectionConfigService.ResolveEffectiveConfigPath(preferredPath);
+        var configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out var loadedConfig, out var configError);
+        if (!configLoaded)
+        {
+            var originalPath = preferredConfigPath;
+            preferredConfigPath = _detectionConfig.EnsureUserConfig();
+            configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out loadedConfig, out var fallbackError);
             if (!configLoaded)
             {
-                var originalPath = preferredConfigPath;
-                preferredConfigPath = _detectionConfig.EnsureUserConfig();
-                configLoaded = _detectionConfig.TryLoadValidated(preferredConfigPath, out loadedConfig, out var fallbackError);
-                if (!configLoaded)
-                {
-                    loadedConfig = _detectionConfig.CreateDefault();
-                    configError = $"配置文件无法安全加载：{originalPath}；默认配置也不可用：{fallbackError}";
-                }
-                else
-                {
-                    configError = $"原阈值文件不可用，已切换到默认文件：{originalPath}";
-                }
+                loadedConfig = _detectionConfig.CreateDefault();
+                configError = $"配置文件无法安全加载：{originalPath}；默认配置也不可用：{fallbackError}";
             }
-
-            ConfigPath = preferredConfigPath;
-            _activeDetectionConfigPath = configLoaded
-                ? Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath))
-                : "";
-            ApplyDetectionConfig(loadedConfig);
-            AcceptDetectionConfigAsSaved();
-            if (configError is not null)
+            else
             {
-                ShowSettingsFeedback(configError, InfoBarSeverity.Warning);
+                configError = $"原阈值文件不可用，已切换到默认文件：{originalPath}";
             }
+        }
+
+        ConfigPath = preferredConfigPath;
+        _activeDetectionConfigPath = configLoaded
+            ? Path.GetFullPath(DetectionConfigService.ResolveConfigPath(ConfigPath))
+            : "";
+        ApplyDetectionConfig(loadedConfig);
+        AcceptDetectionConfigAsSaved();
+        if (configError is not null)
+        {
+            ShowSettingsFeedback(configError, InfoBarSeverity.Warning);
+        }
     }
 
     private void ApplyDetectionConfig(DetectionConfigSettings config)
