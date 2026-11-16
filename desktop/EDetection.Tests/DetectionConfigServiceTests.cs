@@ -68,10 +68,11 @@ public sealed class DetectionConfigServiceTests
 
             service.Save(path, new DetectionConfigSettings { VoltageMinThreshold = 355 });
             service.Save(path, new DetectionConfigSettings { VoltageMinThreshold = 356 });
+            service.Save(path, new DetectionConfigSettings { VoltageMinThreshold = 357 });
             Assert.True(File.Exists(path + ".bak"));
-            Assert.Equal(355, JsonDocument.Parse(File.ReadAllText(path + ".bak"))
+            Assert.Equal(356, JsonDocument.Parse(File.ReadAllText(path + ".bak"))
                 .RootElement.GetProperty("V_MIN_THRESHOLD").GetDouble());
-            Assert.Equal(356, JsonDocument.Parse(File.ReadAllText(path))
+            Assert.Equal(357, JsonDocument.Parse(File.ReadAllText(path))
                 .RootElement.GetProperty("V_MIN_THRESHOLD").GetDouble());
             Assert.Equal("{\"unchanged\":true}", File.ReadAllText(other));
             Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
