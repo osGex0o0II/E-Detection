@@ -5,12 +5,17 @@
 <h1 align="center">E-Detection</h1>
 <p align="center">Windows 电力数据异常检测工具</p>
 <p align="center">
+  <img src="https://img.shields.io/badge/.NET-11-555555?style=flat-square&amp;labelColor=333333" alt=".NET 11" />
+  <img src="https://img.shields.io/badge/WinUI-3-555555?style=flat-square&amp;labelColor=333333" alt="WinUI 3" />
+  <img src="https://img.shields.io/badge/Windows-x64-555555?style=flat-square&amp;labelColor=333333" alt="Windows x64" />
+</p>
+<p align="center">
   <a href="https://github.com/osGex0o0II/E-Detection/releases/latest">下载</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="docs/README.md">开发文档</a>
 </p>
 
-E-Detection 批量分析电力监控及 SCADA 系统导出的 CSV 日报，识别电气与设备状态异常，并生成 Excel 报告。
+批量检测电力监控与 SCADA CSV 日报异常，生成 Excel 报告。
 
 ## 功能
 
@@ -19,7 +24,7 @@ E-Detection 批量分析电力监控及 SCADA 系统导出的 CSV 日报，识�
 - **CSV 处理**：递归扫描目录，支持 UTF-8、GB18030、GBK 等编码及常见测点列名。
 - **检测结果**：查看异常明细、设备汇总和报告历史，按需生成 Excel 工作簿。
 
-支持 Windows 10（版本 1809 及以上）和 Windows 11，均为 x64 平台。基于 C#、.NET 11 和 WinUI 3，检测在本机完成。
+Windows 10（1809+）/ 11 · x64 · 本地运行。
 
 ## 快速开始
 
