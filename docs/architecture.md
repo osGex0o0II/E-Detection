@@ -35,6 +35,16 @@ Desktop
 
 依赖方向只允许向下。新增引用前，确认不破坏 `Domain` / `Desktop.Core` 的 WinUI-free 约束与 `NativeCore` 的独立运行能力。
 
+### 命名与模块边界
+
+`EDetection.Domain`、`EDetection.Infrastructure` 与 `Desktop.Core` 的名称是刻意保留的架构接缝，不是待清理的历史包袱：
+
+- `EDetection.Domain` 固定领域类型的归属；即使当前只有标记程序集，也用于阻止核心逻辑向 WinUI 或宿主层反向渗透。
+- `EDetection.Infrastructure` 隔离 DI 与宿主适配，使 `NativeCore` 不依赖桌面运行时；替换后端或接入新宿主时只改这一层。
+- `Desktop.Core` 承载可无界面测试的应用服务，明确 WinUI 壳之外的可测试边界。
+
+调整上述边界需同步更新架构门禁与测试；普通重构不应重命名项目或命名空间。
+
 ## 项目职责
 
 ### `EDetection.NativeCore`

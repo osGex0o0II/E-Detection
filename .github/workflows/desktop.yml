@@ -368,6 +368,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     needs: winui-build
+    # The release environment admits only v* tags. For manual runs, dispatch from the
+    # release tag ref so github.ref is the tag; dispatching from main is rejected.
+    environment: release
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     permissions:
       contents: write
@@ -610,7 +613,9 @@ jobs:
               throw "Release $tag already exists. Published release assets are immutable for desktop updates; create a new patch tag instead."
           }
           else {
-              gh release create $tag $setupPath.FullName $zipPath.FullName --repo $env:GITHUB_REPOSITORY --verify-tag --title "E-Detection $tag" --notes-file $notesPath
+              # Create the release as a draft so assets can be labeled before publication.
+              # Once published, immutable releases lock their assets and tag.
+              gh release create $tag $setupPath.FullName $zipPath.FullName --repo $env:GITHUB_REPOSITORY --verify-tag --draft --title "E-Detection $tag" --notes-file $notesPath
               if ($LASTEXITCODE -ne 0) {
                   throw "Failed to create release $tag."
               }
@@ -632,5 +637,10 @@ jobs:
                   if ($LASTEXITCODE -ne 0) {
                       throw "Failed to set the label for release asset $assetName."
                   }
+              }
+
+              gh release edit $tag --repo $env:GITHUB_REPOSITORY --draft=false
+              if ($LASTEXITCODE -ne 0) {
+                  throw "Failed to publish draft release $tag."
               }
           }

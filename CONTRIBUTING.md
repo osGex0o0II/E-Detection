@@ -60,4 +60,4 @@ dotnet run --project .\desktop\EDetection.Desktop\EDetection.Desktop.csproj -c D
 - 中文文档保持简洁、专业，使用全角标点，不使用 emoji。
 - Markdown 使用相对链接，新增或移动文件后检查链接。
 - 不添加营销文案、合成截图或未经验证的性能与兼容性声明。
-- 仓库未提供开源许可证；再分发或用于其他项目前请先确认授权。
+- 项目使用 [MIT 许可证](LICENSE)；再分发时请保留版权与许可声明。

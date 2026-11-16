@@ -42,4 +42,4 @@ CSV 只读，不覆盖原文件。
 
 签名状态见 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest)；未签名安装包可能触发安全提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
 
-仓库未提供开源许可证；修改或再分发前请确认授权。安全漏洞请按 [安全策略](SECURITY.md) 私下报告，不要公开 Issue。
+本项目使用 [MIT 许可证](LICENSE)，版权归 E-Detection contributors 所有。安全漏洞请按 [安全策略](SECURITY.md) 私下报告，不要公开 Issue。
