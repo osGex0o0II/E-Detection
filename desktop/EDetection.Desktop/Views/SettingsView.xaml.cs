@@ -20,8 +20,6 @@ public sealed partial class SettingsView : UserControl
     private const double StackedThresholdBreakpoint = 640;
 
     private bool _suppressCategoryScroll;
-    private bool _suppressScrollSync;
-    private int _navigationScrollVersion;
     private readonly List<SettingRowLayoutState> _settingRows = [];
     private readonly IReadOnlyList<SettingsSearchEntry> _searchEntries;
 
@@ -72,7 +70,6 @@ public sealed partial class SettingsView : UserControl
     public void PrepareForDisplay(string? initialSectionName = null)
     {
         _suppressCategoryScroll = true;
-        _suppressScrollSync = true;
         SettingsCategoryList.SelectedIndex = 0;
         _suppressCategoryScroll = false;
         SelectCategoryBySection("DefaultsSection");
@@ -81,7 +78,6 @@ public sealed partial class SettingsView : UserControl
         {
             SettingsScroll.UpdateLayout();
             SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
-            _suppressScrollSync = false;
             NavigateToSectionByName(string.IsNullOrWhiteSpace(initialSectionName)
                 ? "DefaultsSection"
                 : initialSectionName);

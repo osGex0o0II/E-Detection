@@ -15,7 +15,9 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-        </Grid.RowDefinitions>        <TitleBar x:Name="AppTitleBar"
+        </Grid.RowDefinitions>
+
+        <TitleBar x:Name="AppTitleBar"
                   Grid.Row="0"
                   Title="E-Detection">
             <TitleBar.LeftHeader>
@@ -42,8 +44,6 @@
                 </Button>
             </TitleBar.RightHeader>
         </TitleBar>
-
-
 
         <Border x:Name="StatusBand"
                 Grid.Row="1"

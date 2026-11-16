@@ -97,7 +97,7 @@ public sealed partial class SettingsView
         new("更新代理", "更新与维护", "更新 网络代理 proxy", "UpdatesSection", TargetName: "UpdateProxyRow", ExpanderName: "AdvancedUpdateExpander"),
         new("更新检查方式", "更新与维护", "更新 自动检查 手动检查", "UpdatesSection", TargetName: "UpdateChannelRow", ExpanderName: "AdvancedUpdateExpander"),
         new("更新源", "更新与维护", "更新源 feed release github", "UpdatesSection", TargetName: "UpdateFeedRow", ExpanderName: "AdvancedUpdateExpander"),
-        new("维护", "更新与维护", "维护 应用状态 原生 检测核心 设置存储", "AdvancedSection"),
+        new("维护", "更新与维护", "维护 应用状态 检测核心 设置存储", "AdvancedSection"),
     ];
 
     private sealed record SettingsSearchEntry(
