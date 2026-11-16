@@ -15,7 +15,7 @@ on:
   pull_request:
     paths:
       - "desktop/**"
-      - "desktop/scripts/**"
+      - "config.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
       - "NuGet.Config"
@@ -28,12 +28,16 @@ on:
       - "v*"
     paths:
       - "desktop/**"
-      - "desktop/scripts/**"
+      - "config.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
       - "NuGet.Config"
       - "global.json"
       - ".github/workflows/desktop.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !(startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag != '')) }}
 
 permissions:
   contents: read
@@ -106,6 +110,51 @@ jobs:
 
       - name: Build
         run: dotnet build desktop/EDetection.Desktop.slnx -c Debug --no-restore
+
+      - name: Audit NuGet dependencies for vulnerabilities
+        shell: pwsh
+        run: |
+          $output = dotnet list desktop/EDetection.Desktop.slnx package --vulnerable --include-transitive --format json | Out-String
+          if ($LASTEXITCODE -ne 0) {
+              throw "dotnet list package failed with exit code $LASTEXITCODE."
+          }
+
+          $report = $output | ConvertFrom-Json
+          if ($null -eq $report.projects -or @($report.projects).Count -eq 0) {
+              throw "dotnet list package reported no projects; vulnerability coverage is incomplete."
+          }
+
+          $vulnerabilities = @(
+              foreach ($project in @($report.projects)) {
+                  foreach ($framework in @($project.frameworks)) {
+                      $packages = @($framework.topLevelPackages) + @($framework.transitivePackages)
+                      foreach ($package in $packages) {
+                          if ($null -eq $package -or $null -eq $package.vulnerabilities) {
+                              continue
+                          }
+
+                          foreach ($vulnerability in @($package.vulnerabilities)) {
+                              [pscustomobject]@{
+                                  Project = $project.path
+                                  Framework = $framework.framework
+                                  Package = $package.id
+                                  Version = $package.resolvedVersion
+                                  Severity = $vulnerability.severity
+                                  Advisory = $vulnerability.advisoryUrl
+                              }
+                          }
+                      }
+                  }
+              }
+          )
+
+          if ($vulnerabilities.Count -eq 0) {
+              Write-Host "No known vulnerable NuGet packages were reported."
+              exit 0
+          }
+
+          $vulnerabilities | Format-Table -AutoSize | Out-String | Write-Host
+          throw "$($vulnerabilities.Count) vulnerable NuGet package reference(s) were reported."
 
       - name: Verify formatting
         run: dotnet format desktop/EDetection.Desktop.slnx --verify-no-changes --no-restore
@@ -298,6 +347,7 @@ jobs:
             artifacts/desktop/win-x64/EDetection-win-x64.zip
             artifacts/desktop/win-x64/installer/EDetection-Setup-win-x64.exe
           if-no-files-found: error
+          retention-days: 14
 
       - name: Explain build-only run
         if: ${{ !(startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')) }}
@@ -316,6 +366,7 @@ jobs:
   release:
     name: publish GitHub release
     runs-on: windows-latest
+    timeout-minutes: 30
     needs: winui-build
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
     permissions:

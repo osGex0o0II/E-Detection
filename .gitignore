@@ -16,3 +16,9 @@ E-Detection_extracted/
 电气异常报告_*.csv
 电气异常报告_*.xlsx
 *.output
+.vs/
+TestResults/
+*.trx
+*.user
+*.suo
+.codex/

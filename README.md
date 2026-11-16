@@ -36,10 +36,10 @@ CSV 只读，不覆盖原文件。
 
 ## 开发
 
-构建需 .NET SDK 11.0.100、PowerShell 7；命令见 [桌面开发指南](desktop/README.md)，设计与数据见 [技术文档](docs/README.md)。
+构建需 .NET SDK 11.0.100、PowerShell 7；命令见 [桌面开发指南](desktop/README.md)，设计与数据见 [技术文档](docs/README.md)。参与开发前请阅读 [贡献指南](CONTRIBUTING.md)。
 
 ## 发布与许可
 
 签名状态见 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest)；未签名安装包可能触发安全提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
 
-仓库未提供开源许可证；修改或再分发前请确认授权。
+仓库未提供开源许可证；修改或再分发前请确认授权。安全漏洞请按 [安全策略](SECURITY.md) 私下报告，不要公开 Issue。

@@ -6,6 +6,23 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+[*.cs]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+# Deferred until the existing sources get a dedicated using-sort pass; enabling it
+# now makes `dotnet format --verify-no-changes` fail on current code.
+# dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+
 [*.{py,json,md,toml,txt}]
 indent_style = space
 indent_size = 4
