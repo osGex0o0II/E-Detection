@@ -269,7 +269,7 @@ reportDetails（按严重等级排序的全部明细）
 - `PublishSingleFile=false`、`PublishTrimmed=false`：保留 WinUI 资源和依赖文件。
 - Windows CI 验证构建、测试、包健康和安装器；交互式 UI 烟测默认跳过。
 
-详细命令、产物路径和故障处理见 [桌面开发指南](../desktop/README.md)。`v2.0.2` 未签名；SHA-256 仅验证文件完整性，不能验证发布者身份。
+详细命令、产物路径和故障处理见 [桌面开发指南](../desktop/README.md)。签名状态以对应 Release 为准；SHA-256 仅验证文件完整性，不能验证发布者身份。
 
 ## 架构门禁与已知约束
 

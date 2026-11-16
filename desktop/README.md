@@ -47,7 +47,7 @@ pwsh -File .\desktop\scripts\Test-DesktopInstallerSmoke.ps1 -InstallerPath .\art
 
 安装器按用户安装，默认路径为 `%LOCALAPPDATA%\Programs\EDetection`；卸载默认保留设置，显式使用 `-RemoveSettings` 才会清理设置文件。
 
-`v2.0.2` 安装器与便携包未签名，Windows 可能显示“未知发布者”或 SmartScreen 提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
+发布物签名状态以对应 GitHub Release 为准。未签名安装包可能触发“未知发布者”或 SmartScreen 提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
 
 ## 常见问题
 

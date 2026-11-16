@@ -40,6 +40,6 @@ Windows 10（1809+）/ 11 · x64 · 本地运行。
 
 ## 发布与许可
 
-`v2.0.2` 发布物未签名，Windows 可能显示“未知发布者”或 SmartScreen 提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
+发布物签名状态以 [Releases](https://github.com/osGex0o0II/E-Detection/releases/latest) 说明为准；未签名安装包可能触发 Windows 安全提示。SHA-256 仅验证文件完整性，不能验证发布者身份。
 
 仓库尚未提供开源许可证。修改或再分发代码前，请先确认授权。
