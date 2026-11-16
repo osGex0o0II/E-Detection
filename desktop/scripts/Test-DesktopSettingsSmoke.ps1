@@ -450,8 +450,6 @@ try {
 
     Select-SettingsCategory $mainWindow.Handle "检测"
     $defaultsSection = Wait-ForAutomationName $mainWindow.Handle "检测" $WaitSeconds
-    $inputDirectoryControl = Wait-ForAutomationName $mainWindow.Handle "输入目录" $WaitSeconds
-    $browseInputDirectoryButton = Wait-ForAutomationName $mainWindow.Handle "选择输入目录" $WaitSeconds
     $openThresholdSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开阈值设置" $WaitSeconds
     $openDetectionRulesButton = Wait-ForAutomationName $mainWindow.Handle "打开检测规则" $WaitSeconds
     $thresholdsSection = Wait-ForAutomationName $mainWindow.Handle "检测阈值" $WaitSeconds
@@ -575,8 +573,6 @@ try {
         PoetryServiceControl = $poetryServiceControl
         PoetryLanguageControl = $poetryLanguageControl
         DefaultsSection = $defaultsSection
-        InputDirectoryControl = $inputDirectoryControl
-        BrowseInputDirectoryButton = $browseInputDirectoryButton
         OpenThresholdSettingsButton = $openThresholdSettingsButton
         OpenDetectionRulesButton = $openDetectionRulesButton
         ThresholdsSection = $thresholdsSection

@@ -52,30 +52,6 @@ public sealed partial class SettingsView
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
 
-    private async void BrowseInputDirectory_Click(object sender, RoutedEventArgs e)
-    {
-        var folder = await PickFolderAsync();
-        if (folder is null || ViewModel is null)
-        {
-            return;
-        }
-
-        ViewModel.InputDirectory = folder.Path;
-        if (string.IsNullOrWhiteSpace(ViewModel.OutputDirectory))
-        {
-            ViewModel.OutputDirectory = folder.Path;
-        }
-    }
-
-    private async void BrowseOutputDirectory_Click(object sender, RoutedEventArgs e)
-    {
-        var folder = await PickFolderAsync();
-        if (folder is not null && ViewModel is not null)
-        {
-            ViewModel.OutputDirectory = folder.Path;
-        }
-    }
-
     private async void BrowseConfigPath_Click(object sender, RoutedEventArgs e)
     {
         var file = await PickFileAsync(".json");
@@ -84,18 +60,6 @@ public sealed partial class SettingsView
             ViewModel.ConfigPath = file.Path;
             ViewModel.LoadDetectionConfigFromPathCommand.Execute(null);
         }
-    }
-
-    private static async Task<StorageFolder?> PickFolderAsync()
-    {
-        var picker = new FolderPicker();
-        picker.FileTypeFilter.Add("*");
-        if (App.CurrentWindow is not null)
-        {
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
-        }
-
-        return await picker.PickSingleFolderAsync();
     }
 
     private static async Task<StorageFile?> PickFileAsync(params string[] fileTypes)
