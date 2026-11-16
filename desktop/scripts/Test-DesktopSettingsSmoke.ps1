@@ -497,15 +497,16 @@ try {
     Start-Sleep -Milliseconds 300
     $poetryServiceControl = Wait-ForAutomationName $mainWindow.Handle "顶部诗词来源" $WaitSeconds
     $poetryLanguageControl = Wait-ForAutomationName $mainWindow.Handle "诗词语言" $WaitSeconds
-    $desktopNotificationToggle = Wait-ForAutomationName $mainWindow.Handle "桌面通知" $WaitSeconds
-    $desktopNotificationTestButton = Wait-ForAutomationName $mainWindow.Handle "测试桌面通知" $WaitSeconds
-    $openWindowsNotificationSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 通知设置" $WaitSeconds
+
     $startupTrayToggle = Wait-ForAutomationName $mainWindow.Handle "启动时隐藏到托盘" $WaitSeconds
     $autoStartToggle = Wait-ForAutomationName $mainWindow.Handle "登录后自动启动" $WaitSeconds
     $openWindowsStartupSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 启动应用设置" $WaitSeconds
     $resetSettingsButton = Wait-ForAutomationName $mainWindow.Handle "重置设置" $WaitSeconds
 
     Select-SettingsCategory $mainWindow.Handle "通知"
+    $desktopNotificationToggle = Wait-ForAutomationName $mainWindow.Handle "桌面通知" $WaitSeconds
+    $desktopNotificationTestButton = Wait-ForAutomationName $mainWindow.Handle "测试桌面通知" $WaitSeconds
+    $openWindowsNotificationSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 通知设置" $WaitSeconds
     $ntfySection = Wait-ForAutomationName $mainWindow.Handle "外部消息推送" $WaitSeconds
     $ntfySettingsExpander = Expand-AutomationElement $mainWindow.Handle "推送服务配置（启用后生效）" $WaitSeconds
     Start-Sleep -Milliseconds 300
