@@ -199,6 +199,8 @@ public partial class MainViewModel
         {
             ShowSettingsFeedback(configError, InfoBarSeverity.Warning);
         }
+
+        NotifyDetectionConfigSessionChanged();
     }
 
     private void ApplyDetectionConfig(DetectionConfigSettings config)
@@ -238,6 +240,14 @@ public partial class MainViewModel
 
         IsDetectionConfigDirty = JsonSerializer.Serialize(CaptureDetectionConfig())
             != JsonSerializer.Serialize(_loadedDetectionConfig);
+    }
+
+    private void NotifyDetectionConfigSessionChanged()
+    {
+        OnPropertyChanged(nameof(DetectionConfigStatusText));
+        OnPropertyChanged(nameof(RunSetupReadinessText));
+        OnPropertyChanged(nameof(RunSetupReadinessDetailText));
+        StartCommand.NotifyCanExecuteChanged();
     }
 
     private void AcceptDetectionConfigAsSaved()

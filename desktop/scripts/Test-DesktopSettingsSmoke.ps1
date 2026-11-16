@@ -455,6 +455,8 @@ try {
     $thresholdsSection = Wait-ForAutomationName $mainWindow.Handle "检测阈值" $WaitSeconds
     $thresholdConfigControl = Wait-ForAutomationName $mainWindow.Handle "阈值文件路径" $WaitSeconds
     $browseThresholdConfigButton = Wait-ForAutomationName $mainWindow.Handle "选择阈值文件" $WaitSeconds
+    $loadThresholdConfigButton = Wait-ForAutomationName $mainWindow.Handle "加载阈值文件" $WaitSeconds
+    $saveAsThresholdConfigButton = Wait-ForAutomationName $mainWindow.Handle "另存为阈值文件" $WaitSeconds
     $rulesSection = Wait-ForAutomationName $mainWindow.Handle "检测规则" $WaitSeconds
     $voltageMinThreshold = Wait-ForAutomationName $mainWindow.Handle "电压下限" $WaitSeconds
     $voltageMaxThreshold = Wait-ForAutomationName $mainWindow.Handle "电压上限" $WaitSeconds

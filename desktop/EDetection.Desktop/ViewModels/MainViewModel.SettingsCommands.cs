@@ -47,6 +47,7 @@ public partial class MainViewModel
         ApplyDetectionConfig(config);
         AcceptDetectionConfigAsSaved();
         SaveSettings();
+        NotifyDetectionConfigSessionChanged();
         RefreshLocalDiagnostics();
         ShowSettingsFeedback("已加载阈值文件。", InfoBarSeverity.Success);
         return true;
@@ -73,6 +74,7 @@ public partial class MainViewModel
             ConfigPath = target;
             AcceptDetectionConfigAsSaved();
             SaveSettings();
+            NotifyDetectionConfigSessionChanged();
             ShowSettingsFeedback("已将检测阈值另存为新文件。", InfoBarSeverity.Success);
             return true;
         }
@@ -121,6 +123,8 @@ public partial class MainViewModel
             _activeDetectionConfigPath = "";
             IsDetectionConfigDirty = true;
         }
+
+        NotifyDetectionConfigSessionChanged();
         SaveSettings();
         RefreshDesktopHealth();
         RefreshLocalDiagnostics();

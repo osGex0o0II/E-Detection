@@ -64,7 +64,9 @@ public partial class MainViewModel
         !string.Equals(ConfigPath, PendingConfigPath, StringComparison.OrdinalIgnoreCase);
 
     public string DetectionConfigStatusText =>
-        IsDetectionConfigDirty
+        string.IsNullOrWhiteSpace(_activeDetectionConfigPath)
+            ? $"阈值配置尚未确认，请加载有效文件或另存为。待选择：{PendingConfigPath}"
+            : IsDetectionConfigDirty
             ? $"阈值有未保存的修改。当前文件：{ConfigPath}"
             : HasPendingConfigPathChange
                 ? $"待加载文件尚未生效。当前文件：{ConfigPath}"
