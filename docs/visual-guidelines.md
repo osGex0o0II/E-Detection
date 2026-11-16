@@ -1,26 +1,26 @@
 # 视觉规范
 
-[返回文档](README.md)
+[文档索引](README.md)
 
-## Logo
+## 标志
 
-使用深灰数据波形和一个红色检测点；不使用盾牌、渐变或额外装饰。README 中图标尺寸为 104 × 104px，水平居中。
+Logo 使用深灰色数据波形、浅色背景和一个红色检测点，不采用渐变与装饰性图形。README 中以 104 × 104 px 居中显示。
 
 - [SVG 标志](images/e-detection-logo.svg)
-- Windows 图标：[app.ico](../desktop/EDetection.Desktop/Assets/Icons/app.ico) / [running.ico](../desktop/EDetection.Desktop/Assets/Icons/running.ico)
-- 标题栏使用同一波形，线条颜色跟随深浅色主题。
+- Windows 图标：[app.ico](../desktop/EDetection.Desktop/Assets/Icons/app.ico) 和 [running.ico](../desktop/EDetection.Desktop/Assets/Icons/running.ico)
+- 标题栏使用同一波形，线条颜色随系统深浅色主题调整。
 
-## 配色
+## 颜色
 
-| 元素 | 颜色 |
+| 元素 | 色值 |
 | --- | --- |
 | 波形 | `#242427` |
-| 浅色背景 | `#F8F8F8` |
-| 图标边缘 | `#E4E4E7` |
-| 红色检测点 | `#D13438` |
+| 背景 | `#F8F8F8` |
+| 边框 | `#E4E4E7` |
+| 检测点 | `#D13438` |
 
-UI 交互色与告警色遵循 WinUI 语义，不直接套用 Logo 配色。
+交互与告警使用 WinUI 对应的系统语义色。
 
 ## 截图
 
-只展示真实应用截图，并明确标注运行状态；不得将模拟数据标为实际检测结果。更新图标后应重新采集带新版标题栏的截图。
+文档截图应来自实际运行的软件，并标明运行状态。旧版截图仅作为历史素材保留；新版真实截图须在 Windows 上重新采集，不得使用合成图替代检测结果。
