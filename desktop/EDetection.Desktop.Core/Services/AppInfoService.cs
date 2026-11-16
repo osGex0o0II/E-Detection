@@ -7,9 +7,9 @@ namespace EDetection.Desktop.Services;
 
 public sealed class AppInfoService
 {
-    public AppInfo GetInfo()
+    public AppInfo GetInfo(Assembly? hostAssembly = null)
     {
-        var assembly = Assembly.GetExecutingAssembly();
+        var assembly = hostAssembly ?? Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
         var versionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
         var version = versionInfo.ProductVersion
             ?? versionInfo.FileVersion

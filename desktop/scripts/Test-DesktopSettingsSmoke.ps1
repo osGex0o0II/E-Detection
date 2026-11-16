@@ -558,6 +558,18 @@ try {
     Start-Sleep -Milliseconds 300
     $updatesSection = Wait-ForAutomationName $mainWindow.Handle "应用更新" $WaitSeconds
     $updateStatusText = Wait-ForAutomationNameLike $mainWindow.Handle "*当前版本*" $WaitSeconds
+    $releaseInfo = Join-Path (Split-Path -Parent $appFull) "release-info.txt"
+    if (Test-Path -LiteralPath $releaseInfo) {
+        $versionLine = Get-Content -LiteralPath $releaseInfo | Where-Object { $_ -like "Version=*" } | Select-Object -First 1
+        if (!$versionLine) {
+            throw "Settings smoke: release-info.txt has no Version value."
+        }
+
+        $expectedVersion = ($versionLine -replace '^Version=', '').Trim()
+        if ($updateStatusText -notmatch ("^当前版本\\s+" + [regex]::Escape($expectedVersion) + "(?:\\+.*)?$")) {
+            throw "Settings smoke: displayed version '$updateStatusText' differs from package version '$expectedVersion'."
+        }
+    }
     $checkUpdatesButton = Wait-ForAutomationName $mainWindow.Handle "检查更新" $WaitSeconds
     $openUpdatePageButton = Wait-ForAutomationName $mainWindow.Handle "获取更新安装向导" $WaitSeconds
     $advancedUpdateExpander = Expand-AutomationElement $mainWindow.Handle "高级更新选项" $WaitSeconds
@@ -717,3 +729,7 @@ finally {
         $env:EDETECTION_DESKTOP_SETTINGS_DIR = $previousSettingsOverride
     }
 }
+
+# schtasks.exe may return 1 when an optional startup task was absent during cleanup.
+# Any actual test or restoration exception exits before reaching this line.
+$global:LASTEXITCODE = 0
