@@ -467,19 +467,13 @@
                                 <ColumnDefinition x:Name="DetailSearchColumn" Width="*" />
                                 <ColumnDefinition x:Name="DetailSeverityColumn" Width="132" />
                                 <ColumnDefinition x:Name="DetailIssueColumn" Width="150" />
-                                <ColumnDefinition x:Name="DetailClearColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="DetailOpenColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="DetailCopyPathColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="DetailCopySelectedColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="DetailCopyFilteredColumn" Width="Auto" />
-                                <ColumnDefinition x:Name="DetailExplainColumn" Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="DetailSearchBox"
                                      Text="{Binding DetailSearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="搜索建筑、文件、异常或建议" />
+                                     PlaceholderText="搜索建筑、文件、异常或建议" AutomationProperties.Name="搜索异常明细" />
                             <ComboBox x:Name="SeverityFilter"
                                       Grid.Column="1"
-                                      SelectedIndex="{Binding SelectedSeverityFilterIndex, Mode=TwoWay}"
+                                      SelectedIndex="{Binding SelectedSeverityFilterIndex, Mode=TwoWay}" AutomationProperties.Name="筛选异常等级"
                                       HorizontalAlignment="Stretch">
                                 <ComboBoxItem Content="全部等级" />
                                 <ComboBoxItem Content="高" />
@@ -489,45 +483,44 @@
                             <ComboBox x:Name="IssueTypeFilter"
                                       Grid.Column="2"
                                       ItemsSource="{Binding DetailIssueTypeFilters}"
-                                      SelectedIndex="{Binding SelectedIssueTypeFilterIndex, Mode=TwoWay}"
+                                      SelectedIndex="{Binding SelectedIssueTypeFilterIndex, Mode=TwoWay}" AutomationProperties.Name="筛选异常类型"
                                       HorizontalAlignment="Stretch" />
-                            <Button x:Name="ClearDetailFiltersButton"
-                                    Grid.Column="3"
+                            <StackPanel x:Name="DetailActionsPanel" Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="ClearDetailFiltersButton"
                                     Command="{Binding ClearDetailFiltersCommand}"
                                     AutomationProperties.Name="清除筛选" ToolTipService.ToolTip="清除筛选">
                                 <FontIcon Glyph="&#xE894;" FontSize="14" />
                             </Button>
-                            <Button x:Name="OpenSelectedDetailSourceButton"
-                                    Grid.Column="4"
+                                <Button x:Name="OpenSelectedDetailSourceButton"
                                     Command="{Binding OpenSelectedDetailSourceCommand}"
                                     AutomationProperties.Name="定位源文件" ToolTipService.ToolTip="定位源文件">
-                                <FontIcon Glyph="&#xE838;" FontSize="14" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE838;" FontSize="14" />
+                                            <TextBlock Text="定位源文件" />
+                                        </StackPanel>
                             </Button>
-                            <Button x:Name="CopySelectedDetailSourcePathButton"
-                                    Grid.Column="5"
-                                    Command="{Binding CopySelectedDetailSourcePathCommand}"
-                                    AutomationProperties.Name="复制源文件路径" ToolTipService.ToolTip="复制源文件路径">
-                                <FontIcon Glyph="&#xE8C8;" FontSize="14" />
-                            </Button>
-                            <Button x:Name="CopySelectedDetailButton"
-                                    Grid.Column="6"
+                                <Button x:Name="CopySelectedDetailButton"
                                     Command="{Binding CopySelectedDetailCommand}"
                                     AutomationProperties.Name="复制选中明细" ToolTipService.ToolTip="复制选中明细">
-                                <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                                            <TextBlock Text="复制明细" />
+                                        </StackPanel>
                             </Button>
-                            <Button x:Name="CopyFilteredDetailsButton"
-                                    Grid.Column="7"
-                                    Command="{Binding CopyFilteredDetailsCommand}"
-                                    AutomationProperties.Name="复制当前结果" ToolTipService.ToolTip="复制当前结果">
-                                <FontIcon Glyph="&#xE8A5;" FontSize="14" />
-                            </Button>
-                            <Button x:Name="ExplainSelectedDetailButton"
-                                    Grid.Column="8"
-                                    Command="{Binding ExplainSelectedDetailCommand}"
-                                    ToolTipService.ToolTip="智能解读选中异常"
-                                    AutomationProperties.Name="智能解读选中异常">
-                                <FontIcon Glyph="&#xE950;" FontSize="14" />
-                            </Button>
+                                <Button AutomationProperties.Name="更多明细操作" ToolTipService.ToolTip="更多明细操作">
+                                    <Button.Flyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="复制源文件路径" Command="{Binding CopySelectedDetailSourcePathCommand}" />
+                                            <MenuFlyoutItem Text="复制筛选结果" Command="{Binding CopyFilteredDetailsCommand}" />
+                                            <MenuFlyoutItem Text="智能解读选中异常" Command="{Binding ExplainSelectedDetailCommand}" />
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE712;" FontSize="14" />
+                                        <TextBlock Text="更多" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </Grid>
 
                         <Grid Grid.Row="3"

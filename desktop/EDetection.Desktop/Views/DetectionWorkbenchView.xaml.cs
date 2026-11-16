@@ -72,39 +72,15 @@ public sealed partial class DetectionWorkbenchView : UserControl
 
     private void ApplyDetailFilterLayout(bool compact)
     {
-        DetailFilterGrid.RowDefinitions[1].Height = compact ? GridLength.Auto : new GridLength(0);
+        DetailFilterGrid.RowDefinitions[1].Height = GridLength.Auto;
         DetailFilterGrid.RowDefinitions[2].Height = compact ? GridLength.Auto : new GridLength(0);
-
-        if (compact)
-        {
-            DetailSearchColumn.Width = new GridLength(156);
-            DetailSeverityColumn.Width = new GridLength(1, GridUnitType.Star);
-            DetailIssueColumn.Width = new GridLength(0);
-            Place(DetailSearchBox, 0, 0, 9);
-            Place(SeverityFilter, 1, 0);
-            Place(IssueTypeFilter, 1, 1, 8);
-            Place(ClearDetailFiltersButton, 2, 0);
-            Place(OpenSelectedDetailSourceButton, 2, 1);
-            Place(CopySelectedDetailSourcePathButton, 2, 2);
-            Place(CopySelectedDetailButton, 2, 3);
-            Place(CopyFilteredDetailsButton, 2, 4);
-            Place(ExplainSelectedDetailButton, 2, 5);
-            return;
-        }
-
-        DetailFilterGrid.RowDefinitions[2].Height = new GridLength(0);
         DetailSearchColumn.Width = new GridLength(1, GridUnitType.Star);
-        DetailSeverityColumn.Width = new GridLength(132);
-        DetailIssueColumn.Width = new GridLength(150);
-        Place(DetailSearchBox, 0, 0);
-        Place(SeverityFilter, 0, 1);
-        Place(IssueTypeFilter, 0, 2);
-        Place(ClearDetailFiltersButton, 0, 3);
-        Place(OpenSelectedDetailSourceButton, 0, 4);
-        Place(CopySelectedDetailSourcePathButton, 0, 5);
-        Place(CopySelectedDetailButton, 0, 6);
-        Place(CopyFilteredDetailsButton, 0, 7);
-        Place(ExplainSelectedDetailButton, 0, 8);
+        DetailSeverityColumn.Width = compact ? new GridLength(1, GridUnitType.Star) : new GridLength(132);
+        DetailIssueColumn.Width = compact ? new GridLength(1, GridUnitType.Star) : new GridLength(150);
+        Place(DetailSearchBox, 0, 0, compact ? 3 : 1);
+        Place(SeverityFilter, compact ? 1 : 0, compact ? 0 : 1);
+        Place(IssueTypeFilter, compact ? 1 : 0, compact ? 1 : 2);
+        Place(DetailActionsPanel, compact ? 2 : 1, 0, 3);
     }
 
     private static void SetFourColumnGrid(
