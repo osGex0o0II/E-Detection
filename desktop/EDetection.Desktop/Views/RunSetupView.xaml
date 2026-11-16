@@ -40,7 +40,7 @@
                                 <ColumnDefinition x:Name="InputPathButtonColumn" Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="InputDirectoryTextBox"
-                                     Text="{Binding InputDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding InputDirectory, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                      IsEnabled="{Binding CanEditRunConfiguration}"
                                      PlaceholderText="选择包含 CSV 文件的目录" />
                             <Button x:Name="InputDirectoryButton"
@@ -67,7 +67,7 @@
                                 <ColumnDefinition x:Name="OutputPathButtonColumn" Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <TextBox x:Name="OutputDirectoryTextBox"
-                                     Text="{Binding OutputDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding OutputDirectory, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                      IsEnabled="{Binding CanEditRunConfiguration}"
                                      PlaceholderText="留空则写入输入目录" />
                             <Button x:Name="OutputDirectoryButton"

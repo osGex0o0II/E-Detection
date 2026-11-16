@@ -11,16 +11,16 @@
     <StackPanel Spacing="8">
         <TextBlock Text="检测规则" Style="{StaticResource SectionTitleTextStyle}" />
         <StackPanel Spacing="2">
-            <controls:SettingsCard MinHeight="52" Padding="12,6" Header="电流过载检测">
+            <controls:SettingsCard MinHeight="56" Padding="14,8" Header="电流过载检测">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentOverloadEnabled, Mode=TwoWay}" AutomationProperties.Name="电流过载检测" />
             </controls:SettingsCard>
-            <controls:SettingsCard MinHeight="52" Padding="12,6" Header="电流不平衡检测">
+            <controls:SettingsCard MinHeight="56" Padding="14,8" Header="电流不平衡检测">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.CurrentUnbalanceEnabled, Mode=TwoWay}" AutomationProperties.Name="电流不平衡检测" />
             </controls:SettingsCard>
-            <controls:SettingsCard MinHeight="52" Padding="12,6" Header="功率因数检测">
+            <controls:SettingsCard MinHeight="56" Padding="14,8" Header="功率因数检测">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.PowerFactorEnabled, Mode=TwoWay}" AutomationProperties.Name="功率因数检测" />
             </controls:SettingsCard>
-            <controls:SettingsCard Header="详细异常输出" Description="在报告中写入逐项异常详情，会增加文件大小。">
+            <controls:SettingsCard MinHeight="56" Header="详细异常输出" Description="在报告中写入逐项异常详情，会增加文件大小。">
                 <ToggleSwitch IsOn="{x:Bind ViewModel.DetailOutputEnabled, Mode=TwoWay}" AutomationProperties.Name="详细异常输出" />
             </controls:SettingsCard>
         </StackPanel>

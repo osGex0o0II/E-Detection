@@ -865,6 +865,7 @@
                 </Grid.ColumnDefinitions>
                 <InfoBar x:Name="SettingsFeedbackBar" IsOpen="{Binding IsSettingsFeedbackOpen, Mode=TwoWay}" Message="{Binding SettingsFeedbackText}" Severity="{Binding SettingsFeedbackSeverity}" IsIconVisible="True" IsClosable="True" MaxWidth="520" HorizontalAlignment="Left" VerticalAlignment="Center" />
                 <StackPanel x:Name="SettingsFooterActions" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="10">
+                    <TextBlock Text="偏好自动保存" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <Button Click="AboutButton_Click" AutomationProperties.Name="关于" ToolTipService.ToolTip="版本与软件信息">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE946;" FontSize="14" />
