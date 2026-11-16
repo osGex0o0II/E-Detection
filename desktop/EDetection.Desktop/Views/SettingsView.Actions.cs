@@ -48,6 +48,7 @@ public sealed partial class SettingsView
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
         };
+        DialogTheme.Apply(dialog, this);
 
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }

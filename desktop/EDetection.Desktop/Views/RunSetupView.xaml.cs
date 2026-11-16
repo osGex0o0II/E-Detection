@@ -91,6 +91,7 @@ public sealed partial class RunSetupView : UserControl
             DefaultButton = ContentDialogButton.Close,
             XamlRoot = XamlRoot,
         };
+        DialogTheme.Apply(dialog, this);
 
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {

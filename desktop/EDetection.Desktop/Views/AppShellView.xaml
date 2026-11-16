@@ -9,13 +9,27 @@
     mc:Ignorable="d">
 
     <Grid x:Name="Root"
-          Background="Transparent"
           SizeChanged="Root_SizeChanged">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <!--
+            Two page surfaces keep the shell readable in every backdrop mode:
+            the tint stays over Mica/Acrylic, while the opaque surface is shown
+            when no system backdrop is active so the window's default light
+            brush can never show through behind dark-theme text.
+        -->
+        <Border x:Name="BackdropTintSurface"
+                Grid.RowSpan="3"
+                Background="{ThemeResource AppPageBackdropTintBrush}"
+                IsHitTestVisible="False" />
+        <Border x:Name="OpaquePageSurface"
+                Grid.RowSpan="3"
+                Background="{ThemeResource AppPageBackgroundBrush}"
+                IsHitTestVisible="False" />
 
         <views:AppTitleBar x:Name="AppTitleBar"
                           Grid.Row="0"

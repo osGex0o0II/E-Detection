@@ -6,11 +6,14 @@ using EDetection.Desktop.Services;
 using EDetection.Desktop.ViewModels;
 using EDetection.Desktop.Views;
 using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
+using Windows.UI;
+using Windows.UI.ViewManagement;
 using WinRT.Interop;
 using WinUIEx.Messaging;
 
@@ -69,6 +72,9 @@ public sealed partial class MainWindow : Window
         _desktopNotifications.Register();
         Shell.AboutRequested += (_, _) => ShowAboutDialog();
         Activated += MainWindow_Activated;
+        Activated += MainWindow_AppearanceActivated;
+        Shell.ActualThemeChanged += (_, _) =>
+            ApplyCaptionButtonTheme(ResolveEffectiveTheme(Shell.RequestedTheme));
 
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(Shell.TitleBarElement);
@@ -108,6 +114,16 @@ public sealed partial class MainWindow : Window
         await RunStartupBackgroundTaskAsync(
             ViewModel.CheckForUpdatesInBackgroundAsync,
             "Background update check failed");
+    }
+
+    private void MainWindow_AppearanceActivated(object sender, WindowActivatedEventArgs args)
+    {
+        if (args.WindowActivationState == WindowActivationState.Deactivated)
+        {
+            return;
+        }
+
+        ApplyCaptionButtonTheme(ResolveEffectiveTheme(Shell.RequestedTheme));
     }
 
     private static async Task RunStartupBackgroundTaskAsync(Func<Task> operation, string failureDescription)
@@ -361,6 +377,7 @@ public sealed partial class MainWindow : Window
             CloseButtonText = "关闭",
             DefaultButton = ContentDialogButton.Close,
         };
+        DialogTheme.Apply(dialog, Shell);
         var result = await dialog.ShowAsync();
         if (result is ContentDialogResult.Primary)
         {
@@ -533,24 +550,111 @@ public sealed partial class MainWindow : Window
 
     private void ApplyAppearance()
     {
-        Shell.RootElement.RequestedTheme = ViewModel.ThemeMode switch
+        var requestedTheme = ViewModel.ThemeMode switch
         {
             "Light" => ElementTheme.Light,
             "Dark" => ElementTheme.Dark,
             _ => ElementTheme.Default,
         };
-        AppWindow.TitleBar.PreferredTheme = ViewModel.ThemeMode switch
+
+        // The theme has to sit on the window content, not only on the shell's
+        // inner grid: the system backdrop and popups (dialogs, flyouts) resolve
+        // their theme from the XamlRoot content, so an inner override left Mica
+        // and dialogs on the OS light theme while the page used dark brushes.
+        Shell.RequestedTheme = requestedTheme;
+        if (AppWindowTitleBar.IsCustomizationSupported())
         {
-            "Light" => TitleBarTheme.Light,
-            "Dark" => TitleBarTheme.Dark,
-            _ => TitleBarTheme.UseDefaultAppMode,
-        };
-        SystemBackdrop = ViewModel.BackdropMode switch
+            AppWindow.TitleBar.PreferredTheme = requestedTheme switch
+            {
+                ElementTheme.Light => TitleBarTheme.Light,
+                ElementTheme.Dark => TitleBarTheme.Dark,
+                _ => TitleBarTheme.UseDefaultAppMode,
+            };
+        }
+
+        var (backdrop, backdropActive) = CreateBackdrop(ViewModel.BackdropMode);
+        SystemBackdrop = backdrop;
+        Shell.SetBackdropSurfaceActive(backdropActive);
+        ApplyCaptionButtonTheme(ResolveEffectiveTheme(requestedTheme));
+    }
+
+    private static (SystemBackdrop? Backdrop, bool IsActive) CreateBackdrop(string mode)
+    {
+        if (mode == "None")
         {
-            "Acrylic" => new DesktopAcrylicBackdrop(),
-            "None" => null,
-            _ => new MicaBackdrop(),
-        };
+            return (null, false);
+        }
+
+        if (mode == "Acrylic")
+        {
+            return DesktopAcrylicController.IsSupported()
+                ? (new DesktopAcrylicBackdrop(), true)
+                : (null, false);
+        }
+
+        return MicaController.IsSupported()
+            ? (new MicaBackdrop(), true)
+            : (null, false);
+    }
+
+    private static ElementTheme ResolveEffectiveTheme(ElementTheme requestedTheme)
+    {
+        if (requestedTheme is ElementTheme.Light or ElementTheme.Dark)
+        {
+            return requestedTheme;
+        }
+
+        var background = new UISettings().GetColorValue(UIColorType.Background);
+        return (background.R + background.G + background.B) < 384
+            ? ElementTheme.Dark
+            : ElementTheme.Light;
+    }
+
+    private void ApplyCaptionButtonTheme(ElementTheme effectiveTheme)
+    {
+        if (!AppWindowTitleBar.IsCustomizationSupported())
+        {
+            // Windows versions without title bar customization keep the system
+            // chrome; calling the color setters there can crash the app.
+            return;
+        }
+
+        var titleBar = AppWindow.TitleBar;
+        if (new AccessibilitySettings().HighContrast)
+        {
+            // High contrast owns the window chrome colors; null means "use the
+            // system high contrast value" for every caption button state.
+            titleBar.ButtonBackgroundColor = null;
+            titleBar.ButtonInactiveBackgroundColor = null;
+            titleBar.ButtonForegroundColor = null;
+            titleBar.ButtonInactiveForegroundColor = null;
+            titleBar.ButtonHoverBackgroundColor = null;
+            titleBar.ButtonHoverForegroundColor = null;
+            titleBar.ButtonPressedBackgroundColor = null;
+            titleBar.ButtonPressedForegroundColor = null;
+            return;
+        }
+
+        var dark = effectiveTheme == ElementTheme.Dark;
+        var foreground = dark ? Colors.White : Color.FromArgb(255, 26, 26, 26);
+        var inactiveForeground = dark
+            ? Color.FromArgb(255, 176, 176, 176)
+            : Color.FromArgb(255, 95, 95, 95);
+        var hoverBackground = dark
+            ? Color.FromArgb(255, 51, 51, 51)
+            : Color.FromArgb(255, 232, 232, 232);
+        var pressedBackground = dark
+            ? Color.FromArgb(255, 68, 68, 68)
+            : Color.FromArgb(255, 218, 218, 218);
+
+        titleBar.ButtonBackgroundColor = Colors.Transparent;
+        titleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+        titleBar.ButtonForegroundColor = foreground;
+        titleBar.ButtonInactiveForegroundColor = inactiveForeground;
+        titleBar.ButtonHoverBackgroundColor = hoverBackground;
+        titleBar.ButtonHoverForegroundColor = foreground;
+        titleBar.ButtonPressedBackgroundColor = pressedBackground;
+        titleBar.ButtonPressedForegroundColor = foreground;
     }
 
     private void ApplyMinMaxInfo(nint lParam)

@@ -34,7 +34,15 @@ public sealed partial class AppShellView : UserControl
 
     public FrameworkElement TitleBarElement => AppTitleBar;
 
-    public FrameworkElement RootElement => Root;
+    /// <summary>
+    /// Shows the solid theme-aware page surface when no system backdrop is
+    /// active, and lets the tinted backdrop surface carry the page when Mica or
+    /// Acrylic is applied.
+    /// </summary>
+    public void SetBackdropSurfaceActive(bool isBackdropActive) =>
+        OpaquePageSurface.Visibility = isBackdropActive
+            ? Visibility.Collapsed
+            : Visibility.Visible;
 
     public event EventHandler? AboutRequested;
 

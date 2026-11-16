@@ -9,6 +9,7 @@
     mc:Ignorable="d">
 
     <Grid x:Name="Root"
+          Background="{ThemeResource AppPageBackgroundBrush}"
           RowSpacing="12"
           SizeChanged="Root_SizeChanged">
         <VisualStateManager.VisualStateGroups>
