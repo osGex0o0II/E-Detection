@@ -82,15 +82,37 @@ public sealed partial class RunSetupView : UserControl
 
     private async void BrowseInputDirectory_Click(object sender, RoutedEventArgs e)
     {
-        await BrowseInputDirectoryAsync();
+        try
+        {
+            await BrowseInputDirectoryAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // The user dismissed the picker; keep the existing paths unchanged.
+        }
+        catch (Exception ex)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法打开输入目录选择器", ex);
+        }
     }
 
     private async void BrowseOutputDirectory_Click(object sender, RoutedEventArgs e)
     {
-        var folder = await PickFolderAsync();
-        if (folder is not null && ViewModel is not null)
+        try
         {
-            ViewModel.OutputDirectory = folder.Path;
+            var folder = await PickFolderAsync();
+            if (folder is not null && ViewModel is not null)
+            {
+                ViewModel.OutputDirectory = folder.Path;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The user dismissed the picker; keep the existing paths unchanged.
+        }
+        catch (Exception ex)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法打开报告目录选择器", ex);
         }
     }
 
@@ -101,18 +123,12 @@ public sealed partial class RunSetupView : UserControl
             return;
         }
 
-        var dialog = new ContentDialog
-        {
-            Title = "清空报告历史？",
-            Content = "将清除历史列表，不会删除磁盘上的 Excel 报告。",
-            PrimaryButtonText = "清空历史",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
-        };
-        DialogTheme.Apply(dialog, this);
-
-        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        if (await ConfirmationDialog.ConfirmDestructiveActionAsync(
+                XamlRoot,
+                this,
+                "清空报告历史？",
+                "将清除历史列表，不会删除磁盘上的 Excel 报告。",
+                "清空历史"))
         {
             ViewModel?.ClearRecentReportsCommand.Execute(null);
         }

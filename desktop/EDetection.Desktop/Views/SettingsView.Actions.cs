@@ -1,5 +1,4 @@
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -37,25 +36,32 @@ public sealed partial class SettingsView
         }
     }
 
-    private async Task<bool> ConfirmActionAsync(string title, string content, string primaryButtonText)
-    {
-        var dialog = new ContentDialog
-        {
-            Title = title,
-            Content = content,
-            PrimaryButtonText = primaryButtonText,
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Close,
-            XamlRoot = XamlRoot,
-        };
-        DialogTheme.Apply(dialog, this);
-
-        return await dialog.ShowAsync() == ContentDialogResult.Primary;
-    }
+    private async Task<bool> ConfirmActionAsync(string title, string content, string primaryButtonText) =>
+        await ConfirmationDialog.ConfirmDestructiveActionAsync(
+            XamlRoot,
+            this,
+            title,
+            content,
+            primaryButtonText);
 
     private async void BrowseConfigPath_Click(object sender, RoutedEventArgs e)
     {
-        var file = await PickFileAsync(".json");
+        StorageFile? file;
+        try
+        {
+            file = await PickFileAsync(".json");
+        }
+        catch (OperationCanceledException)
+        {
+            // The user dismissed the picker; keep the existing paths unchanged.
+            return;
+        }
+        catch (Exception ex)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法打开阈值文件选择器", ex);
+            return;
+        }
+
         if (file is not null && ViewModel is not null)
         {
             ViewModel.PendingConfigPath = file.Path;
@@ -92,18 +98,33 @@ public sealed partial class SettingsView
             return;
         }
 
-        var picker = new FileSavePicker
+        StorageFile? file;
+        try
         {
-            SuggestedFileName = "detection-config",
-            DefaultFileExtension = ".json",
-        };
-        picker.FileTypeChoices.Add("JSON 配置", [".json"]);
-        if (App.CurrentWindow is not null)
+            var picker = new FileSavePicker
+            {
+                SuggestedFileName = "detection-config",
+                DefaultFileExtension = ".json",
+            };
+            picker.FileTypeChoices.Add("JSON 配置", [".json"]);
+            if (App.CurrentWindow is not null)
+            {
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+            }
+
+            file = await picker.PickSaveFileAsync();
+        }
+        catch (OperationCanceledException)
         {
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
+            // The user dismissed the picker; keep the existing paths unchanged.
+            return;
+        }
+        catch (Exception ex)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法打开阈值文件保存对话框", ex);
+            return;
         }
 
-        var file = await picker.PickSaveFileAsync();
         if (file is not null)
         {
             ViewModel.TrySaveDetectionConfigAs(file.Path);

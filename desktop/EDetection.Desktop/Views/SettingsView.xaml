@@ -308,10 +308,10 @@
                         <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
                         <StackPanel Spacing="4">
                             <controls:SettingsCard Header="生成 Excel 报告" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
-                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{x:Bind ViewModel.WriteReport, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
+                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding WriteReport, Mode=TwoWay}" IsEnabled="{Binding CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="报告历史上限">
-                                <ComboBox SelectedIndex="{x:Bind ViewModel.ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史上限">
+                                <ComboBox SelectedIndex="{Binding ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史上限">
                                     <ComboBoxItem Content="10 个" />
                                     <ComboBoxItem Content="20 个" />
                                     <ComboBoxItem Content="50 个" />
@@ -331,7 +331,7 @@
                         <TextBlock Text="运行记录" Style="{StaticResource SectionTitleTextStyle}" />
                         <StackPanel Spacing="4">
                             <controls:SettingsCard Header="运行记录上限">
-                                <ComboBox SelectedIndex="{x:Bind ViewModel.RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录上限">
+                                <ComboBox SelectedIndex="{Binding RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录上限">
                                     <ComboBoxItem Content="200 条" />
                                     <ComboBoxItem Content="500 条" />
                                     <ComboBoxItem Content="1000 条" />
@@ -616,8 +616,8 @@
                         <StackPanel Spacing="4">
                             <controls:SettingsCard Header="应用状态">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <Button Command="{x:Bind ViewModel.RefreshDesktopHealthCommand, Mode=OneWay}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
+                                    <TextBlock Text="{Binding DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    <Button Command="{Binding RefreshDesktopHealthCommand, Mode=OneWay}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <FontIcon Glyph="&#xE72C;" FontSize="14" />
                                             <TextBlock Text="刷新状态" />
@@ -628,10 +628,10 @@
                             <Expander x:Name="DiagnosticsDetailsExpander" Header="维护详情" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
                                 <StackPanel Spacing="4">
                                     <controls:SettingsCard Header="检测组件">
-                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
                                     </controls:SettingsCard>
                                     <controls:SettingsCard Header="设置存储">
-                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" />
+                                        <TextBlock Text="{Binding DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{Binding DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{Binding DesktopHealth.SettingsText, Mode=OneWay}" />
                                     </controls:SettingsCard>
                                 </StackPanel>
                             </Expander>
@@ -815,29 +815,29 @@
                         <TextBlock Text="外观" Style="{StaticResource SectionTitleTextStyle}" />
                         <StackPanel Spacing="4">
                             <controls:SettingsCard Header="应用主题">
-                                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
+                                <ComboBox SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
                                     <ComboBoxItem Content="跟随系统" />
                                     <ComboBoxItem Content="浅色" />
                                     <ComboBoxItem Content="深色" />
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="窗口背景">
-                                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
+                                <ComboBox SelectedIndex="{Binding SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
                                     <ComboBoxItem Content="Mica" />
                                     <ComboBoxItem Content="Acrylic" />
                                     <ComboBoxItem Content="无" />
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="顶部诗词">
-                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{x:Bind ViewModel.EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
+                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
                             </controls:SettingsCard>
-                            <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{x:Bind ViewModel.EnablePoetryStatus, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                            <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{Binding EnablePoetryStatus, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
                                 <StackPanel Spacing="4">
                                     <controls:SettingsCard Header="诗词来源">
-                                        <TextBox Text="{x:Bind ViewModel.PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
+                                        <TextBox Text="{Binding PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
                                     </controls:SettingsCard>
                                     <controls:SettingsCard Header="诗词语言">
-                                        <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
+                                        <ComboBox SelectedIndex="{Binding SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
                                             <ComboBoxItem Content="简体中文" />
                                             <ComboBoxItem Content="繁体中文" />
                                         </ComboBox>
