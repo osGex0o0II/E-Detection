@@ -241,17 +241,6 @@ public partial class MainViewModel
         ? $"{FilteredDetailPreview.Count}/{DetailPreviewTotalCount} 条预览"
         : "暂无异常明细";
 
-    public string DetailSortStatusText => SelectedDetailSortKey switch
-    {
-        "severity" => "按等级排序",
-        "device" => "按设备排序",
-        "time" => "按时间排序",
-        "issue" => "按异常排序",
-        "value" => "按异常值排序",
-        "recommendation" => "按建议排序",
-        _ => "默认顺序",
-    };
-
     public string LogStatusText => RuntimeLogs.StatusText;
 
     public int LogRetentionLimit => RuntimeLogs.RetentionLimit;

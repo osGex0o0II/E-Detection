@@ -33,5 +33,11 @@ public sealed class ReportDetailPreviewServiceTests
         var result = new ReportDetailPreviewService().Filter(
             details, ["全部类型"], new ReportDetailFilterState("", 0, 0, "time"));
         Assert.Equal("B", result[0].Building);
+
+        var ascending = new ReportDetailPreviewService().Filter(
+            details,
+            ["全部类型"],
+            new ReportDetailFilterState("", 0, 0, "time", SortDescending: true));
+        Assert.Equal("A", ascending[0].Building);
     }
 }

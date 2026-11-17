@@ -56,6 +56,8 @@ public sealed class ReportDetailPreviewService
         {
             "severity" => filtered.OrderBy(item => SeverityRank(item.Severity)).ThenBy(item => item.TimeText),
             "device" => filtered.OrderBy(item => item.LocationText).ThenBy(item => item.TimeText),
+            // Time has a natural newest-first order; the direction flag reverses
+            // it for the table's ascending/descending sort cycle.
             "time" => filtered.OrderByDescending(item => item.TimeText).ThenBy(item => item.LocationText),
             "issue" => filtered.OrderBy(item => item.IssueText).ThenBy(item => item.LocationText),
             "value" => filtered.OrderBy(item => item.ValueText).ThenBy(item => item.LocationText),
@@ -63,7 +65,10 @@ public sealed class ReportDetailPreviewService
             _ => filtered,
         };
 
-        return sorted.ToList();
+        return (filter.SortDescending && !string.IsNullOrWhiteSpace(filter.SortKey)
+                ? sorted.Reverse()
+                : sorted)
+            .ToList();
     }
 
     public string BuildExportText(IEnumerable<ReportDetailPreview> details)

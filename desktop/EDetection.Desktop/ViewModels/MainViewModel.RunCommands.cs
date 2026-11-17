@@ -421,13 +421,14 @@ public partial class MainViewModel
         SelectedSeverityFilterIndex = 0;
         SelectedIssueTypeFilterIndex = 0;
         SelectedDetailSortKey = "";
+        DetailSortDescending = false;
         DetailIssueTypeFilters.Clear();
         DetailIssueTypeFilters.Add("全部类型");
         ActiveRunSummaryText = "";
         RunTelemetry.Reset();
         FilteredDetailPreview.Clear();
         RuntimeLogs.Clear();
-        OnPropertyChanged(nameof(DetailPreviewStatusText));
+        NotifyDetailPreviewChanged();
         CopyFilteredDetailsCommand.NotifyCanExecuteChanged();
     }
 
@@ -510,6 +511,9 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(WorkbenchFilteredDetailPreview));
         OnPropertyChanged(nameof(WorkbenchDetailPreviewStatusText));
         OnPropertyChanged(nameof(DetailSortStatusText));
+        OnPropertyChanged(nameof(DetailTableEmptyStateTitle));
+        OnPropertyChanged(nameof(DetailTableEmptyStateHint));
+        OnPropertyChanged(nameof(DetailTableEmptyStateVisibility));
     }
 
     private void SelectFirstVisibleDetailIfAvailable()
@@ -525,7 +529,8 @@ public partial class MainViewModel
             DetailSearchText,
             SelectedSeverityFilterIndex,
             SelectedIssueTypeFilterIndex,
-            SelectedDetailSortKey);
+            SelectedDetailSortKey,
+            DetailSortDescending);
 
     private static string SensorOverviewTextFrom(ReportSensorOverview sensor) =>
         $"离线 {sensor.OfflineDevices} · 传感器故障 {sensor.SensorFaultRows} · 未配置 {sensor.SensorMissingRows} · 跳过 {sensor.SkippedRows}";

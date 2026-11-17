@@ -26,7 +26,8 @@
                 <StackPanel Spacing="4">
                     <TextBlock Text="检测输入"
                                FontSize="18"
-                               FontWeight="SemiBold" />
+                               FontWeight="SemiBold"
+                               AutomationProperties.HeadingLevel="Level2" />
                     <TextBlock Text="选择 CSV 根目录和报告输出，运行前检查会自动完成"
                                TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -60,6 +61,7 @@
                                     Grid.Column="1"
                                     Click="BrowseInputDirectory_Click"
                                     IsEnabled="{Binding IsIdle}"
+                                    Style="{StaticResource UtilityIconButtonStyle}"
                                     AutomationProperties.Name="选择输入目录" ToolTipService.ToolTip="选择输入目录">
                                 <FontIcon Glyph="&#xE8B7;" FontSize="14" />
                             </Button>
@@ -90,6 +92,7 @@
                                     Grid.Column="1"
                                     Click="BrowseOutputDirectory_Click"
                                     IsEnabled="{Binding IsIdle}"
+                                    Style="{StaticResource UtilityIconButtonStyle}"
                                     AutomationProperties.Name="选择报告目录" ToolTipService.ToolTip="选择报告目录">
                                 <FontIcon Glyph="&#xE8B7;" FontSize="14" />
                             </Button>
@@ -117,7 +120,8 @@
                                 <StackPanel Grid.Column="1" Spacing="2">
                                     <TextBlock Text="{Binding RunSetupReadinessText}"
                                                FontWeight="SemiBold"
-                                               TextWrapping="WrapWholeWords" />
+                                               TextWrapping="WrapWholeWords"
+                                               AutomationProperties.LiveSetting="Polite" />
                                     <TextBlock Text="{Binding RunSetupReadinessDetailText}"
                                                TextWrapping="WrapWholeWords"
                                                MaxLines="2"
@@ -211,7 +215,8 @@
                                    Text="{Binding ReportHistory.StatusText}"
                                    MaxWidth="150"
                                    TextTrimming="CharacterEllipsis"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   AutomationProperties.LiveSetting="Polite" />
                     </Grid>
 
                     <Grid x:Name="ReportHistoryFilterGrid"
@@ -227,11 +232,15 @@
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="ReportSearchBox"
                                  Text="{Binding ReportHistory.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                 PlaceholderText="搜索报告、目录或时间" />
+                                 PlaceholderText="搜索报告、目录或时间"
+                                 AutomationProperties.Name="搜索报告历史"
+                                 AutomationProperties.AutomationId="ReportHistorySearchBox" />
                         <ComboBox x:Name="ReportFilterComboBox"
                                   Grid.Column="1"
                                   SelectedIndex="{Binding ReportHistory.SelectedFilterIndex, Mode=TwoWay}"
-                                  HorizontalAlignment="Stretch">
+                                  HorizontalAlignment="Stretch"
+                                  AutomationProperties.Name="筛选报告历史"
+                                  AutomationProperties.AutomationId="ReportHistoryFilterComboBox">
                             <ComboBoxItem Content="全部" />
                             <ComboBoxItem Content="有异常" />
                             <ComboBoxItem Content="可打开" />
@@ -239,43 +248,73 @@
                         </ComboBox>
                     </Grid>
 
-                    <ListView ItemsSource="{Binding ReportHistory.FilteredRecentReports}"
-                              SelectedItem="{Binding ReportHistory.SelectedReport, Mode=TwoWay}"
-                              MaxHeight="220"
-                              SelectionMode="Single">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid ColumnSpacing="10" Padding="0,7">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Spacing="3">
-                                        <TextBlock Text="{Binding FileName}"
-                                                   FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding Summary}"
+                    <Grid MinHeight="104">
+                        <ListView ItemsSource="{Binding ReportHistory.FilteredRecentReports}"
+                                  SelectedItem="{Binding ReportHistory.SelectedReport, Mode=TwoWay}"
+                                  MaxHeight="220"
+                                  SelectionMode="Single"
+                                  AutomationProperties.Name="报告历史列表"
+                                  AutomationProperties.AutomationId="ReportHistoryList">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid ColumnSpacing="10" Padding="0,7" AutomationProperties.Name="{Binding FileName}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="3">
+                                            <TextBlock Text="{Binding FileName}"
+                                                       FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTipService.ToolTip="{Binding FileName}" />
+                                            <TextBlock Text="{Binding Summary}"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTipService.ToolTip="{Binding Summary}" />
+                                            <TextBlock Text="{Binding SourceText}"
+                                                       FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTipService.ToolTip="{Binding SourceText}" />
+                                            <TextBlock Text="{Binding RunMetaText}"
+                                                       FontSize="12"
+                                                       Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTipService.ToolTip="{Binding RunMetaText}" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding StatusText}"
+                                                   MaxWidth="80"
+                                                   TextTrimming="CharacterEllipsis"
                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding SourceText}"
-                                                   FontSize="12"
-                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                        <TextBlock Text="{Binding RunMetaText}"
-                                                   FontSize="12"
-                                                   Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding StatusText}"
-                                               MaxWidth="80"
-                                               TextTrimming="CharacterEllipsis"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               VerticalAlignment="Top" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
+                                                   VerticalAlignment="Top"
+                                                   ToolTipService.ToolTip="{Binding StatusText}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <StackPanel x:Name="ReportHistoryEmptyState"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="4"
+                                    IsHitTestVisible="False"
+                                    Visibility="{Binding ReportHistory.EmptyStateVisibility}">
+                            <FontIcon Glyph="&#xE9F9;"
+                                      FontSize="22"
+                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                      AutomationProperties.AccessibilityView="Raw" />
+                            <TextBlock Text="{Binding ReportHistory.EmptyStateTitle}"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       AutomationProperties.AutomationId="ReportHistoryEmptyState" />
+                            <TextBlock Text="{Binding ReportHistory.EmptyStateHint}"
+                                       FontSize="12"
+                                       TextWrapping="Wrap"
+                                       MaxWidth="280"
+                                       TextAlignment="Center"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </Grid>
 
                     <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
@@ -324,10 +363,11 @@
                         </Button>
                         <Button Grid.Column="2"
                                 Click="ClearRecentReports_Click"
+                                Style="{StaticResource UtilityIconButtonStyle}"
                                 AutomationProperties.AutomationId="ClearRecentReportsButton"
                                 AutomationProperties.Name="清空报告历史"
                                 ToolTipService.ToolTip="清空报告历史">
-                            <FontIcon Glyph="&#xE894;" FontSize="14" />
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" />
                         </Button>
                     </Grid>
                 </StackPanel>

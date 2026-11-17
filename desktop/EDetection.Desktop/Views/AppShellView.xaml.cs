@@ -190,10 +190,26 @@ public sealed partial class AppShellView : UserControl
     private void AppShellView_Loaded(object sender, RoutedEventArgs e)
     {
         QueueTitleBarInsetCorrection();
+        ApplySettingsTitleBarLabel(Root.ActualWidth >= CompactShellWidth);
         if (Root.ActualWidth < CompactShellWidth)
         {
             QueueCompactScrollReset();
         }
+    }
+
+    private void ApplySettingsTitleBarLabel(bool showLabel)
+    {
+        var visibility = showLabel ? Visibility.Visible : Visibility.Collapsed;
+        if (SettingsTitleBarLabel.Visibility == visibility)
+        {
+            return;
+        }
+
+        SettingsTitleBarLabel.Visibility = visibility;
+        SettingsTitleBarButton.Width = showLabel ? double.NaN : 46;
+        SettingsTitleBarButton.Padding = showLabel
+            ? new Thickness(10, 0, 10, 0)
+            : new Thickness(0);
     }
 
     private void ApplyResponsiveLayout(double width)
@@ -210,6 +226,7 @@ public sealed partial class AppShellView : UserControl
         var stackedStatus = compact && width < StackedStatusWidth;
         var layoutModeChanged = _lastCompactLayout != compact;
         _lastCompactLayout = compact;
+        ApplySettingsTitleBarLabel(!compact);
 
         StatusLayout.RowDefinitions[1].Height = stackedStatus ? GridLength.Auto : new GridLength(0);
         StatusLayout.RowDefinitions[2].Height = compact ? GridLength.Auto : new GridLength(0);

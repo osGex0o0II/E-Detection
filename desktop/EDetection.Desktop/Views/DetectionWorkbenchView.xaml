@@ -4,7 +4,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:behaviors="using:EDetection.Desktop.Behaviors"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
@@ -74,7 +73,6 @@
 
             <Border x:Name="ProcessedMetricCard"
                     Grid.Column="0"
-                    behaviors:CompositionHoverBehavior.IsEnabled="True"
                     Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="文件"
@@ -88,7 +86,6 @@
             </Border>
             <Border x:Name="AnomalyFilesMetricCard"
                     Grid.Column="1"
-                    behaviors:CompositionHoverBehavior.IsEnabled="True"
                     Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="异常文件"
@@ -102,7 +99,6 @@
             </Border>
             <Border x:Name="AnomalyRecordsMetricCard"
                     Grid.Column="2"
-                    behaviors:CompositionHoverBehavior.IsEnabled="True"
                     Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="异常记录"
@@ -116,7 +112,6 @@
             </Border>
             <Border x:Name="SkippedMetricCard"
                     Grid.Column="3"
-                    behaviors:CompositionHoverBehavior.IsEnabled="True"
                     Style="{StaticResource MetricCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock Text="跳过"
@@ -141,11 +136,13 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding WorkbenchActivityTitleText}"
                                Style="{StaticResource SectionTitleTextStyle}"
-                               TextTrimming="CharacterEllipsis" />
+                               TextTrimming="CharacterEllipsis"
+                               AutomationProperties.LiveSetting="Polite" />
                     <TextBlock Grid.Column="1"
                                Text="{Binding WorkbenchProgressText}"
                                Visibility="{Binding StatusProgressVisibility}"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               AutomationProperties.LiveSetting="Polite" />
                 </Grid>
                 <Grid Visibility="{Binding RunTelemetryVisibility}"
                       RowSpacing="8">
@@ -289,6 +286,7 @@
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding CopyCurrentReportPathCommand}"
+                            Style="{StaticResource UtilityIconButtonStyle}"
                             AutomationProperties.Name="复制报告路径" ToolTipService.ToolTip="复制报告路径">
                         <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                     </Button>
@@ -333,6 +331,7 @@
                                 </StackPanel>
                             </Button>
                             <Button Command="{Binding CopyDiagnosticsCommand}"
+                                    Style="{StaticResource UtilityIconButtonStyle}"
                                     AutomationProperties.Name="复制状态详情" ToolTipService.ToolTip="复制状态详情">
                                 <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                             </Button>
@@ -367,9 +366,18 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="高风险设备"
                                    Style="{StaticResource SectionTitleTextStyle}" />
-                        <TextBlock Grid.Column="1"
-                                   Text="{Binding WorkbenchReportDeviceCount}"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="8"
+                                    VerticalAlignment="Center">
+                            <Border Width="1"
+                                    Height="14"
+                                    Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                    Margin="2,0" />
+                            <TextBlock Text="{Binding WorkbenchReportDeviceCountText}"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
                     </Grid>
                     <ItemsRepeater Grid.Row="1"
                                    ItemsSource="{Binding WorkbenchHighRiskDevices}">
@@ -450,10 +458,13 @@
                             <TextBlock Grid.Column="1"
                                        Margin="0,0,12,0"
                                        Text="{Binding WorkbenchDetailPreviewStatusText}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       AutomationProperties.LiveSetting="Polite" />
                             <TextBlock Grid.Column="2"
                                        Text="{Binding DetailSortStatusText}"
-                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       AutomationProperties.AutomationId="DetailSortStatus"
+                                       AutomationProperties.LiveSetting="Polite" />
                         </Grid>
 
                         <Grid x:Name="DetailFilterGrid"
@@ -492,6 +503,7 @@
                             <StackPanel x:Name="DetailActionsPanel" Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8">
                                 <Button x:Name="ClearDetailFiltersButton"
                                          Command="{Binding ClearDetailFiltersCommand}"
+                                         Style="{StaticResource UtilityIconButtonStyle}"
                                          AutomationProperties.Name="清除筛选" ToolTipService.ToolTip="清除筛选">
                                          <FontIcon Glyph="&#xE894;" FontSize="14" />
                                  </Button>
@@ -551,7 +563,9 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="severity">
+                                            CommandParameter="severity"
+                                            AutomationProperties.Name="按等级排序"
+                                            AutomationProperties.HelpText="切换等级列的升序、降序与默认顺序">
                                         <TextBlock Text="等级" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="1"
@@ -560,7 +574,9 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="device">
+                                            CommandParameter="device"
+                                            AutomationProperties.Name="按设备排序"
+                                            AutomationProperties.HelpText="切换设备列的升序、降序与默认顺序">
                                         <TextBlock Text="设备" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="2"
@@ -569,7 +585,9 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="issue">
+                                            CommandParameter="issue"
+                                            AutomationProperties.Name="按异常排序"
+                                            AutomationProperties.HelpText="切换异常列的升序、降序与默认顺序">
                                         <TextBlock Text="异常" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="3"
@@ -578,7 +596,9 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="value">
+                                            CommandParameter="value"
+                                            AutomationProperties.Name="按异常值排序"
+                                            AutomationProperties.HelpText="切换异常值列的升序、降序与默认顺序">
                                         <TextBlock Text="异常值" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="4"
@@ -587,7 +607,9 @@
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
-                                            CommandParameter="recommendation">
+                                            CommandParameter="recommendation"
+                                            AutomationProperties.Name="按建议排序"
+                                            AutomationProperties.HelpText="切换建议列的升序、降序与默认顺序">
                                         <TextBlock Text="建议" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                 </Grid>
@@ -607,51 +629,81 @@
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
                             </Border>
-                            <ListView Grid.Row="2"
-                                      ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
-                                      SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
-                                      SelectionMode="Single"
-                                      ItemContainerStyle="{StaticResource DenseListViewItemStyle}">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid ColumnSpacing="12" Padding="12,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="46" />
-                                                <ColumnDefinition Width="1.2*" />
-                                                <ColumnDefinition Width="1.8*" />
-                                                <ColumnDefinition Width="86" />
-                                                <ColumnDefinition Width="1.4*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="{Binding Severity}"
-                                                       FontWeight="SemiBold"
-                                                       VerticalAlignment="Top" />
-                                            <StackPanel Grid.Column="1" Spacing="1">
-                                                <TextBlock Text="{Binding LocationText}"
+                            <Grid Grid.Row="2">
+                                <ListView ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
+                                          SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
+                                          SelectionMode="Single"
+                                          ItemContainerStyle="{StaticResource DenseListViewItemStyle}"
+                                          AutomationProperties.Name="异常明细表"
+                                          AutomationProperties.AutomationId="DetailTable">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid ColumnSpacing="12" Padding="12,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="46" />
+                                                    <ColumnDefinition Width="1.2*" />
+                                                    <ColumnDefinition Width="1.8*" />
+                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="1.4*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Severity}"
                                                            FontWeight="SemiBold"
-                                                           TextTrimming="CharacterEllipsis" />
-                                                <TextBlock Text="{Binding TimeText}"
-                                                           FontSize="12"
-                                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                           TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                            <TextBlock Grid.Column="2"
-                                                       Text="{Binding IssueText}"
-                                                       TextWrapping="WrapWholeWords"
-                                                       MaxLines="2"
-                                                       FontSize="13" />
-                                            <TextBlock Grid.Column="3"
-                                                       Text="{Binding ValueText}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       FontSize="13" />
-                                            <TextBlock Grid.Column="4"
-                                                       Text="{Binding RecommendedAction}"
-                                                       TextWrapping="WrapWholeWords"
-                                                       MaxLines="2"
-                                                       FontSize="13" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
+                                                           VerticalAlignment="Top"
+                                                           ToolTipService.ToolTip="{Binding Severity}" />
+                                                <StackPanel Grid.Column="1" Spacing="1">
+                                                    <TextBlock Text="{Binding LocationText}"
+                                                               FontWeight="SemiBold"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTipService.ToolTip="{Binding LocationText}" />
+                                                    <TextBlock Text="{Binding TimeText}"
+                                                               FontSize="12"
+                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               ToolTipService.ToolTip="{Binding TimeText}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding IssueText}"
+                                                           TextWrapping="WrapWholeWords"
+                                                           MaxLines="2"
+                                                           FontSize="13"
+                                                           ToolTipService.ToolTip="{Binding IssueText}" />
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{Binding ValueText}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           FontSize="13"
+                                                           ToolTipService.ToolTip="{Binding ValueText}" />
+                                                <TextBlock Grid.Column="4"
+                                                           Text="{Binding RecommendedAction}"
+                                                           TextWrapping="WrapWholeWords"
+                                                           MaxLines="2"
+                                                           FontSize="13"
+                                                           ToolTipService.ToolTip="{Binding RecommendedAction}" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <StackPanel x:Name="DetailEmptyState"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Spacing="4"
+                                            IsHitTestVisible="False"
+                                            Visibility="{Binding DetailTableEmptyStateVisibility}">
+                                    <FontIcon Glyph="&#xE9D9;"
+                                              FontSize="22"
+                                              Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                              AutomationProperties.AccessibilityView="Raw" />
+                                    <TextBlock Text="{Binding DetailTableEmptyStateTitle}"
+                                               FontWeight="SemiBold"
+                                               HorizontalAlignment="Center"
+                                               AutomationProperties.AutomationId="DetailEmptyState" />
+                                    <TextBlock Text="{Binding DetailTableEmptyStateHint}"
+                                               FontSize="12"
+                                               TextWrapping="Wrap"
+                                               MaxWidth="320"
+                                               TextAlignment="Center"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                            </Grid>
                         </Grid>
                     </Grid>
                 </TabViewItem>

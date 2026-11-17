@@ -6,6 +6,8 @@ param(
 
     [string]$OutputDirectory = "",
 
+    [string]$SettingsDirectory = "",
+
     [int]$Width = 1600,
 
     [int]$Height = 1000,
@@ -48,6 +50,14 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
 $appFull = [System.IO.Path]::GetFullPath((Resolve-Path $AppPath).Path)
 $outputFull = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputFull | Out-Null
+
+$settingsEnvironmentVariable = "EDETECTION_DESKTOP_SETTINGS_DIR"
+$previousSettingsOverride = $env:EDETECTION_DESKTOP_SETTINGS_DIR
+$settingsDirectoryFull = $null
+if (![string]::IsNullOrWhiteSpace($SettingsDirectory)) {
+    $settingsDirectoryFull = [System.IO.Path]::GetFullPath($SettingsDirectory)
+    New-Item -ItemType Directory -Force -Path $settingsDirectoryFull | Out-Null
+}
 
 Add-Type -AssemblyName System.Drawing
 Add-Type -AssemblyName System.Windows.Forms
@@ -427,6 +437,13 @@ $handle = [IntPtr]::Zero
 $bitmap = $null
 $graphics = $null
 
+if ($settingsDirectoryFull -ne $null) {
+    $env:EDETECTION_DESKTOP_SETTINGS_DIR = $settingsDirectoryFull
+}
+else {
+    Remove-Item -Path "Env:$settingsEnvironmentVariable" -ErrorAction SilentlyContinue
+}
+
 try {
     $process = Start-Process -FilePath $appFull -WorkingDirectory (Split-Path -Parent $appFull) -PassThru
     $handle = Get-MainWindowHandle $process $WaitSeconds
@@ -490,6 +507,12 @@ try {
     $detailSearchElement = Wait-ForAutomationElement $handle "搜索异常明细" $WaitSeconds
     $severityFilterElement = Wait-ForAutomationElement $handle "筛选异常等级" $WaitSeconds
     $issueTypeFilterElement = Wait-ForAutomationElement $handle "筛选异常类型" $WaitSeconds
+    $reportHistorySearchElement = Find-AutomationElementById $handle "ReportHistorySearchBox" $WaitSeconds
+    $reportHistoryFilterElement = Find-AutomationElementById $handle "ReportHistoryFilterComboBox" $WaitSeconds
+    $detailTableElement = Find-AutomationElementById $handle "DetailTable" $WaitSeconds
+    $accessibleNamesOk = $reportHistorySearchElement.Current.Name -eq "搜索报告历史" `
+        -and $reportHistoryFilterElement.Current.Name -eq "筛选报告历史" `
+        -and $detailTableElement.Current.Name -eq "异常明细表"
     $setupScrollElement = Find-AutomationElementById $handle "SetupScroll" $WaitSeconds
     $workbenchScrollElement = Find-AutomationElementById $handle "WorkbenchScroll" $WaitSeconds
 
@@ -551,6 +574,40 @@ try {
         throw "Visual smoke failed: expected the Settings button, found $($settingsBounds.ControlType)."
     }
 
+    $minimizeElement = Find-AutomationElementById $handle "Minimize" $WaitSeconds
+    $minimizeBounds = Get-ElementBounds $minimizeElement
+    $settingsCaptionGapDip = (($minimizeBounds.X - ($settingsBounds.X + $settingsBounds.Width)) / $scale)
+    $settingsCaptionTopOffsetDip = (($settingsBounds.Y - $minimizeBounds.Y) / $scale)
+    $settingsCaptionAligned = $settingsCaptionGapDip -ge -2 `
+        -and $settingsCaptionGapDip -le 6 `
+        -and [Math]::Abs($settingsCaptionTopOffsetDip) -le 2
+    $settingsButtonWidthDip = $settingsBounds.Width / $scale
+    $settingsLabelExpected = $actualClientWidthDip -ge 1080
+    $settingsLabelVisibleByWidth = if ($settingsLabelExpected) {
+        $settingsButtonWidthDip -ge 60
+    }
+    else {
+        $settingsButtonWidthDip -le 52
+    }
+
+    $rootAutomationElement = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
+    $logoNameCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        "E-Detection")
+    $logoMatches = $rootAutomationElement.FindAll(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        $logoNameCondition)
+    $logoGroupCount = 0
+    $logoTextCount = 0
+    foreach ($logoMatch in $logoMatches) {
+        if ($logoMatch.Current.ControlType -eq [System.Windows.Automation.ControlType]::Group) {
+            $logoGroupCount++
+        }
+        elseif ($logoMatch.Current.ControlType -eq [System.Windows.Automation.ControlType]::Text) {
+            $logoTextCount++
+        }
+    }
+
     $settingsInCaptionRegion = $settingsVisible -and (($settingsBounds.X - $clientScreenRect.Left) -ge ($clientScreenRect.Right - $clientScreenRect.Left) * 0.70)
     $metricElements = @(
         $processedMetricElement,
@@ -599,6 +656,17 @@ try {
 
     $setupBottomReachable = Test-ElementOnScreen $clearHistoryElement $clientScreenRect
 
+    $reportHistoryEmptyCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        "ReportHistoryEmptyState")
+    $reportHistoryEmptyElement = $rootAutomationElement.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        $reportHistoryEmptyCondition)
+    $reportHistoryEmptyRequired = $settingsDirectoryFull -ne $null
+    $reportHistoryEmptyVisible = $reportHistoryEmptyElement -ne $null `
+        -and (Test-ElementOnScreen $reportHistoryEmptyElement $clientScreenRect)
+    $reportHistoryEmptyStateOk = -not $reportHistoryEmptyRequired -or $reportHistoryEmptyVisible
+
     $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
     $setupBottomScreenshotPath = Join-Path $outputFull "main-setup-bottom-$timestamp.png"
     $setupCapture = Capture-WindowBitmap $handle $rect
@@ -632,6 +700,36 @@ try {
     $filterLayout = if ($filterYSpread -le (12 * $scale)) { "one-row" } else { "wrapped" }
     $expectedFilterLayout = if ($workbenchWidthDip -ge 720) { "one-row" } else { "wrapped" }
     $filterLayoutMatches = $filterLayout -eq $expectedFilterLayout
+
+    $noDetailCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty,
+        "暂无异常明细")
+    $noDetailElement = $rootAutomationElement.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        $noDetailCondition)
+    $detailEmptyCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        "DetailEmptyState")
+    $detailEmptyElement = $rootAutomationElement.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        $detailEmptyCondition)
+    $detailEmptyExpected = $noDetailElement -ne $null
+    $detailEmptyVisible = $detailEmptyElement -ne $null `
+        -and (Test-ElementOnScreen $detailEmptyElement $clientScreenRect)
+    $detailEmptyStateOk = -not $detailEmptyExpected -or $detailEmptyVisible
+
+    $sortHeaderElement = Wait-ForAutomationElement $handle "按等级排序" $WaitSeconds
+    [void](Bring-AutomationElementIntoView $sortHeaderElement)
+    $sortHeaderElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep -Milliseconds 300
+    $sortAscending = (Find-AutomationElementById $handle "DetailSortStatus" $WaitSeconds).Current.Name -eq "按等级升序"
+    $sortHeaderElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep -Milliseconds 300
+    $sortDescending = (Find-AutomationElementById $handle "DetailSortStatus" $WaitSeconds).Current.Name -eq "按等级降序"
+    $sortHeaderElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep -Milliseconds 300
+    $sortDefault = (Find-AutomationElementById $handle "DetailSortStatus" $WaitSeconds).Current.Name -eq "默认顺序"
+    $sortStateOk = $sortAscending -and $sortDescending -and $sortDefault
 
     $eventLogElement = Wait-ForAutomationElement $handle "运行记录" $WaitSeconds
     if (!(Test-ElementOnScreen $eventLogElement $clientScreenRect)) {
@@ -672,6 +770,11 @@ try {
 
     $layoutChecksPassed = $analysis.IsUseful `
         -and $settingsInCaptionRegion `
+        -and $settingsCaptionAligned `
+        -and $settingsLabelVisibleByWidth `
+        -and ($logoGroupCount -eq 0) `
+        -and ($logoTextCount -ge 1) `
+        -and $accessibleNamesOk `
         -and $startVisible `
         -and $startClickable `
         -and $metricVisible `
@@ -679,6 +782,9 @@ try {
         -and $metricLayoutMatches `
         -and $riskLayoutMatches `
         -and $filterLayoutMatches `
+        -and $detailEmptyStateOk `
+        -and $reportHistoryEmptyStateOk `
+        -and $sortStateOk `
         -and $setupBottomReachable `
         -and $workbenchTabReachable
     $runStatus = if ($sizeClamped) { "Skipped-ClampedRequestedSize" } elseif ($layoutChecksPassed) { "Passed" } else { "Failed" }
@@ -718,6 +824,25 @@ try {
         SettingsVisible = $settingsVisible
         SettingsInCaptionRegion = $settingsInCaptionRegion
         SettingsButtonBounds = $settingsBounds
+        SettingsButtonWidthDip = [Math]::Round($settingsButtonWidthDip, 1)
+        SettingsToCaptionGapDip = [Math]::Round($settingsCaptionGapDip, 1)
+        SettingsCaptionTopOffsetDip = [Math]::Round($settingsCaptionTopOffsetDip, 1)
+        SettingsCaptionAligned = $settingsCaptionAligned
+        SettingsLabelExpected = $settingsLabelExpected
+        SettingsLabelVisibleByWidth = $settingsLabelVisibleByWidth
+        LogoNameGroupCount = $logoGroupCount
+        LogoNameTextCount = $logoTextCount
+        ReportHistoryEmptyStateRequired = $reportHistoryEmptyRequired
+        ReportHistoryEmptyStateVisible = $reportHistoryEmptyVisible
+        ReportHistoryEmptyStateOk = $reportHistoryEmptyStateOk
+        DetailEmptyStateExpected = $detailEmptyExpected
+        DetailEmptyStateVisible = $detailEmptyVisible
+        DetailEmptyStateOk = $detailEmptyStateOk
+        AccessibleNamesOk = $accessibleNamesOk
+        SortAscending = $sortAscending
+        SortDescending = $sortDescending
+        SortDefault = $sortDefault
+        SortStateOk = $sortStateOk
         WorkbenchWidthDip = [Math]::Round($workbenchWidthDip, 1)
         WorkbenchPaneVisible = $workbenchPaneVisible
         MetricVisible = $metricVisible
@@ -783,6 +908,34 @@ try {
         throw "Visual smoke failed: the title-bar Settings button is not aligned with the caption-button region (X=$($settingsBounds.X), client width=$($clientScreenRect.Right - $clientScreenRect.Left))."
     }
 
+    if (!$settingsCaptionAligned) {
+        throw "Visual smoke failed: the title-bar Settings button is not in the caption band (gap=$([Math]::Round($settingsCaptionGapDip, 1)) DIP, top offset=$([Math]::Round($settingsCaptionTopOffsetDip, 1)) DIP)."
+    }
+
+    if (!$settingsLabelVisibleByWidth) {
+        throw "Visual smoke failed: the title-bar Settings label width ($([Math]::Round($settingsButtonWidthDip, 1)) DIP) does not match the expected $($settingsLabelExpected ? 'visible' : 'compact') layout."
+    }
+
+    if ($logoGroupCount -ne 0 -or $logoTextCount -lt 1) {
+        throw "Visual smoke failed: the title-bar logo exposes a duplicate 'E-Detection' automation name (groups=$logoGroupCount, texts=$logoTextCount)."
+    }
+
+    if (!$reportHistoryEmptyStateOk) {
+        throw "Visual smoke failed: the empty report history state is not visible when no reports exist."
+    }
+
+    if (!$detailEmptyStateOk) {
+        throw "Visual smoke failed: the empty anomaly detail state is not visible when no details exist."
+    }
+
+    if (!$accessibleNamesOk) {
+        throw "Visual smoke failed: the report-history search/filter or anomaly detail table is missing its accessible name."
+    }
+
+    if (!$sortStateOk) {
+        throw "Visual smoke failed: the anomaly detail sort state did not cycle through ascending, descending and default."
+    }
+
     if (!$setupBottomReachable) {
         throw "Visual smoke failed: setup content is not reachable. See $screenshotPath"
     }
@@ -821,5 +974,12 @@ finally {
         if (!$process.HasExited) {
             Stop-Process -Id $process.Id -Force
         }
+    }
+
+    if ($null -eq $previousSettingsOverride) {
+        Remove-Item -Path "Env:$settingsEnvironmentVariable" -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:EDETECTION_DESKTOP_SETTINGS_DIR = $previousSettingsOverride
     }
 }

@@ -72,7 +72,9 @@
                            FontSize="28"
                            FontWeight="SemiBold"
                            Margin="4,0,0,0"
-                           VerticalAlignment="Center" />
+                           VerticalAlignment="Center"
+                           AutomationProperties.AutomationId="SettingsPageTitle"
+                           AutomationProperties.HeadingLevel="Level1" />
             </Grid>
         </Border>
         <Grid x:Name="SettingsBody" Grid.Row="1" Padding="20,16,20,0" ColumnSpacing="20" SizeChanged="SettingsBody_SizeChanged">
@@ -85,20 +87,30 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <AutoSuggestBox x:Name="SettingsSearchBox" QueryIcon="Find" PlaceholderText="搜索设置" AutomationProperties.Name="搜索设置" TextChanged="SettingsSearchBox_TextChanged" SuggestionChosen="SettingsSearchBox_SuggestionChosen" QuerySubmitted="SettingsSearchBox_QuerySubmitted">
-                    <AutoSuggestBox.ItemTemplate>
-                        <DataTemplate>
-                            <StackPanel Padding="0,4">
-                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock Text="{Binding SectionTitle}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
-                            </StackPanel>
-                        </DataTemplate>
-                    </AutoSuggestBox.ItemTemplate>
-                </AutoSuggestBox>
-                <ListView x:Name="SettingsCategoryList" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" SelectionChanged="SettingsCategoryList_SelectionChanged">
+                <StackPanel Spacing="6">
+                    <AutoSuggestBox x:Name="SettingsSearchBox" QueryIcon="Find" PlaceholderText="搜索设置" AutomationProperties.Name="搜索设置" AutomationProperties.HelpText="输入关键词，然后从下拉结果中选择设置项。" TextChanged="SettingsSearchBox_TextChanged" SuggestionChosen="SettingsSearchBox_SuggestionChosen" QuerySubmitted="SettingsSearchBox_QuerySubmitted">
+                        <AutoSuggestBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Padding="0,4">
+                                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Text="{Binding SectionTitle}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </AutoSuggestBox.ItemTemplate>
+                    </AutoSuggestBox>
+                    <TextBlock x:Name="SettingsSearchEmptyText"
+                               Text="未找到匹配的设置，请尝试其他关键词。"
+                               Visibility="Collapsed"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               AutomationProperties.AutomationId="SettingsSearchNoResults"
+                               AutomationProperties.LiveSetting="Polite" />
+                </StackPanel>
+                <ListView x:Name="SettingsCategoryList" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" SelectionChanged="SettingsCategoryList_SelectionChanged" AutomationProperties.Name="设置类别">
                     <ListViewItem Tag="DefaultsSection" AutomationProperties.AutomationId="SettingsNav_Detection" AutomationProperties.Name="检测">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE8B7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                            <FontIcon Glyph="&#xE9D9;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
                             <TextBlock Text="检测" />
                         </StackPanel>
                     </ListViewItem>
@@ -185,7 +197,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox Text="{Binding PendingConfigPath, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditRunConfiguration}" PlaceholderText="选择要加载或保存的 JSON 文件" AutomationProperties.Name="阈值文件路径" AutomationProperties.HelpText="{Binding PendingConfigPath}" ToolTipService.ToolTip="{Binding PendingConfigPath}" />
-                                        <Button Grid.Column="1" Click="BrowseConfigPath_Click" IsEnabled="{Binding CanEditRunConfiguration}" AutomationProperties.Name="选择阈值文件" ToolTipService.ToolTip="选择阈值文件">
+                                        <Button Grid.Column="1" Click="BrowseConfigPath_Click" IsEnabled="{Binding CanEditRunConfiguration}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="选择阈值文件" ToolTipService.ToolTip="选择阈值文件">
                                             <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                                         </Button>
                                         <Button Grid.Column="2"
@@ -306,10 +318,10 @@
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="清空报告历史">
-                                <Button Click="ClearRecentReports_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史">
+                                <Button Click="ClearRecentReports_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史" ToolTipService.ToolTip="移除应用中的报告历史，不会删除磁盘上的报告文件">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
-                                        <TextBlock Text="清空" />
+                                        <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                        <TextBlock Text="清空报告历史" />
                                     </StackPanel>
                                 </Button>
                             </controls:SettingsCard>
@@ -327,10 +339,10 @@
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="清空运行记录">
-                                <Button Click="ClearRuntimeLogs_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录">
+                                <Button Click="ClearRuntimeLogs_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录" ToolTipService.ToolTip="移除应用中的运行记录，无法恢复">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
-                                        <TextBlock Text="清空" />
+                                        <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                        <TextBlock Text="清空运行记录" />
                                     </StackPanel>
                                 </Button>
                             </controls:SettingsCard>
@@ -427,10 +439,10 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <PasswordBox Password="{Binding PendingLlmApiKey, Mode=TwoWay}" PlaceholderText="{Binding LlmApiKeyStatusText}" AutomationProperties.Name="LLM API Key" />
-                                                <Button Grid.Column="1" Command="{Binding SaveLlmApiKeyCommand}" AutomationProperties.Name="保存 LLM API Key" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                                <Button Grid.Column="1" Command="{Binding SaveLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 LLM API Key" ToolTipService.ToolTip="保存到 Windows 凭据">
                                                     <FontIcon Glyph="&#xE74E;" FontSize="14" />
                                                 </Button>
-                                                <Button Grid.Column="2" Command="{Binding ClearLlmApiKeyCommand}" AutomationProperties.Name="清除 LLM API Key" ToolTipService.ToolTip="清除已保存凭据">
+                                                <Button Grid.Column="2" Command="{Binding ClearLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 LLM API Key" ToolTipService.ToolTip="清除已保存凭据">
                                                     <FontIcon Glyph="&#xE894;" FontSize="14" />
                                                 </Button>
                                             </Grid>
@@ -563,10 +575,10 @@
                                                     <ColumnDefinition Width="Auto" />
                                                 </Grid.ColumnDefinitions>
                                                 <PasswordBox Password="{Binding PendingNtfyToken, Mode=TwoWay}" PlaceholderText="{Binding NtfyTokenStatusText}" AutomationProperties.Name="ntfy Token" />
-                                                <Button Grid.Column="1" Command="{Binding SaveNtfyTokenCommand}" AutomationProperties.Name="保存 ntfy Token" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                                <Button Grid.Column="1" Command="{Binding SaveNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 ntfy Token" ToolTipService.ToolTip="保存到 Windows 凭据">
                                                     <FontIcon Glyph="&#xE74E;" FontSize="14" />
                                                 </Button>
-                                                <Button Grid.Column="2" Command="{Binding ClearNtfyTokenCommand}" AutomationProperties.Name="清除 ntfy Token" ToolTipService.ToolTip="清除已保存凭据">
+                                                <Button Grid.Column="2" Command="{Binding ClearNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 ntfy Token" ToolTipService.ToolTip="清除已保存凭据">
                                                     <FontIcon Glyph="&#xE894;" FontSize="14" />
                                                 </Button>
                                             </Grid>
@@ -619,7 +631,7 @@
                                         <TextBlock Text="{x:Bind ViewModel.DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
                                     </controls:SettingsCard>
                                     <controls:SettingsCard Header="设置存储">
-                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                        <TextBlock Text="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{x:Bind ViewModel.DesktopHealth.SettingsText, Mode=OneWay}" />
                                     </controls:SettingsCard>
                                 </StackPanel>
                             </Expander>
@@ -678,10 +690,10 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <PasswordBox Password="{Binding PendingProxyPassword, Mode=TwoWay}" IsEnabled="{Binding CanEditProxyCredentials}" PlaceholderText="{Binding ProxyPasswordStatusText}" AutomationProperties.Name="代理密码" />
-                                        <Button Grid.Column="1" Command="{Binding SaveProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" AutomationProperties.Name="保存代理密码" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                        <Button Grid.Column="1" Command="{Binding SaveProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存代理密码" ToolTipService.ToolTip="保存到 Windows 凭据">
                                             <FontIcon Glyph="&#xE74E;" FontSize="14" />
                                         </Button>
-                                        <Button Grid.Column="2" Command="{Binding ClearProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" AutomationProperties.Name="清除代理密码" ToolTipService.ToolTip="清除已保存凭据">
+                                        <Button Grid.Column="2" Command="{Binding ClearProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除代理密码" ToolTipService.ToolTip="清除已保存凭据">
                                             <FontIcon Glyph="&#xE894;" FontSize="14" />
                                         </Button>
                                     </Grid>
@@ -847,7 +859,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <InfoBar x:Name="SettingsFeedbackBar" IsOpen="{Binding IsSettingsFeedbackOpen, Mode=TwoWay}" Message="{Binding SettingsFeedbackText}" Severity="{Binding SettingsFeedbackSeverity}" IsIconVisible="True" IsClosable="True" MaxWidth="520" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                <InfoBar x:Name="SettingsFeedbackBar" IsOpen="{Binding IsSettingsFeedbackOpen, Mode=TwoWay}" Message="{Binding SettingsFeedbackText}" Severity="{Binding SettingsFeedbackSeverity}" IsIconVisible="True" IsClosable="True" MaxWidth="520" HorizontalAlignment="Left" VerticalAlignment="Center" AutomationProperties.AutomationId="SettingsFeedbackBar" AutomationProperties.LiveSetting="Polite" />
                 <StackPanel x:Name="SettingsFooterActions" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="偏好自动保存" FontSize="12" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     <Button Click="AboutButton_Click" AutomationProperties.Name="关于" ToolTipService.ToolTip="版本与软件信息">

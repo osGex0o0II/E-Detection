@@ -35,8 +35,20 @@
         <views:AppTitleBar x:Name="AppTitleBar"
                           Grid.Row="0"
                           Title="E-Detection">
+            <views:AppTitleBar.Resources>
+                <!--
+                    The default TitleBar template reserves 48 DIP between the
+                    right header and the system caption buttons, and centers the
+                    right header in the 48 DIP title bar.  Both push a settings
+                    button out of the caption band, so the reserved drag strip is
+                    collapsed and the right header is top-aligned with the
+                    caption buttons.  The rest of the title bar remains draggable.
+                -->
+                <x:Double x:Key="TitleBarMinDragRegionWidth">0</x:Double>
+                <VerticalAlignment x:Key="TitleBarRightHeaderVerticalAlignment">Top</VerticalAlignment>
+            </views:AppTitleBar.Resources>
             <views:AppTitleBar.LeftHeader>
-                <Viewbox Width="22" Height="22" VerticalAlignment="Center" AutomationProperties.Name="E-Detection">
+                <Viewbox Width="22" Height="22" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw">
                     <Canvas Width="160" Height="160">
                         <Path Data="M30,90 L54,90 L73,48 L91,110 L106,74 L116,90 L132,90"
                               Fill="Transparent"
@@ -55,8 +67,20 @@
                         Click="SettingsButton_Click"
                         AutomationProperties.AutomationId="SettingsTitleBarButton"
                         AutomationProperties.Name="设置"
-                        ToolTipService.ToolTip="设置">
-                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                        AutomationProperties.HelpText="打开设置页面（Ctrl+,）"
+                        AutomationProperties.AcceleratorKey="Ctrl+,"
+                        ToolTipService.ToolTip="设置（Ctrl+,）">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE713;"
+                                  FontSize="14"
+                                  AutomationProperties.AccessibilityView="Raw" />
+                        <TextBlock x:Name="SettingsTitleBarLabel"
+                                   Text="设置"
+                                   FontSize="12"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"
+                                   AutomationProperties.AccessibilityView="Raw" />
+                    </StackPanel>
                 </Button>
             </views:AppTitleBar.RightHeader>
         </views:AppTitleBar>
@@ -91,13 +115,15 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding WorkbenchStatusText}"
                                    FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis" />
+                                   TextTrimming="CharacterEllipsis"
+                                   AutomationProperties.LiveSetting="Polite" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding WorkbenchStatusBadgeText}"
                                    Visibility="{Binding WorkbenchStatusBadgeVisibility}"
                                    MaxWidth="320"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis" />
+                                   TextTrimming="CharacterEllipsis"
+                                   AutomationProperties.LiveSetting="Polite" />
                     </Grid>
                     <TextBlock Text="{Binding WorkbenchContextText}"
                                FontSize="12"
@@ -117,15 +143,19 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding WorkbenchProcessedSummary}"
                                    FontSize="12"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   AutomationProperties.LiveSetting="Polite" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding WorkbenchProgressText}"
                                    FontSize="12"
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   AutomationProperties.LiveSetting="Polite" />
                     </Grid>
                     <ProgressBar Minimum="0"
                                  Maximum="100"
-                                 Value="{Binding WorkbenchProgressPercent}" />
+                                 Value="{Binding WorkbenchProgressPercent}"
+                                 AutomationProperties.Name="检测进度"
+                                 AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
 
                 <Grid x:Name="PoetryPanel"

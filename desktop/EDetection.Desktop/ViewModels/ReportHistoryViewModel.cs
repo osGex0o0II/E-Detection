@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EDetection.Desktop.Models;
 using EDetection.Desktop.Services;
+using Microsoft.UI.Xaml;
 
 namespace EDetection.Desktop.ViewModels;
 
@@ -26,6 +27,18 @@ public sealed partial class ReportHistoryViewModel(
     public string StatusText => RecentReports.Count > 0
         ? $"{FilteredRecentReports.Count}/{RecentReports.Count} 个报告"
         : "暂无报告历史";
+
+    public Visibility EmptyStateVisibility => FilteredRecentReports.Count == 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public string EmptyStateTitle => RecentReports.Count == 0
+        ? "暂无报告历史"
+        : "没有匹配的报告";
+
+    public string EmptyStateHint => RecentReports.Count == 0
+        ? "完成一次检测后，最近报告会显示在这里。"
+        : "调整搜索关键词或筛选条件后再试。";
 
     [ObservableProperty]
     public partial RecentReport? SelectedReport { get; set; }
@@ -147,6 +160,11 @@ public sealed partial class ReportHistoryViewModel(
 
     partial void OnSelectedFilterIndexChanged(int value) => Refresh();
 
-    private void NotifyStatusChanged() =>
+    private void NotifyStatusChanged()
+    {
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(EmptyStateVisibility));
+        OnPropertyChanged(nameof(EmptyStateTitle));
+        OnPropertyChanged(nameof(EmptyStateHint));
+    }
 }

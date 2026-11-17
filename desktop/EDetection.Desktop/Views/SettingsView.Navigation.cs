@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 
 namespace EDetection.Desktop.Views;
 
@@ -46,6 +47,10 @@ public sealed partial class SettingsView
 
     private void ShowCategory(string categorySectionName)
     {
+        // Footer feedback belongs to the category where the action ran; leaving
+        // it open while navigating makes the new category look like it failed.
+        SettingsFeedbackBar.IsOpen = false;
+
         foreach (var section in GetSettingSections())
         {
             section.Visibility = GetCategorySectionName(section.Name) == categorySectionName
@@ -58,6 +63,43 @@ public sealed partial class SettingsView
         SaveAsDetectionConfigButton.Visibility = showDetectionActions ? Visibility.Visible : Visibility.Collapsed;
         SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
     }
+
+    private void FocusSearchTarget(string elementName)
+    {
+        if (FindName(elementName) is not DependencyObject root)
+        {
+            return;
+        }
+
+        if (root is Control rootControl && TryFocus(rootControl))
+        {
+            return;
+        }
+
+        var pending = new Queue<DependencyObject>();
+        pending.Enqueue(root);
+        while (pending.Count > 0)
+        {
+            var current = pending.Dequeue();
+            if (!ReferenceEquals(current, root) && current is Control control && TryFocus(control))
+            {
+                return;
+            }
+
+            var childCount = VisualTreeHelper.GetChildrenCount(current);
+            for (var i = 0; i < childCount; i++)
+            {
+                pending.Enqueue(VisualTreeHelper.GetChild(current, i));
+            }
+        }
+
+        SettingsCategoryList.Focus(FocusState.Programmatic);
+    }
+
+    private static bool TryFocus(Control control) =>
+        control.IsEnabled
+        && control.Visibility == Visibility.Visible
+        && control.Focus(FocusState.Programmatic);
 
     private void NavigateToElementByName(string elementName)
     {

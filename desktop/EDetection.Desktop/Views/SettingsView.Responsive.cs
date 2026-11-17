@@ -96,6 +96,7 @@ public sealed partial class SettingsView
         SettingsSearchBox.Width = iconOnly ? IconNavigationWidth : double.NaN;
         SettingsSearchBox.PlaceholderText = iconOnly ? "" : "搜索设置";
         SettingsNavRail.RowSpacing = iconOnly ? 0 : 10;
+        UpdateSearchEmptyState();
 
         foreach (var item in SettingsCategoryList.Items.OfType<ListViewItem>())
         {

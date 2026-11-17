@@ -4,6 +4,8 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class SettingsView
 {
+    private bool _settingsSearchHasNoResults;
+
     private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
@@ -12,12 +14,15 @@ public sealed partial class SettingsView
         }
 
         var query = sender.Text.Trim();
-        sender.ItemsSource = string.IsNullOrWhiteSpace(query)
-            ? null
+        var matches = string.IsNullOrWhiteSpace(query)
+            ? new List<SettingsSearchEntry>()
             : _searchEntries
                 .Where(entry => entry.Matches(query))
                 .Take(8)
                 .ToList();
+        sender.ItemsSource = matches.Count > 0 ? matches : null;
+        _settingsSearchHasNoResults = !string.IsNullOrWhiteSpace(query) && matches.Count == 0;
+        UpdateSearchEmptyState();
     }
 
     private void SettingsSearchBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
@@ -28,6 +33,7 @@ public sealed partial class SettingsView
         }
 
         sender.Text = entry.Title;
+        ClearSearchEmptyState();
         NavigateToSearchEntry(entry);
     }
 
@@ -35,6 +41,7 @@ public sealed partial class SettingsView
     {
         if (args.ChosenSuggestion is SettingsSearchEntry chosenEntry)
         {
+            ClearSearchEmptyState();
             NavigateToSearchEntry(chosenEntry);
             return;
         }
@@ -43,19 +50,55 @@ public sealed partial class SettingsView
         var entry = _searchEntries.FirstOrDefault(item => item.Matches(query));
         if (entry is not null)
         {
+            ClearSearchEmptyState();
             NavigateToSearchEntry(entry);
+            return;
         }
+
+        _settingsSearchHasNoResults = !string.IsNullOrWhiteSpace(query);
+        UpdateSearchEmptyState();
+    }
+
+    private void ClearSearchEmptyState()
+    {
+        _settingsSearchHasNoResults = false;
+        UpdateSearchEmptyState();
+    }
+
+    private void UpdateSearchEmptyState()
+    {
+        SettingsSearchEmptyText.Visibility = _settingsSearchHasNoResults
+            && SettingsSearchBox.Visibility == Microsoft.UI.Xaml.Visibility.Visible
+                ? Microsoft.UI.Xaml.Visibility.Visible
+                : Microsoft.UI.Xaml.Visibility.Collapsed;
     }
 
     private void NavigateToSearchEntry(SettingsSearchEntry entry)
     {
+        // Clear the query so the suggestion popup cannot hold focus or swallow
+        // shell accelerators after the user jumps to the target.
+        SettingsSearchBox.Text = "";
+        SettingsSearchBox.ItemsSource = null;
+        ClearSearchEmptyState();
         ExpandSearchEntryContainers(entry);
         DispatcherQueue.TryEnqueue(() =>
         {
             UpdateResponsiveLayout();
             SelectCategoryBySection(entry.SectionName);
             NavigateToElementByName(entry.TargetName ?? entry.SectionName);
+            // Wait for the category swap, scroll and suggestion popup to settle
+            // before taking focus; focusing in the same tick can be rejected by
+            // the still-closing AutoSuggestBox popup.
+            DispatcherQueue.TryEnqueue(
+                Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                () => FocusSearchTargetAfterNavigation(entry.TargetName ?? entry.SectionName));
         });
+    }
+
+    private async void FocusSearchTargetAfterNavigation(string elementName)
+    {
+        await Task.Delay(250);
+        FocusSearchTarget(elementName);
     }
 
     private static SettingsSearchEntry[] BuildSearchEntries() =>

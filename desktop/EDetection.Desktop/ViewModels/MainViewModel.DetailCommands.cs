@@ -740,14 +740,27 @@ public partial class MainViewModel
         SelectedSeverityFilterIndex = 0;
         SelectedIssueTypeFilterIndex = 0;
         SelectedDetailSortKey = "";
+        DetailSortDescending = false;
     }
 
     [RelayCommand]
     private void SortDetails(string key)
     {
-        SelectedDetailSortKey = string.Equals(SelectedDetailSortKey, key, StringComparison.Ordinal)
-            ? ""
-            : key;
+        if (!string.Equals(SelectedDetailSortKey, key, StringComparison.Ordinal))
+        {
+            SelectedDetailSortKey = key;
+            DetailSortDescending = false;
+            return;
+        }
+
+        if (!DetailSortDescending)
+        {
+            DetailSortDescending = true;
+            return;
+        }
+
+        SelectedDetailSortKey = "";
+        DetailSortDescending = false;
     }
 
 }

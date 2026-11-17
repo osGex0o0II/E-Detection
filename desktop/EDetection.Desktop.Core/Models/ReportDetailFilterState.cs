@@ -4,4 +4,5 @@ public sealed record ReportDetailFilterState(
     string SearchText,
     int SeverityFilterIndex,
     int IssueTypeFilterIndex,
-    string SortKey);
+    string SortKey,
+    bool SortDescending = false);

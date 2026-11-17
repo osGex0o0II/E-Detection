@@ -680,6 +680,27 @@ function Set-SettingsSearchFocus([IntPtr]$RootHandle) {
     return $false
 }
 
+function Set-SettingsSearchText([IntPtr]$RootHandle, [string]$Text) {
+    $search = Get-AutomationElementByName $RootHandle "搜索设置" $WaitSeconds
+    $editCondition = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+        [System.Windows.Automation.ControlType]::Edit)
+    $target = $search.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $editCondition)
+    if ($target -eq $null) {
+        $target = $search
+    }
+
+    try {
+        $valuePattern = [System.Windows.Automation.ValuePattern]$target.GetCurrentPattern(
+            [System.Windows.Automation.ValuePattern]::Pattern)
+        $valuePattern.SetValue($Text)
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 $process = $null
 
 try {
@@ -809,6 +830,26 @@ try {
         throw "Settings control cannot be found through UI Automation."
     }
 
+    $reportHistorySearchElement = Get-AutomationElementById $mainWindow.Handle "ReportHistorySearchBox" $WaitSeconds
+    $reportHistoryFilterElement = Get-AutomationElementById $mainWindow.Handle "ReportHistoryFilterComboBox" $WaitSeconds
+    $detailTableElement = Get-AutomationElementById $mainWindow.Handle "DetailTable" $WaitSeconds
+    $workbenchAccessibleNames = [ordered]@{
+        "ReportHistorySearch" = $reportHistorySearchElement.Current.Name
+        "ReportHistoryFilter" = $reportHistoryFilterElement.Current.Name
+        "DetailTable" = $detailTableElement.Current.Name
+    }
+    if ($workbenchAccessibleNames["ReportHistorySearch"] -ne "搜索报告历史") {
+        throw "Settings smoke: report history search accessible name is '$($workbenchAccessibleNames["ReportHistorySearch"])'."
+    }
+
+    if ($workbenchAccessibleNames["ReportHistoryFilter"] -ne "筛选报告历史") {
+        throw "Settings smoke: report history filter accessible name is '$($workbenchAccessibleNames["ReportHistoryFilter"])'."
+    }
+
+    if ($workbenchAccessibleNames["DetailTable"] -ne "异常明细表") {
+        throw "Settings smoke: detail table accessible name is '$($workbenchAccessibleNames["DetailTable"])'."
+    }
+
     $settingsButtonElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
     $settingsTitle = Wait-ForAutomationName $mainWindow.Handle "设置" $WaitSeconds
     $settingsSearchBox = Wait-ForAutomationName $mainWindow.Handle "搜索设置" $WaitSeconds
@@ -839,6 +880,52 @@ try {
     }
 
     $settingsSearchVisible = Test-ElementOnScreen (Get-AutomationElementByName $mainWindow.Handle "搜索设置" $WaitSeconds) $clientScreenRect
+
+    # Settings search must explain a zero-result query instead of silently
+    # leaving an empty suggestion popup.
+    [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
+    Start-Sleep -Milliseconds 250
+    $settingsSearchFocusedForNoResults = Set-SettingsSearchFocus $mainWindow.Handle
+    if (!$settingsSearchFocusedForNoResults) {
+        throw "Settings smoke: could not focus the Settings search box for the no-results check."
+    }
+    [System.Windows.Forms.SendKeys]::SendWait("zzzz")
+    Start-Sleep -Milliseconds 700
+    $settingsSearchNoResultsElement = Get-AutomationElementById $mainWindow.Handle "SettingsSearchNoResults" 3
+    $settingsSearchNoResultsVisible = Test-ElementOnScreen $settingsSearchNoResultsElement $clientScreenRect
+    if (!$settingsSearchNoResultsVisible) {
+        throw "Settings smoke: a zero-result search did not show the no-results state."
+    }
+    $settingsScreenshots["SearchNoResults"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-search-no-results" $screenshotTimestamp).Path
+    [System.Windows.Forms.SendKeys]::SendWait("^a{BACKSPACE}")
+    Start-Sleep -Milliseconds 700
+    $settingsSearchNoResultsCleared = $false
+    try {
+        $settingsSearchNoResultsAfterClear = Get-AutomationElementById $mainWindow.Handle "SettingsSearchNoResults" 1
+        $settingsSearchNoResultsCleared = $settingsSearchNoResultsAfterClear.Current.IsOffscreen
+    }
+    catch {
+        $settingsSearchNoResultsCleared = $true
+    }
+    if (!$settingsSearchNoResultsCleared) {
+        throw "Settings smoke: clearing the Settings search did not hide the no-results state."
+    }
+
+    # Choosing a search result must move keyboard focus to the target section,
+    # not leave it stranded in the navigation rail.
+    [System.Windows.Forms.SendKeys]::SendWait("mica{ENTER}")
+    Start-Sleep -Milliseconds 1200
+    $settingsSearchFocusedElement = [System.Windows.Automation.AutomationElement]::FocusedElement
+    $settingsSearchNavigationFocus = if ($settingsSearchFocusedElement -eq $null) {
+        ""
+    }
+    else {
+        $settingsSearchFocusedElement.Current.Name
+    }
+    if ($settingsSearchNavigationFocus -ne "应用主题") {
+        $focusCodes = ($settingsSearchNavigationFocus.ToCharArray() | ForEach-Object { [int]$_ }) -join ','
+        throw "Settings smoke: searching for a setting did not move focus to its target (focused '$settingsSearchNavigationFocus', codes=$focusCodes)."
+    }
 
     Select-SettingsCategory $mainWindow.Handle "检测"
     Start-Sleep -Milliseconds 500
@@ -910,6 +997,7 @@ try {
     Select-SettingsCategory $mainWindow.Handle "通知"
     $desktopNotificationToggle = Wait-ForAutomationName $mainWindow.Handle "桌面通知" $WaitSeconds
     $desktopNotificationTestButton = Wait-ForAutomationName $mainWindow.Handle "测试桌面通知" $WaitSeconds
+    $desktopNotificationTestElement = Get-AutomationElementByName $mainWindow.Handle "测试桌面通知" $WaitSeconds
     $openWindowsNotificationSettingsButton = Wait-ForAutomationName $mainWindow.Handle "打开 Windows 通知设置" $WaitSeconds
     $ntfySection = Wait-ForAutomationName $mainWindow.Handle "外部消息推送" $WaitSeconds
     $ntfySettingsExpander = Expand-AutomationElement $mainWindow.Handle "推送服务配置（启用后生效）" $WaitSeconds
@@ -918,6 +1006,30 @@ try {
     $ntfyProxyToggle = Wait-ForAutomationName $mainWindow.Handle "ntfy 使用网络代理" $WaitSeconds
     $ntfyTestButton = Wait-ForAutomationName $mainWindow.Handle "发送 ntfy 测试推送" $WaitSeconds
     $settingsScreenshots["Notifications"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-notifications" $screenshotTimestamp).Path
+
+    # Category navigation must dismiss feedback raised by an action in the
+    # previous category; otherwise the new page looks like it failed.
+    $desktopNotificationTestElement.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+    Start-Sleep -Milliseconds 800
+    $settingsFeedbackElement = Get-AutomationElementById $mainWindow.Handle "SettingsFeedbackBar" 3
+    $settingsFeedbackVisible = Test-ElementOnScreen $settingsFeedbackElement $clientScreenRect
+    if (!$settingsFeedbackVisible) {
+        throw "Settings smoke: test notification did not show the footer feedback bar."
+    }
+    $settingsScreenshots["Feedback"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-footer-feedback" $screenshotTimestamp).Path
+    Select-SettingsCategory $mainWindow.Handle "常规"
+    Start-Sleep -Milliseconds 600
+    $settingsFeedbackClearedOnNavigation = $false
+    try {
+        $settingsFeedbackAfterNavigation = Get-AutomationElementById $mainWindow.Handle "SettingsFeedbackBar" 1
+        $settingsFeedbackClearedOnNavigation = $settingsFeedbackAfterNavigation.Current.IsOffscreen
+    }
+    catch {
+        $settingsFeedbackClearedOnNavigation = $true
+    }
+    if (!$settingsFeedbackClearedOnNavigation) {
+        throw "Settings smoke: footer feedback stayed open after switching settings categories."
+    }
 
     Select-SettingsCategory $mainWindow.Handle "连接与集成"
     $llmSection = Wait-ForAutomationName $mainWindow.Handle "智能助手集成" $WaitSeconds
@@ -1249,6 +1361,12 @@ try {
         SettingsBackButtonBounds = $backBounds
         SettingsBackButtonIsTopLeft = $backIsTopLeft
         SettingsSearchVisible = $settingsSearchVisible
+        SettingsSearchNoResultsVisible = $settingsSearchNoResultsVisible
+        SettingsSearchNoResultsCleared = $settingsSearchNoResultsCleared
+        SettingsSearchNavigationFocus = $settingsSearchNavigationFocus
+        SettingsFeedbackVisibleBeforeNavigation = $settingsFeedbackVisible
+        SettingsFeedbackClearedOnNavigation = $settingsFeedbackClearedOnNavigation
+        WorkbenchAccessibleNames = $workbenchAccessibleNames
         SettingsSaveVisible = $settingsSaveVisible
         SettingsResetVisible = $settingsResetVisible
         SettingsClosedBySearchEscape = $settingsClosedBySearchEscape

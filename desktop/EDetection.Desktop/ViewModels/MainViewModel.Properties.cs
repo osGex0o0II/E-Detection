@@ -343,6 +343,10 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewTotalCount))]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(WorkbenchReportDeviceCountText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     [NotifyPropertyChangedFor(nameof(FirstRunGuideVisibility))]
     [NotifyPropertyChangedFor(nameof(SnapshotActionsVisibility))]
     [NotifyPropertyChangedFor(nameof(RunTelemetryVisibility))]
@@ -361,6 +365,7 @@ public partial class MainViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WorkbenchReportDeviceCount))]
+    [NotifyPropertyChangedFor(nameof(WorkbenchReportDeviceCountText))]
     public partial int ReportDeviceCount { get; set; }
 
     [ObservableProperty]
@@ -386,28 +391,50 @@ public partial class MainViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     public partial string DetailSearchText { get; set; } = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     public partial int SelectedSeverityFilterIndex { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     public partial int SelectedIssueTypeFilterIndex { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DetailSortStatusText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     public partial string SelectedDetailSortKey { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DetailSortStatusText))]
+    [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
+    [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
+    public partial bool DetailSortDescending { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DetailPreviewStatusText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewTotalCount))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
+    [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
     public partial int DetailPreviewTotalCount { get; set; }
 
     [ObservableProperty]
@@ -744,6 +771,8 @@ public partial class MainViewModel
     partial void OnSelectedIssueTypeFilterIndexChanged(int value) => RefreshDetailPreview();
 
     partial void OnSelectedDetailSortKeyChanged(string value) => RefreshDetailPreview();
+
+    partial void OnDetailSortDescendingChanged(bool value) => RefreshDetailPreview();
 
     partial void OnSelectedDetailChanged(ReportDetailPreview? value)
     {
