@@ -379,6 +379,7 @@ public partial class MainViewModel
     [NotifyCanExecuteChangedFor(nameof(OpenSelectedReportFolderCommand))]
     [NotifyCanExecuteChangedFor(nameof(UseSelectedReportDirectoriesCommand))]
     [NotifyCanExecuteChangedFor(nameof(RemoveSelectedReportCommand))]
+    [NotifyPropertyChangedFor(nameof(HasSelectedReport))]
     public partial RecentReport? SelectedReport { get; set; }
 
     [ObservableProperty]

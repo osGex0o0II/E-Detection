@@ -176,6 +176,8 @@ public partial class MainViewModel
 
     public bool HasSelectedDetail => SelectedDetail is not null;
 
+    public bool HasSelectedReport => SelectedReport is not null;
+
     public bool IsIdle => !IsRunning;
 
     public bool CanEditRunConfiguration => !IsRunning;

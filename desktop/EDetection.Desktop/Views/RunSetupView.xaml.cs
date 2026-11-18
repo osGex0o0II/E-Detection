@@ -143,6 +143,32 @@ public sealed partial class RunSetupView : UserControl
         }
     }
 
+    private async void RemoveSelectedReport_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (ViewModel?.RemoveSelectedReportCommand.CanExecute(null) != true)
+            {
+                return;
+            }
+
+            // Removing an entry is not undoable, so it asks first.
+            if (await ConfirmationDialog.ConfirmDestructiveActionAsync(
+                    XamlRoot,
+                    this,
+                    "移除选中报告？",
+                    "只会从历史列表中移除该条目，不会删除磁盘上的 Excel 报告。",
+                    "移除"))
+            {
+                ViewModel?.RemoveSelectedReportCommand.Execute(null);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or COMException)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法显示移除确认对话框", ex);
+        }
+    }
+
     private static async Task<StorageFolder?> PickFolderAsync()
     {
         var picker = new FolderPicker();

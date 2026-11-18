@@ -361,8 +361,11 @@
                             </StackPanel>
                         </Button>
                         <Button Grid.Column="1"
-                                Command="{Binding RemoveSelectedReportCommand}"
-                                HorizontalAlignment="Stretch">
+                                Click="RemoveSelectedReport_Click"
+                                IsEnabled="{Binding HasSelectedReport}"
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="从历史移除选中报告"
+                                ToolTipService.ToolTip="仅从历史列表中移除，不会删除磁盘上的报告文件">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE74D;" FontSize="14" />
                                 <TextBlock Text="移除" />
