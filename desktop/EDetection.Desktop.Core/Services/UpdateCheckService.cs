@@ -57,7 +57,14 @@ public sealed class UpdateCheckService
 
     private static Uri ResolveLatestReleaseEndpoint(string feedUrl)
     {
-        var uri = new Uri(feedUrl, UriKind.Absolute);
+        // new Uri(..., Absolute) throws a localised framework message such as
+        // "Invalid URI: The format of the URI could not be determined."; the
+        // settings field is user-editable, so name the field and the fix.
+        if (!Uri.TryCreate(feedUrl.Trim(), UriKind.Absolute, out var uri))
+        {
+            throw new InvalidOperationException("更新源不是有效地址。请填写完整地址，例如 https://github.com/owner/repo/releases/latest");
+        }
+
         if (uri.Scheme != Uri.UriSchemeHttps)
         {
             throw new InvalidOperationException("更新源必须使用 HTTPS。");

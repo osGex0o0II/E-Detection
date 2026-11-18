@@ -9,6 +9,4 @@ public sealed partial class DetectionRulesSettingsSection : UserControl
     {
         InitializeComponent();
     }
-
-    public MainViewModel? ViewModel => DataContext as MainViewModel;
 }

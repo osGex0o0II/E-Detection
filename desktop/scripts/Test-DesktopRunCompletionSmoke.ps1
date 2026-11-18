@@ -138,7 +138,9 @@ try {
 
     $startAction = Invoke-AutomationElement $mainWindow.Handle "开始检测" 2
     if ($startAction -eq $null) {
-        [System.Windows.Forms.SendKeys]::SendWait("{F5}")
+        # There is no F5 accelerator; sending one only produced a misleading
+        # "passed" record for a run that never started.
+        throw "开始检测 button was not found, so the run could not be started."
     }
 
     $completionTitle = Wait-ForAutomationName $mainWindow.Handle "检测完成" $WaitSeconds
@@ -165,7 +167,7 @@ try {
         RequestedDipHeight = $Height
         TargetWidth = $targetWidth
         TargetHeight = $targetHeight
-        Trigger = "F5 with a one-file CSV input"
+        Trigger = "UI Automation InvokePattern on 开始检测 with a one-file CSV input"
         Passed = $true
         CapturedAt = (Get-Date).ToString("o")
     } | ConvertTo-Json | Set-Content -Path $resultPath -Encoding UTF8

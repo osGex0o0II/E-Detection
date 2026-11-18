@@ -72,15 +72,6 @@ public sealed partial class RunSetupView : UserControl
         }
     }
 
-    public async Task BrowseConfigPathAsync()
-    {
-        var file = await PickFileAsync(".json");
-        if (file is not null && ViewModel is not null)
-        {
-            ViewModel.PendingConfigPath = file.Path;
-        }
-    }
-
     private async void BrowseInputDirectory_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -179,22 +170,6 @@ public sealed partial class RunSetupView : UserControl
         }
 
         return await picker.PickSingleFolderAsync();
-    }
-
-    private static async Task<StorageFile?> PickFileAsync(params string[] fileTypes)
-    {
-        var picker = new FileOpenPicker();
-        foreach (var fileType in fileTypes)
-        {
-            picker.FileTypeFilter.Add(fileType);
-        }
-
-        if (App.CurrentWindow is not null)
-        {
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.CurrentWindow));
-        }
-
-        return await picker.PickSingleFileAsync();
     }
 
     private static void ApplyPathLayout(
