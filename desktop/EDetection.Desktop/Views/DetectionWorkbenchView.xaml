@@ -653,6 +653,13 @@
                                     every column drifted.  The header's right inset is
                                     synced to the real scrollbar width in code-behind.
                                 -->
+                                <!--
+                                    The workbench page sits inside the shell's
+                                    ScrollViewer, so a ListView here could grow
+                                    to its full item height, lose virtualization
+                                    and swallow the page scroll.  Cap it so it
+                                    keeps its own scrollbar.
+                                -->
                                 <ListView x:Name="DetailTable"
                                           ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
                                           SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
