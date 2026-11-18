@@ -28,6 +28,10 @@ public sealed partial class ReportHistoryViewModel(
         ? $"{FilteredRecentReports.Count}/{RecentReports.Count} 个报告"
         : "暂无报告历史";
 
+    // The clear action must not be clickable when there is nothing to clear;
+    // a confirmation dialog that then does nothing reads as a broken action.
+    public bool HasReports => RecentReports.Count > 0;
+
     public Visibility EmptyStateVisibility => FilteredRecentReports.Count == 0
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -166,5 +170,6 @@ public sealed partial class ReportHistoryViewModel(
         OnPropertyChanged(nameof(EmptyStateVisibility));
         OnPropertyChanged(nameof(EmptyStateTitle));
         OnPropertyChanged(nameof(EmptyStateHint));
+        OnPropertyChanged(nameof(HasReports));
     }
 }

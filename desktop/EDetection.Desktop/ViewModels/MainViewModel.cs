@@ -204,29 +204,7 @@ public partial class MainViewModel
     public string CancelButtonText => IsCancelConfirmationPending ? "确认取消" : "取消";
 
     public string CancelConfirmationText =>
-        "再次按 Esc 或点击“确认取消”停止检测。当前检测任务会被终止。";
-
-    public Visibility CompletionActionsVisibility => ShouldShowCompletionActions
-        ? Visibility.Visible
-        : Visibility.Collapsed;
-
-    public string CompletionActionTitleText => AnomalyRecords > 0
-        ? $"检测完成，发现 {AnomalyRecords} 条异常"
-        : "检测完成，未发现异常";
-
-    public string CompletionActionBodyText
-    {
-        get
-        {
-            var reportText = string.IsNullOrWhiteSpace(ReportPath)
-                ? "未生成 Excel 报告"
-                : $"报告已生成: {Path.GetFileName(ReportPath)}";
-            return $"{ProcessedSummary} 个文件 · 异常文件 {AnomalyFiles} · 跳过 {SkippedFiles} · {reportText}";
-        }
-    }
-
-    private bool ShouldShowCompletionActions =>
-        !IsRunning && SelectedReport is null && StatusText == "检测完成";
+        "点击“确认取消”即可停止检测，当前检测任务会被终止。";
 
     public string ProcessedSummary => TotalFiles > 0
         ? $"{ProcessedFiles}/{TotalFiles}"
@@ -238,7 +216,7 @@ public partial class MainViewModel
         $"离线 {SensorOfflineDevices} · 传感器故障 {SensorFaultRows} · 未配置 {SensorMissingRows} · 跳过 {SensorSkippedRows}";
 
     public string DetailPreviewStatusText => DetailPreviewTotalCount > 0
-        ? $"{FilteredDetailPreview.Count}/{DetailPreviewTotalCount} 条预览"
+        ? BuildPreviewStatusText(FilteredDetailPreview.Count(), DetailPreviewTotalCount)
         : "暂无异常明细";
 
     public string LogStatusText => RuntimeLogs.StatusText;
@@ -275,7 +253,7 @@ public partial class MainViewModel
             : FilteredDetailPreview;
 
     public string WorkbenchDetailPreviewStatusText => WorkbenchDetailPreviewTotalCount > 0
-        ? $"{WorkbenchFilteredDetailPreview.Count()}/{WorkbenchDetailPreviewTotalCount} 条预览"
+        ? BuildPreviewStatusText(WorkbenchFilteredDetailPreview.Count(), WorkbenchDetailPreviewTotalCount)
         : "暂无异常明细";
 
     public string ReportHistoryStatusText => ReportHistory.StatusText;

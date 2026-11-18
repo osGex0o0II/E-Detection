@@ -268,7 +268,8 @@ public partial class MainViewModel
                                    or JsonException
                                    or ArgumentException
                                    or InvalidOperationException
-                                   or TaskCanceledException)
+                                   or TaskCanceledException
+                                   or UriFormatException)
         {
             UpdateStatusText = showProgress
                 ? $"检查更新失败: {ex.Message}"

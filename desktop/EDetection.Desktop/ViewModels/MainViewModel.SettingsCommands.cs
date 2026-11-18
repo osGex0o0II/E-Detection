@@ -262,7 +262,11 @@ public partial class MainViewModel
     [RelayCommand]
     private void OpenSystemNotificationSettings()
     {
-        OpenUri(WindowsNotificationSettingsUri);
+        if (!OpenUri(WindowsNotificationSettingsUri))
+        {
+            return;
+        }
+
         ShowSettingsFeedback("已打开 Windows 通知设置。", InfoBarSeverity.Informational);
         AddLog("桌面通知", "已打开 Windows 通知设置。");
     }
@@ -270,7 +274,11 @@ public partial class MainViewModel
     [RelayCommand]
     private void OpenSystemStartupSettings()
     {
-        OpenUri(WindowsStartupAppsSettingsUri);
+        if (!OpenUri(WindowsStartupAppsSettingsUri))
+        {
+            return;
+        }
+
         ShowSettingsFeedback("已打开 Windows 启动应用设置。", InfoBarSeverity.Informational);
         AddLog("窗口", "已打开 Windows 启动应用设置。");
     }
@@ -338,7 +346,11 @@ public partial class MainViewModel
     [RelayCommand]
     private void OpenSystemProxySettings()
     {
-        OpenUri(WindowsProxySettingsUri);
+        if (!OpenUri(WindowsProxySettingsUri))
+        {
+            return;
+        }
+
         ShowSettingsFeedback("已打开 Windows 代理设置。", InfoBarSeverity.Informational);
         AddLog("网络代理", "已打开 Windows 代理设置。");
     }

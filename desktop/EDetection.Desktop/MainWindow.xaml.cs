@@ -37,6 +37,8 @@ public sealed partial class MainWindow : Window
     private bool _isSessionEnding;
     private bool _shellResourcesCleanedUp;
     private bool _isClosed;
+    private bool _closeConfirmed;
+    private bool _closePromptOpen;
 
     private const uint WmQueryEndSession = 0x0011;
     private const uint WmEndSession = 0x0016;
@@ -140,12 +142,75 @@ public sealed partial class MainWindow : Window
 
     private void AppWindow_Closing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        if (_isExitRequested || _isSessionEnding || !ViewModel.CloseToTrayOnClose)
+        if (_isSessionEnding)
+        {
+            return;
+        }
+
+        // Neither a running detection nor unsaved threshold edits may be
+        // destroyed by a stray window close or a tray Exit click.  Blocking the
+        // UI thread on a dialog deadlocks, so the close is cancelled and
+        // re-issued after the user confirms.
+        if (!_closeConfirmed && (ViewModel.IsRunning || ViewModel.IsDetectionConfigDirty))
+        {
+            args.Cancel = true;
+            _ = PromptCloseWithUnsavedWorkAsync();
+            return;
+        }
+
+        if (_isExitRequested || !ViewModel.CloseToTrayOnClose)
         {
             return;
         }
 
         args.Cancel = HideToTray();
+    }
+
+    private async Task PromptCloseWithUnsavedWorkAsync()
+    {
+        if (_closePromptOpen || Shell.XamlRoot is null)
+        {
+            return;
+        }
+
+        _closePromptOpen = true;
+        try
+        {
+            var running = ViewModel.IsRunning;
+            var dialog = new ContentDialog
+            {
+                XamlRoot = Shell.XamlRoot,
+                Title = running ? "检测正在运行" : "检测阈值尚未保存",
+                Content = running
+                    ? "关闭窗口会终止当前检测，且不会生成未完成的报告。"
+                    : "检测阈值有未保存的修改，关闭后这些修改会丢失。",
+                PrimaryButtonText = running ? "终止并关闭" : "放弃修改并关闭",
+                CloseButtonText = running ? "继续检测" : "返回设置",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            DialogTheme.Apply(dialog, Shell);
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+            {
+                // A cancelled close must leave the app in its previous state,
+                // including close-to-tray behaviour on the next close.
+                _isExitRequested = false;
+                return;
+            }
+
+            _closeConfirmed = true;
+            // Only a confirmed close may tear down the run and save settings.
+            ViewModel.PrepareForShellShutdown();
+            Close();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or COMException)
+        {
+            // A second dialog (or a closing XamlRoot) must not crash the app.
+            StartupDiagnostics.WriteException("Close confirmation failed", ex);
+        }
+        finally
+        {
+            _closePromptOpen = false;
+        }
     }
 
     public bool PrepareForStartupHidden()
@@ -232,11 +297,17 @@ public sealed partial class MainWindow : Window
             && !string.IsNullOrWhiteSpace(activation.ReportPath)
             && File.Exists(activation.ReportPath))
         {
-            Process.Start(new ProcessStartInfo
+            try
             {
-                FileName = activation.ReportPath,
-                UseShellExecute = true,
-            });
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = activation.ReportPath,
+                    UseShellExecute = true,
+                });
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or Win32Exception)
+            {
+            }
         }
 
         if (activation.Action == DesktopNotificationActivation.OpenUpdateAction
@@ -357,7 +428,10 @@ public sealed partial class MainWindow : Window
         });
         content.Children.Add(new TextBlock
         {
-            Text = $"版本: {info.Version}",
+            // The assembly informational version carries a full 40-char commit
+            // hash.  The update row already shows the short form, so the About
+            // dialog shows the same short build identity instead of a hash wall.
+            Text = $"版本: {AppInfoService.FormatDisplayVersion(info.Version)}",
         });
         content.Children.Add(new TextBlock
         {
@@ -371,7 +445,7 @@ public sealed partial class MainWindow : Window
         var dialog = new ContentDialog
         {
             XamlRoot = Shell.XamlRoot,
-            Title = info.ProductName,
+            Title = "关于 E-Detection",
             Content = content,
             PrimaryButtonText = "软件更新",
             CloseButtonText = "关闭",
@@ -431,8 +505,15 @@ public sealed partial class MainWindow : Window
 
     private void ExitFromTray()
     {
+        // Closing prompts when a run is active or thresholds are unsaved, so
+        // those states must not be torn down here before the user confirms.
+        // The shutdown path that follows a confirmed close prepares the shell.
         _isExitRequested = true;
-        ViewModel.PrepareForShellShutdown();
+        if (_closeConfirmed)
+        {
+            ViewModel.PrepareForShellShutdown();
+        }
+
         Close();
     }
 

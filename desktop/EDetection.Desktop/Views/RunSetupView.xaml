@@ -203,6 +203,11 @@
                     </Border>
                 </StackPanel>
 
+                <!--
+                    Report history is the last block in a pane shorter than its
+                    content.  The list keeps its own bounded height so the pane
+                    scrolls as one surface instead of stopping inside the list.
+                -->
                 <StackPanel Spacing="9">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -248,10 +253,10 @@
                         </ComboBox>
                     </Grid>
 
-                    <Grid MinHeight="104">
+                    <Grid>
                         <ListView ItemsSource="{Binding ReportHistory.FilteredRecentReports}"
                                   SelectedItem="{Binding ReportHistory.SelectedReport, Mode=TwoWay}"
-                                  MaxHeight="220"
+                                  Height="160"
                                   SelectionMode="Single"
                                   AutomationProperties.Name="报告历史列表"
                                   AutomationProperties.AutomationId="ReportHistoryList">
@@ -323,7 +328,8 @@
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Command="{Binding OpenSelectedReportCommand}"
-                                HorizontalAlignment="Stretch">
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="打开选中报告">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                                 <TextBlock Text="打开报告" />
@@ -331,7 +337,8 @@
                         </Button>
                         <Button Grid.Column="1"
                                 Command="{Binding OpenSelectedReportFolderCommand}"
-                                HorizontalAlignment="Stretch">
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="打开选中报告所在目录">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE8B7;" FontSize="14" />
                                 <TextBlock Text="所在目录" />
@@ -363,6 +370,7 @@
                         </Button>
                         <Button Grid.Column="2"
                                 Click="ClearRecentReports_Click"
+                                IsEnabled="{Binding ReportHistory.HasReports}"
                                 Style="{StaticResource UtilityIconButtonStyle}"
                                 AutomationProperties.AutomationId="ClearRecentReportsButton"
                                 AutomationProperties.Name="清空报告历史"

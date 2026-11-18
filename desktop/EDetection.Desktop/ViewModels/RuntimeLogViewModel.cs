@@ -28,6 +28,9 @@ public sealed partial class RuntimeLogViewModel(
         ? $"{FilteredLogItems.Count}/{LogItems.Count} 条记录"
         : "暂无记录";
 
+    // Clearing is destructive and must not stay clickable on an empty log.
+    public bool HasLogs => LogItems.Count > 0;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RetentionLimit))]
     [NotifyPropertyChangedFor(nameof(RetentionText))]
@@ -106,6 +109,9 @@ public sealed partial class RuntimeLogViewModel(
 
     partial void OnSelectedKindFilterIndexChanged(int value) => Refresh();
 
-    private void NotifyStatusChanged() =>
+    private void NotifyStatusChanged()
+    {
         OnPropertyChanged(nameof(StatusText));
+        OnPropertyChanged(nameof(HasLogs));
+    }
 }

@@ -134,12 +134,47 @@ public sealed partial class SettingsView : UserControl
             return;
         }
 
+        // Escape belongs to the topmost layer first.  A ComboBox dropdown or an
+        // AutoSuggestBox suggestion list lives in its own popup, so closing the
+        // whole page here would discard the user's place and break the Windows
+        // convention that Escape dismisses the innermost surface.
+        if (HasOpenPopup())
+        {
+            return;
+        }
+
         // PreviewKeyDown tunnels through the page before controls such as
         // AutoSuggestBox, TextBox, and ComboBox consume Escape.  A keyboard
         // accelerator on the root only fired when focus was outside those
         // controls and also rendered a stray accelerator tooltip.
         e.Handled = true;
         BackRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool HasOpenPopup()
+    {
+        var xamlRoot = XamlRoot;
+        if (xamlRoot is null)
+        {
+            return false;
+        }
+
+        foreach (var popup in Microsoft.UI.Xaml.Media.VisualTreeHelper.GetOpenPopupsForXamlRoot(xamlRoot))
+        {
+            // Tooltips are popups too, but Escape must not be captured just
+            // because a tooltip happens to be visible.
+            if (popup.Child is Microsoft.UI.Xaml.Controls.ToolTip)
+            {
+                continue;
+            }
+
+            if (popup.Child is FrameworkElement { Visibility: Visibility.Visible })
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void OpenThresholdSettings_Click(object sender, RoutedEventArgs e) =>

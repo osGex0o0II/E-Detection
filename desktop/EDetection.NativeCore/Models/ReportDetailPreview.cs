@@ -70,17 +70,33 @@ public sealed class ReportDetailPreview
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(IssueDetail))
+            var type = IssueType?.Trim() ?? "";
+            var detail = IssueDetail?.Trim() ?? "";
+            if (string.IsNullOrWhiteSpace(detail))
             {
-                return IssueType ?? "";
+                return type;
             }
 
-            if (string.IsNullOrWhiteSpace(IssueType))
+            if (string.IsNullOrWhiteSpace(type))
             {
-                return IssueDetail ?? "";
+                return detail;
             }
 
-            return $"{IssueType} · {IssueDetail}";
+            // With detail output disabled the native backend stores the same
+            // compact label in both fields, which rendered as
+            // "CT极性异常 · CT极性异常" in every row.  Collapse that instead of
+            // printing the label twice.
+            if (string.Equals(type, detail, StringComparison.Ordinal))
+            {
+                return type;
+            }
+
+            if (detail.StartsWith(type, StringComparison.Ordinal))
+            {
+                return detail;
+            }
+
+            return $"{type} · {detail}";
         }
     }
 

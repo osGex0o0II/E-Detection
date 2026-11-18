@@ -105,10 +105,25 @@ public sealed class RunEventService
             ProcessedFiles = evt.ProcessedFiles,
             TotalFiles = evt.TotalFiles,
             CurrentFileText = string.IsNullOrWhiteSpace(sourceText) ? null : $"已完成: {sourceText}",
-            LogKind = evt.Status ?? "文件",
+            LogKind = LocalizeFileResultKind(evt.Status),
             LogMessage = evt.Message ?? evt.SourceFile ?? "文件处理完成",
         };
     }
+
+    // The native backend reports machine-readable status values.  Showing them
+    // verbatim would put "anomaly"/"normal"/"skipped" inside an otherwise
+    // Chinese log column, so known values are mapped and anything else keeps
+    // its original text instead of being silently dropped.
+    private static string LocalizeFileResultKind(string? status) =>
+        status?.Trim().ToLowerInvariant() switch
+        {
+            null or "" => "文件",
+            "anomaly" => "异常",
+            "normal" => "正常",
+            "skipped" => "跳过",
+            "error" => "错误",
+            _ => status!,
+        };
 
     private static RunEventAction BuildFileProgress(DetectionBackendEvent evt)
     {

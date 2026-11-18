@@ -123,6 +123,26 @@ public sealed class DetectionConfigServiceTests
         }
     }
 
+    [Fact]
+    public void Save_ReportsVisibleFieldNamesInsteadOfJsonKeys()
+    {
+        var directory = CreateDirectory();
+        try
+        {
+            var path = Path.Combine(directory, "settings.json");
+            var service = new DetectionConfigService();
+
+            var error = Assert.Throws<ArgumentException>(() => service.Save(path,
+                new DetectionConfigSettings { FreezeCountThreshold = 2.5 }));
+            Assert.Contains("连续不变化点数", error.Message, StringComparison.Ordinal);
+            Assert.DoesNotContain("FREEZE_COUNT_THRESHOLD", error.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static string CreateDirectory()
     {
         var directory = Path.Combine(Path.GetTempPath(), "e-detection-config-" + Guid.NewGuid().ToString("N"));

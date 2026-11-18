@@ -116,6 +116,7 @@
                         <TextBlock Text="{Binding WorkbenchStatusText}"
                                    FontWeight="SemiBold"
                                    TextTrimming="CharacterEllipsis"
+                                   ToolTipService.ToolTip="{Binding WorkbenchStatusText}"
                                    AutomationProperties.LiveSetting="Polite" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding WorkbenchStatusBadgeText}"
@@ -123,12 +124,13 @@
                                    MaxWidth="320"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    TextTrimming="CharacterEllipsis"
-                                   AutomationProperties.LiveSetting="Polite" />
+                                   ToolTipService.ToolTip="{Binding WorkbenchStatusBadgeText}" />
                     </Grid>
                     <TextBlock Text="{Binding WorkbenchContextText}"
                                FontSize="12"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               TextTrimming="CharacterEllipsis" />
+                               TextTrimming="CharacterEllipsis"
+                               ToolTipService.ToolTip="{Binding WorkbenchContextText}" />
                 </StackPanel>
 
                 <StackPanel x:Name="ProgressPanel"
@@ -175,11 +177,13 @@
                     <StackPanel Grid.Column="1" Spacing="1">
                         <TextBlock Text="{Binding PoetryStatusText}"
                                    FontWeight="SemiBold"
-                                   TextTrimming="CharacterEllipsis" />
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTipService.ToolTip="{Binding PoetryStatusText}" />
                         <TextBlock Text="{Binding PoetryStatusSourceText}"
                                    FontSize="12"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis" />
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTipService.ToolTip="{Binding PoetryStatusSourceText}" />
                     </StackPanel>
                     <Button Grid.Column="2"
                             Command="{Binding RefreshPoetryStatusCommand}"

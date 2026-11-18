@@ -63,47 +63,77 @@ public partial class MainViewModel
 
     private void SaveSettings()
     {
-        _settings.Save(new AppSettings
+        if (!TrySaveSettings())
         {
-            InputDirectory = InputDirectory,
-            OutputDirectory = OutputDirectory,
-            ConfigPath = ConfigPath,
-            WriteReport = WriteReport,
-            CloseToTrayOnClose = CloseToTrayOnClose,
-            StartMinimizedToTray = StartMinimizedToTray,
-            AutoStartOnSignIn = AutoStartOnSignIn,
-            EnableDesktopNotifications = EnableDesktopNotifications,
-            EnableLlmAssistant = EnableLlmAssistant,
-            LlmEndpoint = LlmEndpoint,
-            LlmModel = LlmModel,
-            UseProxyForLlm = UseProxyForLlm,
-            EnableNtfyNotifications = EnableNtfyNotifications,
-            NtfyServerUrl = NtfyServerUrl,
-            NtfyTopic = NtfyTopic,
-            SelectedNtfyPriorityIndex = SelectedNtfyPriorityIndex,
-            UseProxyForNotifications = UseProxyForNotifications,
-            EnableNetworkProxy = EnableNetworkProxy,
-            ProxyAddress = ProxyAddress,
-            ProxyRequiresAuthentication = ProxyRequiresAuthentication,
-            ProxyUserName = ProxyUserName,
-            EnableUpdateChecks = EnableUpdateChecks,
-            UseProxyForUpdates = UseProxyForUpdates,
-            SelectedUpdateChannelIndex = SelectedUpdateChannelIndex,
-            UpdateFeedUrl = UpdateFeedUrl,
-            SelectedLogRetentionIndex = SelectedLogRetentionIndex,
-            SelectedRecentReportLimitIndex = ReportHistory.SelectedRecentReportLimitIndex,
-            RecentReports = RecentReports.ToList(),
-            SelectedThemeIndex = SelectedThemeIndex,
-            SelectedBackdropIndex = SelectedBackdropIndex,
-            EnablePoetryStatus = EnablePoetryStatus,
-            PoetryServiceUrl = PoetryServiceUrl,
-            SelectedPoetryLanguageIndex = SelectedPoetryLanguageIndex,
-            WindowLeft = WindowLeft,
-            WindowTop = WindowTop,
-            WindowWidth = WindowWidth,
-            WindowHeight = WindowHeight,
-            IsWindowMaximized = IsWindowMaximized,
-        });
+            return;
+        }
+    }
+
+    /// <summary>
+    /// Persists preferences.  A failed write must not escape into a property
+    /// setter or a window close path - that would terminate the app - so the
+    /// failure is reported in the settings footer and the runtime log instead.
+    /// </summary>
+    private bool TrySaveSettings()
+    {
+        try
+        {
+            _settings.Save(new AppSettings
+            {
+                InputDirectory = InputDirectory,
+                OutputDirectory = OutputDirectory,
+                ConfigPath = ConfigPath,
+                WriteReport = WriteReport,
+                CloseToTrayOnClose = CloseToTrayOnClose,
+                StartMinimizedToTray = StartMinimizedToTray,
+                AutoStartOnSignIn = AutoStartOnSignIn,
+                EnableDesktopNotifications = EnableDesktopNotifications,
+                EnableLlmAssistant = EnableLlmAssistant,
+                LlmEndpoint = LlmEndpoint,
+                LlmModel = LlmModel,
+                UseProxyForLlm = UseProxyForLlm,
+                EnableNtfyNotifications = EnableNtfyNotifications,
+                NtfyServerUrl = NtfyServerUrl,
+                NtfyTopic = NtfyTopic,
+                SelectedNtfyPriorityIndex = SelectedNtfyPriorityIndex,
+                UseProxyForNotifications = UseProxyForNotifications,
+                EnableNetworkProxy = EnableNetworkProxy,
+                ProxyAddress = ProxyAddress,
+                ProxyRequiresAuthentication = ProxyRequiresAuthentication,
+                ProxyUserName = ProxyUserName,
+                EnableUpdateChecks = EnableUpdateChecks,
+                UseProxyForUpdates = UseProxyForUpdates,
+                SelectedUpdateChannelIndex = SelectedUpdateChannelIndex,
+                UpdateFeedUrl = UpdateFeedUrl,
+                SelectedLogRetentionIndex = SelectedLogRetentionIndex,
+                SelectedRecentReportLimitIndex = ReportHistory.SelectedRecentReportLimitIndex,
+                RecentReports = RecentReports.ToList(),
+                SelectedThemeIndex = SelectedThemeIndex,
+                SelectedBackdropIndex = SelectedBackdropIndex,
+                EnablePoetryStatus = EnablePoetryStatus,
+                PoetryServiceUrl = PoetryServiceUrl,
+                SelectedPoetryLanguageIndex = SelectedPoetryLanguageIndex,
+                WindowLeft = WindowLeft,
+                WindowTop = WindowTop,
+                WindowWidth = WindowWidth,
+                WindowHeight = WindowHeight,
+                IsWindowMaximized = IsWindowMaximized,
+            });
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException
+                                   or UnauthorizedAccessException
+                                   or ArgumentException
+                                   or NotSupportedException
+                                   or System.Security.SecurityException)
+        {
+            var message = $"设置保存失败: {ex.Message}";
+            SettingsFeedbackText = message;
+            SettingsFeedbackSeverity = InfoBarSeverity.Warning;
+            IsSettingsFeedbackOpen = true;
+            AddLog("设置警告", message);
+            return false;
+        }
     }
 
     private void ApplySettingsDefaults(AppSettings defaults)

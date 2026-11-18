@@ -292,12 +292,39 @@ public sealed class DetectionConfigService
             if (!double.IsFinite(value) || value < min || value > max
                 || (name == FreezeCountThresholdKey && value != Math.Truncate(value)))
             {
-                return $"检测阈值超出允许范围: {name}";
+                // The raw JSON key is meaningless to a person reading the
+                // settings footer, so name the visible field and its range.
+                var label = ThresholdLabels.TryGetValue(name, out var known)
+                    ? known
+                    : name;
+                var hint = name == FreezeCountThresholdKey
+                    ? "必须是整数"
+                    : $"范围 {FormatBound(min)}-{FormatBound(max)}";
+                return $"{label}超出允许范围（{hint}）。";
             }
         }
 
         return ValidateThresholdOrder(settings);
     }
+
+    private static readonly Dictionary<string, string> ThresholdLabels = new(StringComparer.Ordinal)
+    {
+        [VoltageMinThresholdKey] = "电压下限",
+        [VoltageMaxThresholdKey] = "电压上限",
+        [CurrentMaxThresholdKey] = "电流上限",
+        [CurrentUnbalanceMaxThresholdKey] = "电流不平衡上限",
+        [ActivePowerMinThresholdKey] = "有功功率下限",
+        [PowerFactorMinThresholdKey] = "功率因数下限",
+        [TemperatureMinThresholdKey] = "温度下限",
+        [TemperatureMaxThresholdKey] = "温度上限",
+        [CurrentActiveMinThresholdKey] = "电流激活下限",
+        [FreezeCountThresholdKey] = "连续不变化点数",
+        [FreezeStdThresholdKey] = "数据波动容差",
+        [VoltageImbalanceThresholdKey] = "相电压不平衡阈值",
+    };
+
+    private static string FormatBound(double value) =>
+        double.IsInfinity(value) ? "不限" : value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
 
     public void Save(string path, DetectionConfigSettings settings)
     {

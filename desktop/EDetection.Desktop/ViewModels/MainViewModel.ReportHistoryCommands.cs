@@ -158,11 +158,17 @@ public partial class MainViewModel
             return;
         }
 
-        Process.Start(new ProcessStartInfo
+        try
         {
-            FileName = path,
-            UseShellExecute = true,
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+        }
     }
 
     private static void OpenContainingFolder(string path)
@@ -172,12 +178,18 @@ public partial class MainViewModel
             return;
         }
 
-        Process.Start(new ProcessStartInfo
+        try
         {
-            FileName = "explorer.exe",
-            ArgumentList = { "/select,", path },
-            UseShellExecute = true,
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                ArgumentList = { "/select,", path },
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+        }
     }
 
     private static void OpenFolder(string path)
@@ -187,14 +199,20 @@ public partial class MainViewModel
             return;
         }
 
-        Process.Start(new ProcessStartInfo
+        try
         {
-            FileName = path,
-            UseShellExecute = true,
-        });
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true,
+            });
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+        }
     }
 
-    private void OpenUri(string uri)
+    private bool OpenUri(string uri)
     {
         try
         {
@@ -203,10 +221,12 @@ public partial class MainViewModel
                 FileName = uri,
                 UseShellExecute = true,
             });
+            return true;
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             ShowSettingsFeedback($"打开外部链接失败: {ex.Message}", InfoBarSeverity.Warning);
+            return false;
         }
     }
 }

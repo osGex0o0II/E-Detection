@@ -157,7 +157,8 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock Text="{Binding RunTelemetry.CurrentFileText}"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   TextTrimming="CharacterEllipsis" />
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTipService.ToolTip="{Binding RunTelemetry.CurrentFileText}" />
                         <ProgressBar Grid.Column="1"
                                      Width="160"
                                      Minimum="0"
@@ -207,7 +208,8 @@
                 <TextBlock Text="{Binding WorkbenchReportPathText}"
                            Visibility="{Binding ReportActionsVisibility}"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           TextTrimming="CharacterEllipsis" />
+                           TextTrimming="CharacterEllipsis"
+                           ToolTipService.ToolTip="{Binding WorkbenchReportPathText}" />
                 <Border Visibility="{Binding CancelConfirmationVisibility}"
                         BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
                         BorderThickness="0,1,0,0"
@@ -333,7 +335,7 @@
                             <Button Command="{Binding CopyDiagnosticsCommand}"
                                     Style="{StaticResource UtilityIconButtonStyle}"
                                     AutomationProperties.Name="复制状态详情" ToolTipService.ToolTip="复制状态详情">
-                                <FontIcon Glyph="&#xE8A5;" FontSize="14" />
+                                <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                             </Button>
                         </StackPanel>
                     </Grid>
@@ -391,15 +393,19 @@
                                     <StackPanel Spacing="2">
                                         <TextBlock Text="{Binding Title}"
                                                    FontWeight="SemiBold"
-                                                   TextTrimming="CharacterEllipsis" />
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTipService.ToolTip="{Binding Title}" />
                                         <TextBlock Text="{Binding MainIssueTypes}"
                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                   TextTrimming="CharacterEllipsis" />
+                                                   TextTrimming="CharacterEllipsis"
+                                                   ToolTipService.ToolTip="{Binding MainIssueTypes}" />
                                     </StackPanel>
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding Subtitle}"
                                                VerticalAlignment="Center"
-                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                               Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               ToolTipService.ToolTip="{Binding Subtitle}" />
                                 </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>

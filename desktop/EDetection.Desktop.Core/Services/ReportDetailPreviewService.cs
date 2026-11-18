@@ -1,10 +1,14 @@
 using EDetection.Desktop.Models;
+using System.Text.RegularExpressions;
 
 namespace EDetection.Desktop.Services;
 
-public sealed class ReportDetailPreviewService
+public sealed partial class ReportDetailPreviewService
 {
     private const string AllIssueTypesFilter = "全部类型";
+
+    [GeneratedRegex(@"-?\d+(?:\.\d+)?", RegexOptions.CultureInvariant)]
+    private static partial Regex NumericValuePattern();
 
     public ReportDetailRefreshResult Refresh(
         IEnumerable<ReportDetailPreview> details,
@@ -60,7 +64,13 @@ public sealed class ReportDetailPreviewService
             // it for the table's ascending/descending sort cycle.
             "time" => filtered.OrderByDescending(item => item.TimeText).ThenBy(item => item.LocationText),
             "issue" => filtered.OrderBy(item => item.IssueText).ThenBy(item => item.LocationText),
-            "value" => filtered.OrderBy(item => item.ValueText).ThenBy(item => item.LocationText),
+            // ValueText carries measurement text such as "Uab=380.0", so a
+            // plain string sort would order 9 after 100.  Compare the first
+            // number in the cell and keep the text order as a tie-breaker.
+            "value" => filtered
+                .OrderBy(ValueSortKey)
+                .ThenBy(item => item.ValueText, StringComparer.CurrentCulture)
+                .ThenBy(item => item.LocationText),
             "recommendation" => filtered.OrderBy(item => item.RecommendedAction).ThenBy(item => item.LocationText),
             _ => filtered,
         };
@@ -108,4 +118,25 @@ public sealed class ReportDetailPreviewService
         "低" => 2,
         _ => 3,
     };
+
+    // Sorts by the first number found in the cell so that "100" no longer
+    // sorts before "9".  Cells without a number sort last.
+    private static double ValueSortKey(ReportDetailPreview detail)
+    {
+        var text = detail.ValueText;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return double.PositiveInfinity;
+        }
+
+        var match = NumericValuePattern().Match(text);
+        return match.Success
+            && double.TryParse(
+                match.Value,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var value)
+            ? value
+            : double.PositiveInfinity;
+    }
 }

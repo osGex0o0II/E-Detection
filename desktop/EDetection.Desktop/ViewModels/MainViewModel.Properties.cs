@@ -281,6 +281,7 @@ public partial class MainViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WorkbenchSkippedFiles))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionTitleText))]
     [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
     public partial int SkippedFiles { get; set; }
 
@@ -371,16 +372,22 @@ public partial class MainViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SensorOverviewText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchSensorOverviewText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionTitleText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
     public partial int SensorOfflineDevices { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SensorOverviewText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchSensorOverviewText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionTitleText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
     public partial int SensorFaultRows { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SensorOverviewText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchSensorOverviewText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionTitleText))]
+    [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
     public partial int SensorMissingRows { get; set; }
 
     [ObservableProperty]
@@ -776,10 +783,11 @@ public partial class MainViewModel
 
     partial void OnSelectedDetailChanged(ReportDetailPreview? value)
     {
-        if (!IsExplainingSelectedDetail)
-        {
-            LlmDetailExplanationText = "";
-        }
+        // Every selection change invalidates the previous explanation, even
+        // mid-request: otherwise the panel keeps describing the old row and
+        // can sit on "正在生成..." forever when the in-flight request is
+        // discarded.
+        LlmDetailExplanationText = "";
     }
 
 }

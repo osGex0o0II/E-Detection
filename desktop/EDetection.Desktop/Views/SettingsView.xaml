@@ -318,7 +318,7 @@
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="清空报告历史">
-                                <Button Click="ClearRecentReports_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史" ToolTipService.ToolTip="移除应用中的报告历史，不会删除磁盘上的报告文件">
+                                <Button Click="ClearRecentReports_Click" IsEnabled="{Binding ReportHistory.HasReports}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史" ToolTipService.ToolTip="移除应用中的报告历史，不会删除磁盘上的报告文件">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE74D;" FontSize="14" />
                                         <TextBlock Text="清空报告历史" />
@@ -339,7 +339,7 @@
                                 </ComboBox>
                             </controls:SettingsCard>
                             <controls:SettingsCard Header="清空运行记录">
-                                <Button Click="ClearRuntimeLogs_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录" ToolTipService.ToolTip="移除应用中的运行记录，无法恢复">
+                                <Button Click="ClearRuntimeLogs_Click" IsEnabled="{Binding RuntimeLogs.HasLogs}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录" ToolTipService.ToolTip="移除应用中的运行记录，无法恢复">
                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                         <FontIcon Glyph="&#xE74D;" FontSize="14" />
                                         <TextBlock Text="清空运行记录" />
