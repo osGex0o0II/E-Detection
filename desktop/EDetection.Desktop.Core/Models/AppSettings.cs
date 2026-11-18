@@ -46,6 +46,9 @@ public sealed class AppSettings
 
     public string ProxyUserName { get; set; } = "";
 
+    // Legacy flag from the era of two competing update controls.  It is only
+    // read once, to fold the old "自动检查更新" switch into
+    // SelectedUpdateChannelIndex; nothing writes it any more.
     public bool EnableUpdateChecks { get; set; } = true;
 
     public bool UseProxyForUpdates { get; set; }

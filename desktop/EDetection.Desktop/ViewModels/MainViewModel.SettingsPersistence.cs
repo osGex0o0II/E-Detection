@@ -101,7 +101,6 @@ public partial class MainViewModel
                 ProxyAddress = ProxyAddress,
                 ProxyRequiresAuthentication = ProxyRequiresAuthentication,
                 ProxyUserName = ProxyUserName,
-                EnableUpdateChecks = EnableUpdateChecks,
                 UseProxyForUpdates = UseProxyForUpdates,
                 SelectedUpdateChannelIndex = SelectedUpdateChannelIndex,
                 UpdateFeedUrl = UpdateFeedUrl,
@@ -158,7 +157,6 @@ public partial class MainViewModel
         ProxyAddress = defaults.ProxyAddress;
         ProxyRequiresAuthentication = defaults.ProxyRequiresAuthentication;
         ProxyUserName = defaults.ProxyUserName;
-        EnableUpdateChecks = defaults.EnableUpdateChecks;
         UseProxyForUpdates = defaults.UseProxyForUpdates;
         SelectedUpdateChannelIndex = defaults.SelectedUpdateChannelIndex;
         UpdateFeedUrl = defaults.UpdateFeedUrl;

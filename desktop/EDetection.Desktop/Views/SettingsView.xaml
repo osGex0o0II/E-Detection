@@ -793,13 +793,23 @@
                         <TextBlock Text="应用更新" Style="{StaticResource SectionTitleTextStyle}" />
                         <Border Style="{StaticResource SettingsGroupStyle}">
                             <StackPanel>
-                                <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
+                                <!--
+                                    One control for one decision.  A separate
+                                    "自动检查更新" switch plus a "检查方式"
+                                    dropdown in the advanced section both gated
+                                    the same startup check, so they could
+                                    contradict each other.
+                                -->
+                                <Grid x:Name="UpdateChannelRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="自动检查更新" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="启动时自动检查更新；关闭后仍可手动检查。" />
-                                    <ToggleSwitch Grid.Column="1" IsOn="{Binding EnableUpdateChecks, Mode=TwoWay}" AutomationProperties.Name="自动检查更新" />
+                                    <TextBlock Text="检查方式" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="自动检查在启动时进行；仅手动检查时仍可使用“检查更新”。" />
+                                    <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedUpdateChannelIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="更新检查方式" AutomationProperties.HelpText="自动检查在启动时进行，选择仅手动检查后仍可随时手动检查更新。">
+                                        <ComboBoxItem Content="自动检查" />
+                                        <ComboBoxItem Content="仅手动检查" />
+                                    </ComboBox>
                                 </Grid>
                                 <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                 <Grid MinHeight="56" Padding="14,8" ColumnSpacing="20">
@@ -846,18 +856,6 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="使用网络代理" Style="{StaticResource SettingsRowTitleTextStyle}" />
                                             <ToggleSwitch Grid.Column="1" IsOn="{Binding UseProxyForUpdates, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="更新使用网络代理" />
-                                        </Grid>
-                                        <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                        <Grid x:Name="UpdateChannelRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="200" />
-                                                <ColumnDefinition Width="*" MaxWidth="320" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="检查方式" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <ComboBox Grid.Column="1" SelectedIndex="{Binding SelectedUpdateChannelIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="更新检查方式">
-                                                <ComboBoxItem Content="自动检查" />
-                                                <ComboBoxItem Content="仅手动检查" />
-                                            </ComboBox>
                                         </Grid>
                                         <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
                                         <Grid x:Name="UpdateFeedRow" MinHeight="56" Padding="14,8" ColumnSpacing="20">

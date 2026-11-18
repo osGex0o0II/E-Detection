@@ -180,11 +180,10 @@ public partial class MainViewModel
     public partial bool IsTestingNetworkProxy { get; set; }
 
     [ObservableProperty]
-    public partial bool EnableUpdateChecks { get; set; } = true;
-
-    [ObservableProperty]
     public partial bool UseProxyForUpdates { get; set; }
 
+    // One observable drives the startup check.  A separate "自动检查更新"
+    // switch duplicated this dropdown and could contradict it.
     [ObservableProperty]
     public partial int SelectedUpdateChannelIndex { get; set; }
 
@@ -219,8 +218,7 @@ public partial class MainViewModel
     [NotifyCanExecuteChangedFor(nameof(OpenUpdateFeedCommand))]
     public partial bool IsDownloadingUpdateInstaller { get; set; }
 
-    public bool ShouldCheckForUpdatesOnStartup =>
-        EnableUpdateChecks && SelectedUpdateChannelIndex == 0;
+    public bool ShouldCheckForUpdatesOnStartup => SelectedUpdateChannelIndex == 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShellStatus))]
@@ -695,8 +693,6 @@ public partial class MainViewModel
 
     partial void OnProxyUserNameChanged(string value) => SavePreferenceSettings();
 
-    partial void OnEnableUpdateChecksChanged(bool value) => SavePreferenceSettings();
-
     partial void OnUseProxyForUpdatesChanged(bool value) => SavePreferenceSettings();
 
     partial void OnSelectedUpdateChannelIndexChanged(int value)
@@ -708,6 +704,7 @@ public partial class MainViewModel
             return;
         }
 
+        OnPropertyChanged(nameof(ShouldCheckForUpdatesOnStartup));
         SavePreferenceSettings();
     }
 

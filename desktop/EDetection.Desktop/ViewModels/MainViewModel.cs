@@ -122,9 +122,12 @@ public partial class MainViewModel
         ProxyAddress = saved.ProxyAddress;
         ProxyRequiresAuthentication = saved.ProxyRequiresAuthentication;
         ProxyUserName = saved.ProxyUserName;
-        EnableUpdateChecks = saved.EnableUpdateChecks;
         UseProxyForUpdates = saved.UseProxyForUpdates;
-        SelectedUpdateChannelIndex = Math.Clamp(saved.SelectedUpdateChannelIndex, 0, 1);
+        // Older settings stored "自动检查更新" as a separate switch that could
+        // contradict the check-mode dropdown.  Honour the stricter of the two.
+        SelectedUpdateChannelIndex = saved.EnableUpdateChecks
+            ? Math.Clamp(saved.SelectedUpdateChannelIndex, 0, 1)
+            : 1;
         UpdateFeedUrl = saved.UpdateFeedUrl;
         var fullVersion = new AppInfoService().GetInfo(typeof(MainViewModel).Assembly).Version;
         UpdateStatusText = $"当前版本 {AppInfoService.FormatDisplayVersion(fullVersion)}";
