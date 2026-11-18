@@ -83,15 +83,6 @@ public partial class MainViewModel
             case nameof(RunTelemetryViewModel.ElapsedText):
                 OnPropertyChanged(nameof(RunElapsedText));
                 break;
-            case nameof(RunTelemetryViewModel.SpeedText):
-                OnPropertyChanged(nameof(RunSpeedText));
-                break;
-            case nameof(RunTelemetryViewModel.RemainingText):
-                OnPropertyChanged(nameof(RunRemainingText));
-                break;
-            case nameof(RunTelemetryViewModel.ProgressDetailText):
-                OnPropertyChanged(nameof(RunProgressDetailText));
-                break;
         }
     }
 
@@ -109,12 +100,6 @@ public partial class MainViewModel
                 break;
             case nameof(RuntimeLogViewModel.SelectedRetentionIndex):
                 OnPropertyChanged(nameof(SelectedLogRetentionIndex));
-                break;
-            case nameof(RuntimeLogViewModel.SearchText):
-                OnPropertyChanged(nameof(LogSearchText));
-                break;
-            case nameof(RuntimeLogViewModel.SelectedKindFilterIndex):
-                OnPropertyChanged(nameof(SelectedLogKindFilterIndex));
                 break;
         }
     }

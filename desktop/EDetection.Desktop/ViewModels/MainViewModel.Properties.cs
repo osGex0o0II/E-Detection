@@ -320,7 +320,6 @@ public partial class MainViewModel
     public partial string ReportPath { get; set; } = "";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedDetail))]
     [NotifyCanExecuteChangedFor(nameof(CopySelectedDetailCommand))]
     [NotifyCanExecuteChangedFor(nameof(OpenSelectedDetailSourceCommand))]
     [NotifyCanExecuteChangedFor(nameof(CopySelectedDetailSourcePathCommand))]
@@ -576,7 +575,6 @@ public partial class MainViewModel
     public partial bool DetailOutputEnabled { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ActiveRunSummaryVisibility))]
     [NotifyPropertyChangedFor(nameof(WorkbenchContextText))]
     public partial string ActiveRunSummaryText { get; set; } = "";
 

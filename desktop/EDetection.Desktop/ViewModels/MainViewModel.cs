@@ -177,8 +177,6 @@ public partial class MainViewModel
 
     public ObservableCollection<string> DetailIssueTypeFilters { get; } = ["全部类型"];
 
-    public bool HasSelectedDetail => SelectedDetail is not null;
-
     public bool HasSelectedReport => SelectedReport is not null;
 
     public bool IsIdle => !IsRunning;
@@ -448,10 +446,6 @@ public partial class MainViewModel
         TaskbarProgressKind,
         TaskbarProgressPercent);
 
-    public Visibility ActiveRunSummaryVisibility => string.IsNullOrWhiteSpace(ActiveRunSummaryText)
-        ? Visibility.Collapsed
-        : Visibility.Visible;
-
     public Visibility FailureActionsVisibility => HasActionableFailure
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -488,8 +482,6 @@ public partial class MainViewModel
     public event EventHandler? AppearanceChanged;
 
     public event EventHandler<DesktopNotificationRequest>? DesktopNotificationRequested;
-
-    public string SettingsStoreStatusText => _settings.StoreStatusText;
 
     public DesktopHealthViewModel DesktopHealth { get; }
 

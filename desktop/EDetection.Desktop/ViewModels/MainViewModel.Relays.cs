@@ -18,15 +18,5 @@ public partial class MainViewModel
 
     public string RunElapsedText => RunTelemetry.ElapsedText;
 
-    public string RunSpeedText => RunTelemetry.SpeedText;
-
-    public string RunRemainingText => RunTelemetry.RemainingText;
-
-    public string RunProgressDetailText => RunTelemetry.ProgressDetailText;
-
     public int SelectedLogRetentionIndex => RuntimeLogs.SelectedRetentionIndex;
-
-    public string LogSearchText => RuntimeLogs.SearchText;
-
-    public int SelectedLogKindFilterIndex => RuntimeLogs.SelectedKindFilterIndex;
 }
