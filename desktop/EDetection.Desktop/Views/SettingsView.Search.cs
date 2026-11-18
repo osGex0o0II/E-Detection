@@ -98,19 +98,27 @@ public sealed partial class SettingsView
             UpdateResponsiveLayout();
             SelectCategoryBySection(entry.SectionName);
             NavigateToElementByName(entry.TargetName ?? entry.SectionName);
-            // Wait for the category swap, scroll and suggestion popup to settle
-            // before taking focus; focusing in the same tick can be rejected by
-            // the still-closing AutoSuggestBox popup.
+            // The AutoSuggestBox popup is still closing when the category swap
+            // happens, and a focus request made while it is open is rejected.
+            // Poll for the popup to close instead of sleeping a fixed 250 ms,
+            // so focus lands as soon as it is accepted.
             DispatcherQueue.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-                () => FocusSearchTargetAfterNavigation(entry.TargetName ?? entry.SectionName));
+                () => FocusSearchTargetWhenPopupCloses(entry.TargetName ?? entry.SectionName));
         });
     }
 
-    private async void FocusSearchTargetAfterNavigation(string elementName)
+    private void FocusSearchTargetWhenPopupCloses(string elementName, int attempt = 0)
     {
-        await Task.Delay(250);
-        FocusSearchTarget(elementName);
+        if (!HasOpenPopup() || attempt >= 20)
+        {
+            FocusSearchTarget(elementName);
+            return;
+        }
+
+        DispatcherQueue.TryEnqueue(
+            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+            () => FocusSearchTargetWhenPopupCloses(elementName, attempt + 1));
     }
 
     private static SettingsSearchEntry[] BuildSearchEntries() =>
