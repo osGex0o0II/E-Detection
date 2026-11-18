@@ -23,7 +23,7 @@ public sealed partial class SettingsView
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            PickerFailureFeedback.Report(ViewModel, "无法显示重置确认对话框", ex);
+            PickerFailureFeedback.ReportInSettings(ViewModel, "无法显示重置确认对话框", ex);
         }
     }
 
@@ -38,7 +38,7 @@ public sealed partial class SettingsView
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            PickerFailureFeedback.Report(ViewModel, "无法显示清空确认对话框", ex);
+            PickerFailureFeedback.ReportInSettings(ViewModel, "无法显示清空确认对话框", ex);
         }
     }
 
@@ -53,7 +53,7 @@ public sealed partial class SettingsView
         }
         catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
-            PickerFailureFeedback.Report(ViewModel, "无法显示清空确认对话框", ex);
+            PickerFailureFeedback.ReportInSettings(ViewModel, "无法显示清空确认对话框", ex);
         }
     }
 
@@ -79,7 +79,7 @@ public sealed partial class SettingsView
         }
         catch (Exception ex)
         {
-            PickerFailureFeedback.Report(ViewModel, "无法打开阈值文件选择器", ex);
+            PickerFailureFeedback.ReportInSettings(ViewModel, "无法打开阈值文件选择器", ex);
             return;
         }
 
@@ -142,7 +142,7 @@ public sealed partial class SettingsView
         }
         catch (Exception ex)
         {
-            PickerFailureFeedback.Report(ViewModel, "无法打开阈值文件保存对话框", ex);
+            PickerFailureFeedback.ReportInSettings(ViewModel, "无法打开阈值文件保存对话框", ex);
             return;
         }
 

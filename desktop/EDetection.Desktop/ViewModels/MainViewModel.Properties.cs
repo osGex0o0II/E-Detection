@@ -522,6 +522,15 @@ public partial class MainViewModel
     [ObservableProperty]
     public partial InfoBarSeverity SettingsFeedbackSeverity { get; set; } = InfoBarSeverity.Informational;
 
+    // Picker failures on the run-setup pane cannot use the settings footer,
+    // which is not visible on that page, so they get their own surface.
+    [ObservableProperty]
+    public partial bool IsRunSetupFeedbackOpen { get; set; }
+    [ObservableProperty]
+    public partial string RunSetupFeedbackText { get; set; } = "";
+    [ObservableProperty]
+    public partial InfoBarSeverity RunSetupFeedbackSeverity { get; set; } = InfoBarSeverity.Warning;
+
     [ObservableProperty]
     public partial double VoltageMinThreshold { get; set; } = 353.0;
 

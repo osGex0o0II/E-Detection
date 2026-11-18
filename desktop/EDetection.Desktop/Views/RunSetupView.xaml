@@ -103,6 +103,18 @@
                                   IsOn="{Binding WriteReport, Mode=TwoWay}"
                                   IsEnabled="{Binding IsIdle}" />
 
+                    <!--
+                        Picker and confirmation failures used to appear only in
+                        the settings footer, which is hidden while this page is
+                        shown.  Surface them next to the controls that failed.
+                    -->
+                    <InfoBar IsOpen="{Binding IsRunSetupFeedbackOpen, Mode=TwoWay}"
+                             IsClosable="True"
+                             Severity="{Binding RunSetupFeedbackSeverity}"
+                             Message="{Binding RunSetupFeedbackText}"
+                             AutomationProperties.AutomationId="RunSetupFeedbackBar"
+                             AutomationProperties.LiveSetting="Polite" />
+
                     <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                             BorderThickness="0,1,0,0"
                             Padding="0,10,0,0">
