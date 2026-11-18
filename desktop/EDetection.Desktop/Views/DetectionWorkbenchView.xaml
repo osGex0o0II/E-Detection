@@ -658,6 +658,7 @@
                                           SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
                                           SelectionMode="Single"
                                           ItemContainerStyle="{StaticResource DenseListViewItemStyle}"
+                                          MaxHeight="420"
                                           Loaded="DetailTable_Loaded"
                                           SizeChanged="DetailTable_SizeChanged"
                                           AutomationProperties.Name="异常明细表"
