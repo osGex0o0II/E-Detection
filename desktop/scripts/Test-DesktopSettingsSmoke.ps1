@@ -982,7 +982,7 @@ try {
     $voltageImbalanceThreshold = Wait-ForAutomationName $mainWindow.Handle "相电压不平衡阈值" $WaitSeconds
     $voltageUnitHint = Wait-ForAutomationName $mainWindow.Handle "单位 V · 0-1000" $WaitSeconds
     $currentUnitHint = Wait-ForAutomationName $mainWindow.Handle "单位 A" $WaitSeconds
-    $ratioUnitHint = Wait-ForAutomationName $mainWindow.Handle "比例 · 0-1" $WaitSeconds
+    $ratioUnitHint = Wait-ForAutomationNameLike $mainWindow.Handle "比例 · 0-1*" $WaitSeconds
     $sampleCountHint = Wait-ForAutomationName $mainWindow.Handle "采样点数 · 1-1000" $WaitSeconds
     $currentOverloadRule = Wait-ForAutomationName $mainWindow.Handle "电流过载检测" $WaitSeconds
     $currentUnbalanceRule = Wait-ForAutomationName $mainWindow.Handle "电流不平衡检测" $WaitSeconds

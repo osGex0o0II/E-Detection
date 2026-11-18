@@ -46,6 +46,59 @@ public sealed partial class DetectionWorkbenchView : UserControl
         InitializeComponent();
     }
 
+    // The detail table's header sits outside the ListView, so a vertical
+    // scrollbar appearing on demand narrows only the rows and every column
+    // drifts out of alignment.  Mirror the real scrollbar width onto the
+    // header's right inset instead of guessing a fixed value.
+    private void DetailTable_Loaded(object sender, RoutedEventArgs e) =>
+        SyncDetailHeaderInset();
+
+    private void DetailTable_SizeChanged(object sender, SizeChangedEventArgs e) =>
+        SyncDetailHeaderInset();
+
+    private void SyncDetailHeaderInset()
+    {
+        var scrollViewer = FindDescendant<ScrollViewer>(DetailTable);
+        if (scrollViewer is null)
+        {
+            return;
+        }
+
+        var inset = scrollViewer.ComputedVerticalScrollBarVisibility == Visibility.Visible
+            ? scrollViewer.ActualWidth - scrollViewer.ViewportWidth
+            : 0;
+        if (double.IsNaN(inset) || inset <= 0 || inset > 40)
+        {
+            inset = 0;
+        }
+
+        if (Math.Abs(DetailHeaderGrid.Margin.Right - inset) > 0.5)
+        {
+            DetailHeaderGrid.Margin = new Thickness(0, 0, inset, 0);
+        }
+    }
+
+    private static T? FindDescendant<T>(DependencyObject root)
+        where T : DependencyObject
+    {
+        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (var i = 0; i < childCount; i++)
+        {
+            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T match)
+            {
+                return match;
+            }
+
+            if (FindDescendant<T>(child) is { } nested)
+            {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
     private void Root_SizeChanged(object sender, SizeChangedEventArgs e) =>
         ApplyResponsiveLayout(e.NewSize.Width);
 

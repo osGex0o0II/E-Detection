@@ -647,11 +647,19 @@
                                 </StackPanel>
                             </Border>
                             <Grid Grid.Row="2">
+                                <!--
+                                    The scrollbar appears on demand, which narrowed the
+                                    rows while the header above kept the full width and
+                                    every column drifted.  The header's right inset is
+                                    synced to the real scrollbar width in code-behind.
+                                -->
                                 <ListView x:Name="DetailTable"
                                           ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
                                           SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
                                           SelectionMode="Single"
                                           ItemContainerStyle="{StaticResource DenseListViewItemStyle}"
+                                          Loaded="DetailTable_Loaded"
+                                          SizeChanged="DetailTable_SizeChanged"
                                           AutomationProperties.Name="异常明细表"
                                           AutomationProperties.AutomationId="DetailTable">
                                     <ListView.ItemTemplate>

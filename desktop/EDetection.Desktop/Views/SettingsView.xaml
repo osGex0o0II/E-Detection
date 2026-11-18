@@ -256,8 +256,8 @@
                                     </StackPanel>
                                     <StackPanel x:Name="PowerFactorThresholdRow" Grid.Row="1" Grid.Column="1" Spacing="6">
                                         <TextBlock Text="功率因数下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding PowerFactorMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="功率因数下限" AutomationProperties.HelpText="比例，范围 0 到 1" />
-                                        <TextBlock Text="比例 · 0-1" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <NumberBox Value="{Binding PowerFactorMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="功率因数下限" AutomationProperties.HelpText="比例，范围 0 到 1，例如 0.9 表示 90%" />
+                                        <TextBlock Text="比例 · 0-1，例如 0.9 表示 90%" Style="{StaticResource TableHeaderTextStyle}" />
                                     </StackPanel>
                                     <StackPanel x:Name="TemperatureMaxThresholdRow" Grid.Row="2" Spacing="6">
                                         <TextBlock Text="温度上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
@@ -677,6 +677,23 @@
                                     </controls:SettingsCard>
                                     <controls:SettingsCard Header="设置存储">
                                         <TextBlock Text="{Binding DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{Binding DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{Binding DesktopHealth.SettingsText, Mode=OneWay}" />
+                                    </controls:SettingsCard>
+                                    <!--
+                                        The summary names the failing checks, so each
+                                        one needs a row; otherwise "3 项需要关注"
+                                        cannot be traced to a specific subsystem.
+                                    -->
+                                    <controls:SettingsCard Header="系统通知">
+                                        <TextBlock Text="{Binding DesktopHealth.NotificationText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.NotificationText, Mode=OneWay}" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="登录自启动">
+                                        <TextBlock Text="{Binding DesktopHealth.StartupText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.StartupText, Mode=OneWay}" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="包完整性">
+                                        <TextBlock Text="{Binding DesktopHealth.PackageText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.PackageText, Mode=OneWay}" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="安装形态">
+                                        <TextBlock Text="{Binding DesktopHealth.InstallText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.InstallText, Mode=OneWay}" />
                                     </controls:SettingsCard>
                                 </StackPanel>
                             </Expander>
