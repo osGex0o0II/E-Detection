@@ -6,6 +6,10 @@ public sealed partial class SettingsView
 {
     private bool _settingsSearchHasNoResults;
 
+    private bool _settingsSearchIsTruncated;
+
+    private const int SettingsSearchResultLimit = 8;
+
     private void SettingsSearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
     {
         if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
@@ -14,14 +18,15 @@ public sealed partial class SettingsView
         }
 
         var query = sender.Text.Trim();
-        var matches = string.IsNullOrWhiteSpace(query)
+        var allMatches = string.IsNullOrWhiteSpace(query)
             ? new List<SettingsSearchEntry>()
             : _searchEntries
                 .Where(entry => entry.Matches(query))
-                .Take(8)
                 .ToList();
+        var matches = allMatches.Take(SettingsSearchResultLimit).ToList();
         sender.ItemsSource = matches.Count > 0 ? matches : null;
         _settingsSearchHasNoResults = !string.IsNullOrWhiteSpace(query) && matches.Count == 0;
+        _settingsSearchIsTruncated = allMatches.Count > SettingsSearchResultLimit;
         UpdateSearchEmptyState();
     }
 
@@ -62,15 +67,22 @@ public sealed partial class SettingsView
     private void ClearSearchEmptyState()
     {
         _settingsSearchHasNoResults = false;
+        _settingsSearchIsTruncated = false;
         UpdateSearchEmptyState();
     }
 
     private void UpdateSearchEmptyState()
     {
-        SettingsSearchEmptyText.Visibility = _settingsSearchHasNoResults
-            && SettingsSearchBox.Visibility == Microsoft.UI.Xaml.Visibility.Visible
-                ? Microsoft.UI.Xaml.Visibility.Visible
-                : Microsoft.UI.Xaml.Visibility.Collapsed;
+        var visible = SettingsSearchBox.Visibility == Microsoft.UI.Xaml.Visibility.Visible;
+        SettingsSearchEmptyText.Visibility = _settingsSearchHasNoResults && visible
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
+
+        // The suggestion list is capped at 8 entries; without a cue the rest
+        // looked like they did not exist.
+        SettingsSearchTruncatedText.Visibility = _settingsSearchIsTruncated && visible
+            ? Microsoft.UI.Xaml.Visibility.Visible
+            : Microsoft.UI.Xaml.Visibility.Collapsed;
     }
 
     private void NavigateToSearchEntry(SettingsSearchEntry entry)

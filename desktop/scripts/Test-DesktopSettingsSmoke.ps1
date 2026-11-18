@@ -916,15 +916,29 @@ try {
     }
 
     # Choosing a search result must move keyboard focus to the target section,
-    # not leave it stranded in the navigation rail.
-    [System.Windows.Forms.SendKeys]::SendWait("mica{ENTER}")
-    Start-Sleep -Milliseconds 1200
-    $settingsSearchFocusedElement = [System.Windows.Automation.AutomationElement]::FocusedElement
-    $settingsSearchNavigationFocus = if ($settingsSearchFocusedElement -eq $null) {
-        ""
-    }
-    else {
-        $settingsSearchFocusedElement.Current.Name
+    # not leave it stranded in the navigation rail.  Typing via SendKeys is
+    # blocked by some endpoint-protection setups, so set the text through the
+    # value pattern and only send the Enter keystroke.  The keystroke can also
+    # be dropped when another process steals the foreground, so retry.
+    $settingsSearchNavigationFocus = ""
+    for ($attempt = 1; $attempt -le 3; $attempt++) {
+        [DesktopSettingsSmokeNative]::SetForegroundWindow($mainWindow.Handle) | Out-Null
+        Start-Sleep -Milliseconds 200
+        Set-SettingsSearchFocus $mainWindow.Handle | Out-Null
+        Set-SettingsSearchText $mainWindow.Handle "mica" | Out-Null
+        Start-Sleep -Milliseconds 400
+        [System.Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep -Milliseconds 1200
+        $settingsSearchFocusedElement = [System.Windows.Automation.AutomationElement]::FocusedElement
+        $settingsSearchNavigationFocus = if ($settingsSearchFocusedElement -eq $null) {
+            ""
+        }
+        else {
+            $settingsSearchFocusedElement.Current.Name
+        }
+        if ($settingsSearchNavigationFocus -eq "应用主题") {
+            break
+        }
     }
     if ($settingsSearchNavigationFocus -ne "应用主题") {
         $focusCodes = ($settingsSearchNavigationFocus.ToCharArray() | ForEach-Object { [int]$_ }) -join ','

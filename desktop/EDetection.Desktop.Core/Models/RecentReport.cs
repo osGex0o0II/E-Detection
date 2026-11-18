@@ -1,9 +1,14 @@
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 namespace EDetection.Desktop.Models;
 
-public sealed class RecentReport
+public sealed class RecentReport : INotifyPropertyChanged
 {
+    private bool _isLatest;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     public string Path { get; set; } = "";
 
     public string CreatedAt { get; set; } = "";
@@ -39,7 +44,22 @@ public sealed class RecentReport
     public List<ReportDetailPreview> DetailPreview { get; set; } = [];
 
     [JsonIgnore]
-    public bool IsLatest { get; set; }
+    public bool IsLatest
+    {
+        get => _isLatest;
+        set
+        {
+            if (_isLatest == value)
+            {
+                return;
+            }
+
+            _isLatest = value;
+            // StatusText embeds the "最新 · " prefix; without a notification
+            // the label kept saying 最新 after another report became newest.
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusText)));
+        }
+    }
 
     [JsonIgnore]
     public string FileName => string.IsNullOrWhiteSpace(Path)

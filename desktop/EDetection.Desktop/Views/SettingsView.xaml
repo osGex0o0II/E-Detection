@@ -106,6 +106,14 @@
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                AutomationProperties.AutomationId="SettingsSearchNoResults"
                                AutomationProperties.LiveSetting="Polite" />
+                    <TextBlock x:Name="SettingsSearchTruncatedText"
+                               Text="仅显示前 8 条结果，请继续输入以缩小范围。"
+                               Visibility="Collapsed"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               AutomationProperties.AutomationId="SettingsSearchTruncated"
+                               AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
                 <ListView x:Name="SettingsCategoryList" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" SelectionChanged="SettingsCategoryList_SelectionChanged" AutomationProperties.Name="设置类别">
                     <ListViewItem Tag="DefaultsSection" AutomationProperties.AutomationId="SettingsNav_Detection" AutomationProperties.Name="检测">
