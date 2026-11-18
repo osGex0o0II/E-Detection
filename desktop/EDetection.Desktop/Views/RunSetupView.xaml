@@ -366,7 +366,8 @@
                         </Grid.ColumnDefinitions>
                         <Button Grid.Column="0"
                                 Command="{Binding UseSelectedReportDirectoriesCommand}"
-                                HorizontalAlignment="Stretch">
+                                HorizontalAlignment="Stretch"
+                                AutomationProperties.Name="复用选中报告的目录">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE72C;" FontSize="14" />
                                 <TextBlock Text="复用路径" />

@@ -283,13 +283,15 @@
                 <StackPanel Orientation="Horizontal"
                             Spacing="8"
                             Visibility="{Binding ReportActionsVisibility}">
-                    <Button Command="{Binding OpenCurrentReportCommand}">
+                    <Button Command="{Binding OpenCurrentReportCommand}"
+                            AutomationProperties.Name="{Binding WorkbenchReportButtonText}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE8A5;" FontSize="14" />
                             <TextBlock Text="{Binding WorkbenchReportButtonText}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding OpenCurrentReportFolderCommand}">
+                    <Button Command="{Binding OpenCurrentReportFolderCommand}"
+                            AutomationProperties.Name="{Binding WorkbenchReportFolderButtonText}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE8B7;" FontSize="14" />
                             <TextBlock Text="{Binding WorkbenchReportFolderButtonText}" />
@@ -301,7 +303,8 @@
                         <FontIcon Glyph="&#xE8C8;" FontSize="14" />
                     </Button>
                     <Button Command="{Binding ShowCurrentRunCommand}"
-                            Visibility="{Binding SnapshotActionsVisibility}">
+                            Visibility="{Binding SnapshotActionsVisibility}"
+                            AutomationProperties.Name="返回当前检测状态">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <FontIcon Glyph="&#xE72B;" FontSize="14" />
                             <TextBlock Text="返回当前状态" />
