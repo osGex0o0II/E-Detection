@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using EDetection.Desktop.Models;
 using EDetection.Desktop.Services;
+using Microsoft.UI.Xaml;
 
 namespace EDetection.Desktop.ViewModels;
 
@@ -23,6 +24,17 @@ public sealed partial class RuntimeLogViewModel(
     };
 
     public string RetentionText => $"保留最近 {RetentionLimit} 条";
+
+    // Lowering the retention limit deletes log rows immediately.
+    public int LastTrimmedLogCount { get; private set; }
+
+    public string TrimWarningText => LastTrimmedLogCount > 0
+        ? $"已按新上限移除 {LastTrimmedLogCount} 条较早的运行记录。"
+        : "";
+
+    public Visibility TrimWarningVisibility => LastTrimmedLogCount > 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     public string StatusText => LogItems.Count > 0
         ? $"{FilteredLogItems.Count}/{LogItems.Count} 条记录"
@@ -101,8 +113,13 @@ public sealed partial class RuntimeLogViewModel(
 
     partial void OnSelectedRetentionIndexChanged(int value)
     {
+        var before = LogItems.Count;
         Trim();
+        LastTrimmedLogCount = before - LogItems.Count;
         Refresh();
+        OnPropertyChanged(nameof(LastTrimmedLogCount));
+        OnPropertyChanged(nameof(TrimWarningText));
+        OnPropertyChanged(nameof(TrimWarningVisibility));
     }
 
     partial void OnSearchTextChanged(string value) => Refresh();

@@ -146,18 +146,19 @@
                         <TextBlock Text="{Binding WorkbenchProcessedSummary}"
                                    FontSize="12"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   AutomationProperties.LiveSetting="Polite" />
+                                   AutomationProperties.LiveSetting="Off" />
                         <TextBlock Grid.Column="1"
                                    Text="{Binding WorkbenchProgressText}"
                                    FontSize="12"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   AutomationProperties.LiveSetting="Polite" />
+                                   AutomationProperties.LiveSetting="Off" />
                     </Grid>
                     <ProgressBar Minimum="0"
                                  Maximum="100"
                                  Value="{Binding WorkbenchProgressPercent}"
+                                 IsIndeterminate="{Binding WorkbenchProgressIsIndeterminate}"
                                  AutomationProperties.Name="检测进度"
-                                 AutomationProperties.LiveSetting="Polite" />
+                                 AutomationProperties.LiveSetting="Off" />
                 </StackPanel>
 
                 <Grid x:Name="PoetryPanel"

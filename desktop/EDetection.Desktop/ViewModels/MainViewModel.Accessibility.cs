@@ -77,6 +77,29 @@ public partial class MainViewModel
         _ => "默认顺序",
     };
 
+    // Sighted users need the same state the screen reader gets from
+    // DetailSortStatusText, so the active column carries an arrow.
+    public string DetailSeverityHeaderText => HeaderText("severity", "等级");
+
+    public string DetailDeviceHeaderText => HeaderText("device", "设备");
+
+    public string DetailIssueHeaderText => HeaderText("issue", "异常");
+
+    public string DetailValueHeaderText => HeaderText("value", "异常值");
+
+    public string DetailRecommendationHeaderText => HeaderText("recommendation", "建议");
+
+    private string HeaderText(string key, string label)
+    {
+        if (!string.Equals(SelectedDetailSortKey, key, StringComparison.Ordinal))
+        {
+            return label;
+        }
+
+        var descending = key == "time" ? !DetailSortDescending : DetailSortDescending;
+        return descending ? $"{label} ↓" : $"{label} ↑";
+    }
+
     public string DetailTableEmptyStateTitle => WorkbenchDetailPreviewTotalCount == 0
         ? "暂无异常明细"
         : "没有匹配的异常明细";
@@ -84,6 +107,15 @@ public partial class MainViewModel
     public string DetailTableEmptyStateHint => WorkbenchDetailPreviewTotalCount == 0
         ? "完成一次检测或选择历史报告后，可在这里查看异常记录。"
         : "调整搜索关键词或筛选条件后再试。";
+
+    // With detail output disabled every row carries "-" in the value column.
+    public Visibility DetailValueColumnVisibility => DetailOutputEnabled
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
+    public GridLength DetailValueColumnWidth => DetailOutputEnabled
+        ? new GridLength(86)
+        : new GridLength(0);
 
     public Visibility DetailTableEmptyStateVisibility =>
         WorkbenchDetailPreviewTotalCount == 0 || !WorkbenchFilteredDetailPreview.Any()

@@ -24,6 +24,18 @@ public sealed partial class ReportHistoryViewModel(
 
     public string RecentReportLimitText => $"保留最近 {RecentReportLimit} 个";
 
+    // Lowering the limit deletes history immediately, so the count that was
+    // dropped is surfaced instead of letting entries vanish silently.
+    public int LastTrimmedReportCount { get; private set; }
+
+    public string TrimWarningText => LastTrimmedReportCount > 0
+        ? $"已按新上限移除 {LastTrimmedReportCount} 个较早的报告记录。"
+        : "";
+
+    public Visibility TrimWarningVisibility => LastTrimmedReportCount > 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
     public string StatusText => RecentReports.Count > 0
         ? $"{FilteredRecentReports.Count}/{RecentReports.Count} 个报告"
         : "暂无报告历史";
@@ -154,7 +166,12 @@ public sealed partial class ReportHistoryViewModel(
             return;
         }
 
+        var before = RecentReports.Count;
         history.Trim(RecentReports, RecentReportLimit);
+        LastTrimmedReportCount = before - RecentReports.Count;
+        OnPropertyChanged(nameof(LastTrimmedReportCount));
+        OnPropertyChanged(nameof(TrimWarningText));
+        OnPropertyChanged(nameof(TrimWarningVisibility));
         history.RefreshLatestMarkers(RecentReports);
         Refresh();
         NotifyStatusChanged();

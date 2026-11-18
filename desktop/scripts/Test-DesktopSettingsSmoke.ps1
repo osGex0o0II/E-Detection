@@ -889,7 +889,11 @@ try {
     if (!$settingsSearchFocusedForNoResults) {
         throw "Settings smoke: could not focus the Settings search box for the no-results check."
     }
-    [System.Windows.Forms.SendKeys]::SendWait("zzzz")
+    # Typing through SendKeys is blocked by some endpoint-protection setups,
+    # so drive the same code path through the automation value pattern.
+    if (!(Set-SettingsSearchText $mainWindow.Handle "zzzz")) {
+        throw "Settings smoke: could not type into the Settings search box for the no-results check."
+    }
     Start-Sleep -Milliseconds 700
     $settingsSearchNoResultsElement = Get-AutomationElementById $mainWindow.Handle "SettingsSearchNoResults" 3
     $settingsSearchNoResultsVisible = Test-ElementOnScreen $settingsSearchNoResultsElement $clientScreenRect
@@ -897,7 +901,7 @@ try {
         throw "Settings smoke: a zero-result search did not show the no-results state."
     }
     $settingsScreenshots["SearchNoResults"] = (Save-WindowScreenshot $mainWindow.Handle $outputFull "settings-search-no-results" $screenshotTimestamp).Path
-    [System.Windows.Forms.SendKeys]::SendWait("^a{BACKSPACE}")
+    Set-SettingsSearchText $mainWindow.Handle "" | Out-Null
     Start-Sleep -Milliseconds 700
     $settingsSearchNoResultsCleared = $false
     try {

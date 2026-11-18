@@ -60,9 +60,46 @@ public sealed class ReportDetailPreview
     {
         get
         {
-            var text = string.Join(" ", new[] { Date, Time }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            // Native rows store the hour cell verbatim ("7"), and files without
+            // a date in the name carry the literal "日期未知".  Printing both
+            // produced "日期未知 7时" in every row; normalize to "07:00".
+            var date = NormalizeDateText(Date);
+            var time = NormalizeTimeText(Time);
+            var text = string.Join(" ", new[] { date, time }.Where(value => !string.IsNullOrWhiteSpace(value)));
             return string.IsNullOrWhiteSpace(text) ? SourceFile ?? "" : text;
         }
+    }
+
+    private static string NormalizeDateText(string? value)
+    {
+        var text = value?.Trim() ?? "";
+        return text is "" or "日期未知" or "-" ? "" : text;
+    }
+
+    private static string NormalizeTimeText(string? value)
+    {
+        var text = value?.Trim() ?? "";
+        if (text is "" or "-")
+        {
+            return "";
+        }
+
+        if (text.All(char.IsAsciiDigit) && text.Length <= 2 && int.TryParse(text, out var hour) && hour is >= 0 and <= 23)
+        {
+            return $"{hour:00}:00";
+        }
+
+        var match = System.Text.RegularExpressions.Regex.Match(
+            text,
+            @"^(?<hour>\d{1,2}):(?<minute>\d{2})(?::\d{2})?$");
+        if (match.Success
+            && int.TryParse(match.Groups["hour"].Value, out var parsedHour)
+            && parsedHour is >= 0 and <= 23)
+        {
+            return $"{parsedHour:00}:{match.Groups["minute"].Value}";
+        }
+
+        return text;
     }
 
     [JsonIgnore]

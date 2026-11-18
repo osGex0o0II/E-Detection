@@ -47,6 +47,8 @@ public sealed partial class SettingsView
 
     private void ShowCategory(string categorySectionName)
     {
+        _lastCategorySectionName = categorySectionName;
+
         // Footer feedback belongs to the category where the action ran; leaving
         // it open while navigating makes the new category look like it failed.
         SettingsFeedbackBar.IsOpen = false;

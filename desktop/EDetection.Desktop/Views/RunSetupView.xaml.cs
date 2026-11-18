@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using EDetection.Desktop.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -118,19 +119,27 @@ public sealed partial class RunSetupView : UserControl
 
     private async void ClearRecentReports_Click(object sender, RoutedEventArgs e)
     {
-        if (ViewModel?.ClearRecentReportsCommand.CanExecute(null) != true)
+        try
         {
-            return;
-        }
+            if (ViewModel?.ClearRecentReportsCommand.CanExecute(null) != true)
+            {
+                return;
+            }
 
-        if (await ConfirmationDialog.ConfirmDestructiveActionAsync(
-                XamlRoot,
-                this,
-                "清空报告历史？",
-                "将清除历史列表，不会删除磁盘上的 Excel 报告。",
-                "清空历史"))
+            if (await ConfirmationDialog.ConfirmDestructiveActionAsync(
+                    XamlRoot,
+                    this,
+                    "清空报告历史？",
+                    "将清除历史列表，不会删除磁盘上的 Excel 报告。",
+                    "清空历史"))
+            {
+                ViewModel?.ClearRecentReportsCommand.Execute(null);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or COMException)
         {
-            ViewModel?.ClearRecentReportsCommand.Execute(null);
+            // A second dialog or a torn-down XamlRoot must not crash the shell.
+            PickerFailureFeedback.Report(ViewModel, "无法显示清空确认对话框", ex);
         }
     }
 

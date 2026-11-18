@@ -427,7 +427,10 @@ public partial class MainViewModel
         ActiveRunSummaryText = "";
         RunTelemetry.Reset();
         FilteredDetailPreview.Clear();
-        RuntimeLogs.Clear();
+        // The run log honours a retention limit, so wiping it at the start of
+        // every run made that setting meaningless and destroyed the trace from
+        // the previous run.  Keep the entries; only reset the filters.
+        RuntimeLogs.ClearFilters();
         NotifyDetailPreviewChanged();
         CopyFilteredDetailsCommand.NotifyCanExecuteChanged();
     }

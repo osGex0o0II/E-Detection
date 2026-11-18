@@ -50,18 +50,16 @@ public sealed class DesktopHealthService
         var packageText = BuildPackageText();
         const string backendText = "Native .NET 检测核心";
         var installText = BuildInstallText();
-        var attentionCount = CountAttention(
-            notificationText,
-            startupText,
-            settingsText,
-            packageText,
-            backendText,
-            installText);
+        var attentionItems = CollectAttention(
+            ("系统通知", notificationText),
+            ("登录自启动", startupText),
+            ("设置存储", settingsText),
+            ("包完整性", packageText),
+            ("检测核心", backendText),
+            ("安装形态", installText));
 
         return new DesktopHealthSnapshot(
-            attentionCount == 0
-                ? "应用状态正常"
-                : $"应用状态有 {attentionCount} 项需要关注",
+            BuildSummaryText(attentionItems),
             notificationText,
             startupText,
             settingsText,
@@ -69,6 +67,25 @@ public sealed class DesktopHealthService
             backendText,
             installText);
     }
+
+    private static string BuildSummaryText(IReadOnlyList<string> attentionItems) =>
+        attentionItems.Count == 0
+            ? "应用状态正常"
+            : $"应用状态有 {attentionItems.Count} 项需要关注：{string.Join("、", attentionItems)}";
+
+    private static IReadOnlyList<string> CollectAttention(
+        params (string Label, string Value)[] values) =>
+        values
+            .Where(item => NeedsAttention(item.Value))
+            .Select(item => item.Label)
+            .ToArray();
+
+    private static bool NeedsAttention(string value) =>
+        value.Contains("不可用", StringComparison.OrdinalIgnoreCase)
+        || value.Contains("关闭", StringComparison.OrdinalIgnoreCase)
+        || value.Contains("失败", StringComparison.OrdinalIgnoreCase)
+        || value.Contains("缺失", StringComparison.OrdinalIgnoreCase)
+        || value.Contains("其他位置", StringComparison.OrdinalIgnoreCase);
 
     private static string BuildNotificationText()
     {
@@ -135,11 +152,4 @@ public sealed class DesktopHealthService
         return "安装形态: 便携/开发版";
     }
 
-    private static int CountAttention(params string[] values) =>
-        values.Count(value =>
-            value.Contains("不可用", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("关闭", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("失败", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("缺失", StringComparison.OrdinalIgnoreCase)
-            || value.Contains("其他位置", StringComparison.OrdinalIgnoreCase));
 }

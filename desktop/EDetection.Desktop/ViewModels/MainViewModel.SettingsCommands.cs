@@ -142,10 +142,10 @@ public partial class MainViewModel
         SaveSecureSecret(PendingLlmApiKey, _credentials.SaveLlmApiKey, () => PendingLlmApiKey = "");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasLlmApiKey))]
     private void ClearLlmApiKey()
     {
-        ClearSecureSecret(_credentials.ClearLlmApiKey, "LLM API Key 已清除。");
+        ClearSecureSecret(_credentials.ClearLlmApiKey, () => _credentials.HasLlmApiKey, "LLM API Key 已清除。");
     }
 
     private bool CanTestLlmConnection() => !IsTestingLlmConnection;
@@ -213,10 +213,10 @@ public partial class MainViewModel
         SaveSecureSecret(PendingNtfyToken, _credentials.SaveNtfyToken, () => PendingNtfyToken = "");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasNtfyToken))]
     private void ClearNtfyToken()
     {
-        ClearSecureSecret(_credentials.ClearNtfyToken, "ntfy Token 已清除。");
+        ClearSecureSecret(_credentials.ClearNtfyToken, () => _credentials.HasNtfyToken, "ntfy Token 已清除。");
     }
 
     [RelayCommand]
@@ -337,10 +337,10 @@ public partial class MainViewModel
         SaveSecureSecret(PendingProxyPassword, _credentials.SaveProxyPassword, () => PendingProxyPassword = "");
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(HasProxyPassword))]
     private void ClearProxyPassword()
     {
-        ClearSecureSecret(_credentials.ClearProxyPassword, "代理密码已清除。");
+        ClearSecureSecret(_credentials.ClearProxyPassword, () => _credentials.HasProxyPassword, "代理密码已清除。");
     }
 
     [RelayCommand]
@@ -405,12 +405,20 @@ public partial class MainViewModel
         }
     }
 
-    private void ClearSecureSecret(Action clear, string successMessage)
+    private void ClearSecureSecret(Action clear, Func<bool> stillHasSecret, string successMessage)
     {
         try
         {
             clear();
             RefreshSecureCredentialStatus();
+            // The vault silently ignores removal failures, so confirm the read
+            // path instead of trusting the call and claiming success.
+            if (stillHasSecret())
+            {
+                ShowSettingsFeedback("未能清除凭据，请稍后重试或在 Windows 凭据管理器中手动删除。", InfoBarSeverity.Warning);
+                return;
+            }
+
             ShowSettingsFeedback(successMessage, InfoBarSeverity.Success);
         }
         catch (Exception ex)
@@ -424,6 +432,9 @@ public partial class MainViewModel
         LlmApiKeyStatusText = _credentials.LlmApiKeyStatusText;
         NtfyTokenStatusText = _credentials.NtfyTokenStatusText;
         ProxyPasswordStatusText = _credentials.ProxyPasswordStatusText;
+        HasLlmApiKey = _credentials.HasLlmApiKey;
+        HasNtfyToken = _credentials.HasNtfyToken;
+        HasProxyPassword = _credentials.HasProxyPassword;
     }
 
 }

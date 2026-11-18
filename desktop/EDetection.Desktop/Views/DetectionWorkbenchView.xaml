@@ -137,12 +137,12 @@
                     <TextBlock Text="{Binding WorkbenchActivityTitleText}"
                                Style="{StaticResource SectionTitleTextStyle}"
                                TextTrimming="CharacterEllipsis"
-                               AutomationProperties.LiveSetting="Polite" />
+                               AutomationProperties.LiveSetting="Off" />
                     <TextBlock Grid.Column="1"
                                Text="{Binding WorkbenchProgressText}"
                                Visibility="{Binding StatusProgressVisibility}"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               AutomationProperties.LiveSetting="Polite" />
+                               AutomationProperties.LiveSetting="Off" />
                 </Grid>
                 <Grid Visibility="{Binding RunTelemetryVisibility}"
                       RowSpacing="8">
@@ -163,6 +163,7 @@
                                      Width="160"
                                      Minimum="0"
                                      Maximum="100"
+                                     IsIndeterminate="{Binding WorkbenchProgressIsIndeterminate}"
                                      Value="{Binding WorkbenchProgressPercent}" />
                     </Grid>
                     <Grid x:Name="RunTelemetryStatsGrid"
@@ -569,7 +570,7 @@
                                         <ColumnDefinition x:Name="DetailHeaderSeverityColumn" Width="46" />
                                         <ColumnDefinition x:Name="DetailHeaderDeviceColumn" Width="1.2*" />
                                         <ColumnDefinition x:Name="DetailHeaderIssueColumn" Width="1.8*" />
-                                        <ColumnDefinition x:Name="DetailHeaderValueColumn" Width="86" />
+                                        <ColumnDefinition x:Name="DetailHeaderValueColumn" Width="{Binding DetailValueColumnWidth}" />
                                         <ColumnDefinition x:Name="DetailHeaderActionColumn" Width="1.4*" />
                                     </Grid.ColumnDefinitions>
                                     <Button Padding="0"
@@ -580,7 +581,7 @@
                                             CommandParameter="severity"
                                             AutomationProperties.Name="按等级排序"
                                             AutomationProperties.HelpText="切换等级列的升序、降序与默认顺序">
-                                        <TextBlock Text="等级" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <TextBlock Text="{Binding DetailSeverityHeaderText}" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="1"
                                             Padding="0"
@@ -591,7 +592,7 @@
                                             CommandParameter="device"
                                             AutomationProperties.Name="按设备排序"
                                             AutomationProperties.HelpText="切换设备列的升序、降序与默认顺序">
-                                        <TextBlock Text="设备" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <TextBlock Text="{Binding DetailDeviceHeaderText}" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="2"
                                             Padding="0"
@@ -602,18 +603,20 @@
                                             CommandParameter="issue"
                                             AutomationProperties.Name="按异常排序"
                                             AutomationProperties.HelpText="切换异常列的升序、降序与默认顺序">
-                                        <TextBlock Text="异常" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <TextBlock Text="{Binding DetailIssueHeaderText}" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
-                                    <Button Grid.Column="3"
+                                    <Button x:Name="DetailHeaderValueButton"
+                                            Grid.Column="3"
                                             Padding="0"
                                             Background="Transparent"
                                             BorderThickness="0"
                                             HorizontalAlignment="Left"
                                             Command="{Binding SortDetailsCommand}"
                                             CommandParameter="value"
+                                            Visibility="{Binding DetailValueColumnVisibility}"
                                             AutomationProperties.Name="按异常值排序"
                                             AutomationProperties.HelpText="切换异常值列的升序、降序与默认顺序">
-                                        <TextBlock Text="异常值" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <TextBlock Text="{Binding DetailValueHeaderText}" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                     <Button Grid.Column="4"
                                             Padding="0"
@@ -624,7 +627,7 @@
                                             CommandParameter="recommendation"
                                             AutomationProperties.Name="按建议排序"
                                             AutomationProperties.HelpText="切换建议列的升序、降序与默认顺序">
-                                        <TextBlock Text="建议" Style="{StaticResource TableHeaderTextStyle}" />
+                                        <TextBlock Text="{Binding DetailRecommendationHeaderText}" Style="{StaticResource TableHeaderTextStyle}" />
                                     </Button>
                                 </Grid>
                             </Border>
@@ -644,7 +647,8 @@
                                 </StackPanel>
                             </Border>
                             <Grid Grid.Row="2">
-                                <ListView ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
+                                <ListView x:Name="DetailTable"
+                                          ItemsSource="{Binding WorkbenchFilteredDetailPreview}"
                                           SelectedItem="{Binding SelectedDetail, Mode=TwoWay}"
                                           SelectionMode="Single"
                                           ItemContainerStyle="{StaticResource DenseListViewItemStyle}"
@@ -657,7 +661,7 @@
                                                     <ColumnDefinition Width="46" />
                                                     <ColumnDefinition Width="1.2*" />
                                                     <ColumnDefinition Width="1.8*" />
-                                                    <ColumnDefinition Width="86" />
+                                                    <ColumnDefinition Width="{Binding DataContext.DetailValueColumnWidth, ElementName=DetailTable}" />
                                                     <ColumnDefinition Width="1.4*" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Text="{Binding Severity}"
@@ -681,8 +685,10 @@
                                                            MaxLines="2"
                                                            FontSize="13"
                                                            ToolTipService.ToolTip="{Binding IssueText}" />
-                                                <TextBlock Grid.Column="3"
+                                                <TextBlock x:Name="DetailValueCellText"
+                                                           Grid.Column="3"
                                                            Text="{Binding ValueText}"
+                                                           Visibility="{Binding DataContext.DetailValueColumnVisibility, ElementName=DetailTable}"
                                                            TextTrimming="CharacterEllipsis"
                                                            FontSize="13"
                                                            ToolTipService.ToolTip="{Binding ValueText}" />
@@ -727,6 +733,7 @@
                     <Grid RowSpacing="10">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <Grid>
@@ -740,10 +747,40 @@
                                        Text="{Binding RuntimeLogs.StatusText}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                         </Grid>
-                        <ListView Grid.Row="1"
+                        <Grid Grid.Row="1"
+                              ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding RuntimeLogs.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     PlaceholderText="搜索运行记录"
+                                     AutomationProperties.Name="搜索运行记录" />
+                            <ComboBox Grid.Column="1"
+                                      MinWidth="120"
+                                      ItemsSource="{Binding RuntimeLogs.LogKindFilters}"
+                                      SelectedIndex="{Binding RuntimeLogs.SelectedKindFilterIndex, Mode=TwoWay}"
+                                      AutomationProperties.Name="筛选运行记录类型" />
+                            <Button Grid.Column="2"
+                                    Command="{Binding CopyFilteredLogsCommand}"
+                                    AutomationProperties.Name="复制运行记录"
+                                    ToolTipService.ToolTip="复制当前筛选结果">
+                                <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                            </Button>
+                            <Button Grid.Column="3"
+                                    Command="{Binding ClearLogFiltersCommand}"
+                                    AutomationProperties.Name="清除运行记录筛选"
+                                    ToolTipService.ToolTip="清除搜索与类型筛选">
+                                <FontIcon Glyph="&#xE894;" FontSize="14" />
+                            </Button>
+                        </Grid>
+                        <ListView Grid.Row="2"
                                   ItemsSource="{Binding RuntimeLogs.FilteredLogItems}"
                                   SelectionMode="None"
-                                  ItemContainerStyle="{StaticResource DenseListViewItemStyle}">
+                                  ItemContainerStyle="{StaticResource DenseListViewItemStyle}"
+                                  AutomationProperties.Name="运行记录列表">
                             <ListView.ItemTemplate>
                                 <DataTemplate>
                                     <Grid ColumnSpacing="12" Padding="0,6">

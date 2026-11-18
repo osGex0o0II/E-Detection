@@ -23,14 +23,31 @@ public partial class MainViewModel
 {
     private bool CanOpenFirstAnomalySource()
     {
-        var detail = WorkbenchFilteredDetailPreview.FirstOrDefault();
+        var detail = FindMostSevereDetail();
         return detail is not null && File.Exists(ResolveDetailSourcePath(detail));
     }
+
+    // "Locate first anomaly" used to mean the first row in the current filter
+    // order, so sorting by time pointed at the newest row instead of the worst
+    // one.  Pick the highest severity, then the earliest time within it.
+    private ReportDetailPreview? FindMostSevereDetail() =>
+        WorkbenchFilteredDetailPreview
+            .OrderBy(static detail => SeverityRank(detail.Severity))
+            .ThenBy(static detail => detail.TimeText, StringComparer.Ordinal)
+            .FirstOrDefault();
+
+    private static int SeverityRank(string? severity) => severity switch
+    {
+        "高" => 0,
+        "中" => 1,
+        "低" => 2,
+        _ => 3,
+    };
 
     [RelayCommand(CanExecute = nameof(CanOpenFirstAnomalySource))]
     private void OpenFirstAnomalySource()
     {
-        var detail = WorkbenchFilteredDetailPreview.FirstOrDefault();
+        var detail = FindMostSevereDetail();
         if (detail is null)
         {
             return;
@@ -628,6 +645,13 @@ public partial class MainViewModel
                                    or UriFormatException
                                    or JsonException)
         {
+            LlmDetailExplanationText = $"智能解读失败: {ex.Message}";
+            AddLog("智能助手提醒", $"异常明细解读失败: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            // A stale "正在生成..." label reads as a hung feature, so any
+            // other failure has to terminate the state as well.
             LlmDetailExplanationText = $"智能解读失败: {ex.Message}";
             AddLog("智能助手提醒", $"异常明细解读失败: {ex.Message}");
         }

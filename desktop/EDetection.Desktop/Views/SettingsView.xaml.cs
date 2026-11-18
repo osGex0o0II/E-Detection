@@ -21,6 +21,7 @@ public sealed partial class SettingsView : UserControl
     private const double StackedThresholdBreakpoint = 640;
 
     private bool _suppressCategoryScroll;
+    private string _lastCategorySectionName = "DefaultsSection";
     private readonly List<SettingRowLayoutState> _settingRows = [];
     private readonly IReadOnlyList<SettingsSearchEntry> _searchEntries;
 
@@ -70,18 +71,22 @@ public sealed partial class SettingsView : UserControl
 
     public void PrepareForDisplay(string? initialSectionName = null)
     {
+        // Reopening settings used to snap back to the first category and scroll
+        // top, which lost the user's place.  Keep the last category unless a
+        // caller explicitly asks for a section.
+        var targetSection = string.IsNullOrWhiteSpace(initialSectionName)
+            ? _lastCategorySectionName
+            : initialSectionName;
         _suppressCategoryScroll = true;
         SettingsCategoryList.SelectedIndex = 0;
         _suppressCategoryScroll = false;
-        SelectCategoryBySection("DefaultsSection");
+        SelectCategoryBySection(GetCategorySectionName(targetSection));
         SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
         DispatcherQueue.TryEnqueue(() =>
         {
             SettingsScroll.UpdateLayout();
             SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);
-            NavigateToSectionByName(string.IsNullOrWhiteSpace(initialSectionName)
-                ? "DefaultsSection"
-                : initialSectionName);
+            NavigateToSectionByName(targetSection);
         });
     }
 

@@ -18,6 +18,12 @@ public sealed class SecureCredentialService : IAppCredentialStore
 
     public string ProxyPasswordStatusText => BuildStatusText(ProxyPasswordResource, "代理密码");
 
+    public bool HasLlmApiKey => HasSecret(LlmApiKeyResource);
+
+    public bool HasNtfyToken => HasSecret(NtfyTokenResource);
+
+    public bool HasProxyPassword => HasSecret(ProxyPasswordResource);
+
     public void SaveLlmApiKey(string secret) => SaveSecret(LlmApiKeyResource, secret);
 
     public void SaveNtfyToken(string secret) => SaveSecret(NtfyTokenResource, secret);

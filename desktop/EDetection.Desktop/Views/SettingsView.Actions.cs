@@ -9,30 +9,51 @@ public sealed partial class SettingsView
 {
     private async void ResetSettings_Click(object sender, RoutedEventArgs e)
     {
-        if (!await ConfirmActionAsync(
-                "重置设置？",
-                "将恢复检测阈值、目录、窗口和网络偏好。已保存的 API Key、Token 与代理密码不会删除。",
-                "重置设置"))
+        try
         {
-            return;
-        }
+            if (!await ConfirmActionAsync(
+                    "重置设置？",
+                    "将恢复检测阈值、目录、窗口和网络偏好。已保存的 API Key、Token 与代理密码不会删除。",
+                    "重置设置"))
+            {
+                return;
+            }
 
-        ViewModel?.ResetSettingsToDefaultsCommand.Execute(null);
+            ViewModel?.ResetSettingsToDefaultsCommand.Execute(null);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法显示重置确认对话框", ex);
+        }
     }
 
     private async void ClearRecentReports_Click(object sender, RoutedEventArgs e)
     {
-        if (await ConfirmActionAsync("清空报告历史？", "这会移除应用中的报告历史记录，不会删除磁盘上的 Excel 报告。", "清空历史"))
+        try
         {
-            ViewModel?.ClearRecentReportsCommand.Execute(null);
+            if (await ConfirmActionAsync("清空报告历史？", "这会移除应用中的报告历史记录，不会删除磁盘上的 Excel 报告。", "清空历史"))
+            {
+                ViewModel?.ClearRecentReportsCommand.Execute(null);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法显示清空确认对话框", ex);
         }
     }
 
     private async void ClearRuntimeLogs_Click(object sender, RoutedEventArgs e)
     {
-        if (await ConfirmActionAsync("清空运行记录？", "这会移除应用中的运行记录，无法恢复。", "清空记录"))
+        try
         {
-            ViewModel?.ClearRuntimeLogsCommand.Execute(null);
+            if (await ConfirmActionAsync("清空运行记录？", "这会移除应用中的运行记录，无法恢复。", "清空记录"))
+            {
+                ViewModel?.ClearRuntimeLogsCommand.Execute(null);
+            }
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.Runtime.InteropServices.COMException)
+        {
+            PickerFailureFeedback.Report(ViewModel, "无法显示清空确认对话框", ex);
         }
     }
 

@@ -107,7 +107,12 @@ public partial class MainViewModel
     public partial string PendingLlmApiKey { get; set; } = "";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearLlmApiKeyCommand))]
     public partial string LlmApiKeyStatusText { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearLlmApiKeyCommand))]
+    public partial bool HasLlmApiKey { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(TestLlmConnectionCommand))]
@@ -132,7 +137,12 @@ public partial class MainViewModel
     public partial string PendingNtfyToken { get; set; } = "";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearNtfyTokenCommand))]
     public partial string NtfyTokenStatusText { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearNtfyTokenCommand))]
+    public partial bool HasNtfyToken { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SendTestNtfyNotificationCommand))]
@@ -158,7 +168,12 @@ public partial class MainViewModel
     public partial string PendingProxyPassword { get; set; } = "";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearProxyPasswordCommand))]
     public partial string ProxyPasswordStatusText { get; set; } = "";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ClearProxyPasswordCommand))]
+    public partial bool HasProxyPassword { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(TestNetworkProxyCommand))]
@@ -223,6 +238,7 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WorkbenchStatusBadgeVisibility))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
+    [NotifyPropertyChangedFor(nameof(SettingsRunningBannerVisibility))]
     [NotifyCanExecuteChangedFor(nameof(StartCommand))]
     [NotifyCanExecuteChangedFor(nameof(SaveSettingsFromPageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ResetSettingsToDefaultsCommand))]
@@ -265,6 +281,7 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WorkbenchProcessedSummary))]
     [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
     [NotifyPropertyChangedFor(nameof(RunTelemetryVisibility))]
+    [NotifyPropertyChangedFor(nameof(WorkbenchProgressIsIndeterminate))]
     public partial int ProcessedFiles { get; set; }
 
     [ObservableProperty]
@@ -421,6 +438,11 @@ public partial class MainViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DetailSortStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailSeverityHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailDeviceHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailIssueHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailValueHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailRecommendationHeaderText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
     [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
@@ -430,6 +452,11 @@ public partial class MainViewModel
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DetailSortStatusText))]
+    [NotifyPropertyChangedFor(nameof(DetailSeverityHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailDeviceHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailIssueHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailValueHeaderText))]
+    [NotifyPropertyChangedFor(nameof(DetailRecommendationHeaderText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchFilteredDetailPreview))]
     [NotifyPropertyChangedFor(nameof(WorkbenchDetailPreviewStatusText))]
     [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
@@ -542,36 +569,14 @@ public partial class MainViewModel
     public partial bool PowerFactorEnabled { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DetailValueColumnVisibility))]
+    [NotifyPropertyChangedFor(nameof(DetailValueColumnWidth))]
     public partial bool DetailOutputEnabled { get; set; }
-
-    public string DiagnosticSummaryText => Diagnostics.SummaryText;
-
-    public string BackendDiagnosticText => Diagnostics.BackendText;
-
-    public string ConfigDiagnosticText => Diagnostics.ConfigText;
-
-    public string InputDiagnosticText => Diagnostics.InputText;
-
-    public string OutputDiagnosticText => Diagnostics.OutputText;
-
-    public string DiagnosticCheckedAtText => Diagnostics.CheckedAtText;
-
-    public string DiagnosticActionText => Diagnostics.ActionText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ActiveRunSummaryVisibility))]
     [NotifyPropertyChangedFor(nameof(WorkbenchContextText))]
     public partial string ActiveRunSummaryText { get; set; } = "";
-
-    public string CurrentFileText => RunTelemetry.CurrentFileText;
-
-    public string RunElapsedText => RunTelemetry.ElapsedText;
-
-    public string RunSpeedText => RunTelemetry.SpeedText;
-
-    public string RunRemainingText => RunTelemetry.RemainingText;
-
-    public string RunProgressDetailText => RunTelemetry.ProgressDetailText;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CancelConfirmationVisibility))]
@@ -582,12 +587,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(FailureActionBodyText))]
     [NotifyPropertyChangedFor(nameof(FailureActionsVisibility))]
     public partial string LastFailureText { get; set; } = "暂无失败";
-
-    public int SelectedLogRetentionIndex => RuntimeLogs.SelectedRetentionIndex;
-
-    public string LogSearchText => RuntimeLogs.SearchText;
-
-    public int SelectedLogKindFilterIndex => RuntimeLogs.SelectedKindFilterIndex;
 
     partial void OnSelectedThemeIndexChanged(int value) => SaveAppearanceSettings();
 

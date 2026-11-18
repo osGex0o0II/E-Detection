@@ -39,6 +39,7 @@ public sealed partial class MainWindow : Window
     private bool _isClosed;
     private bool _closeConfirmed;
     private bool _closePromptOpen;
+    private bool _trayHintShown;
 
     private const uint WmQueryEndSession = 0x0011;
     private const uint WmEndSession = 0x0016;
@@ -500,6 +501,17 @@ public sealed partial class MainWindow : Window
         AppWindow.Hide();
         ShowWindow(_windowHandle, ShowWindowCommand.Hide);
         _shellResources.ReleaseAfterHideToTray();
+
+        // Closing to the tray previously made the window vanish with no hint
+        // about where it went; the balloon is shown once per session.
+        if (savePlacement && !_trayHintShown)
+        {
+            _trayHintShown = true;
+            _trayIcon.ShowBalloon(
+                "E-Detection 仍在运行",
+                "窗口已隐藏到系统托盘。双击托盘图标可重新打开，托盘菜单可退出。");
+        }
+
         return true;
     }
 

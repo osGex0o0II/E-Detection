@@ -18,6 +18,11 @@ public sealed class TrayIconService : IDisposable
     private const uint WmAppCommandOpenReport = 1006;
     private const uint WmAppCommandOpenReportFolder = 1007;
 
+    // Explorer broadcasts this registered message after it restarts. Tray icons
+    // registered with the old shell are lost at that point, so the icon has to
+    // be added again or the app becomes a window with no tray entry.
+    private static readonly uint TaskbarCreatedMessage = RegisterWindowMessage("TaskbarCreated");
+
     private static readonly nint MessageOnlyWindow = new(-3);
 
     private readonly nint _ownerWindowHandle;
@@ -223,6 +228,24 @@ public sealed class TrayIconService : IDisposable
         }
     }
 
+    private void ReAddIconAfterExplorerRestart()
+    {
+        _iconAdded = false;
+
+        if (_callbackWindowHandle == 0)
+        {
+            return;
+        }
+
+        AddIcon();
+        if (!_iconAdded)
+        {
+            return;
+        }
+
+        UpdateStatus(_status);
+    }
+
     private NotifyIconData CreateData(NotifyIconFlags flags) => new()
     {
         Size = (uint)Marshal.SizeOf<NotifyIconData>(),
@@ -241,6 +264,12 @@ public sealed class TrayIconService : IDisposable
 
     private nint WndProc(nint hwnd, uint msg, nint wParam, nint lParam)
     {
+        if (msg == TaskbarCreatedMessage && TaskbarCreatedMessage != 0)
+        {
+            ReAddIconAfterExplorerRestart();
+            return 0;
+        }
+
         if (msg == CallbackMessage && wParam == IconId)
         {
             var command = unchecked((uint)lParam.ToInt64());
@@ -366,6 +395,9 @@ public sealed class TrayIconService : IDisposable
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern ushort RegisterClassEx(ref WindowClassEx windowClass);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint RegisterWindowMessage(string message);
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern bool UnregisterClass(string className, nint instance);

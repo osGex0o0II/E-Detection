@@ -180,6 +180,12 @@ public partial class MainViewModel
 
     public bool CanEditRunConfiguration => !IsRunning;
 
+    // Settings stay reachable during a run, but several controls silently
+    // grey out.  A banner explains why instead of leaving dead controls.
+    public Visibility SettingsRunningBannerVisibility => IsRunning
+        ? Visibility.Visible
+        : Visibility.Collapsed;
+
     public Visibility CancelCommandVisibility => IsRunning
         ? Visibility.Visible
         : Visibility.Collapsed;
@@ -273,6 +279,11 @@ public partial class MainViewModel
     public double WorkbenchProgressPercent => SelectedReport is { TotalFiles: > 0 }
         ? 100
         : ProgressPercent;
+
+    // Before the first file completes the bar has nothing to show, so a
+    // determinate 0% looked like a stalled task.
+    public bool WorkbenchProgressIsIndeterminate =>
+        IsRunning && ProcessedFiles == 0 && SelectedReport is null;
 
     public string WorkbenchProcessedSummary => SelectedReport is { } report
         ? (report.TotalFiles > 0 ? $"{report.ProcessedFiles}/{report.TotalFiles}" : "-")
