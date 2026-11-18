@@ -230,16 +230,6 @@ public partial class MainViewModel
         ? BuildPreviewStatusText(FilteredDetailPreview.Count(), DetailPreviewTotalCount)
         : "暂无异常明细";
 
-    public string LogStatusText => RuntimeLogs.StatusText;
-
-    public int LogRetentionLimit => RuntimeLogs.RetentionLimit;
-
-    public string LogRetentionText => RuntimeLogs.RetentionText;
-
-    public int RecentReportLimit => ReportHistory.RecentReportLimit;
-
-    public string RecentReportLimitText => ReportHistory.RecentReportLimitText;
-
     public int WorkbenchReportDeviceCount => SelectedReport?.DeviceCount ?? ReportDeviceCount;
 
     public IEnumerable<ReportDeviceSummary> WorkbenchHighRiskDevices =>

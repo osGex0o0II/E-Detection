@@ -38,8 +38,6 @@ public partial class MainViewModel
         if (e.PropertyName is nameof(ReportHistoryViewModel.RecentReportLimit)
             or nameof(ReportHistoryViewModel.RecentReportLimitText))
         {
-            OnPropertyChanged(nameof(RecentReportLimit));
-            OnPropertyChanged(nameof(RecentReportLimitText));
             ClearRecentReportsCommand.NotifyCanExecuteChanged();
             SavePreferenceSettings();
         }
@@ -50,7 +48,6 @@ public partial class MainViewModel
         switch (e.PropertyName)
         {
             case nameof(DiagnosticsViewModel.SummaryText):
-                OnPropertyChanged(nameof(DiagnosticSummaryText));
                 OnPropertyChanged(nameof(RunSetupReadinessText));
                 OnPropertyChanged(nameof(RunSetupReadinessDetailText));
                 break;
@@ -65,9 +62,6 @@ public partial class MainViewModel
                 break;
             case nameof(DiagnosticsViewModel.OutputText):
                 OnPropertyChanged(nameof(OutputDiagnosticText));
-                break;
-            case nameof(DiagnosticsViewModel.CheckedAtText):
-                OnPropertyChanged(nameof(DiagnosticCheckedAtText));
                 break;
             case nameof(DiagnosticsViewModel.ActionText):
                 OnPropertyChanged(nameof(DiagnosticActionText));
@@ -106,14 +100,11 @@ public partial class MainViewModel
         switch (e.PropertyName)
         {
             case nameof(RuntimeLogViewModel.StatusText):
-                OnPropertyChanged(nameof(LogStatusText));
                 ClearRuntimeLogsCommand.NotifyCanExecuteChanged();
                 CopyFilteredLogsCommand.NotifyCanExecuteChanged();
                 break;
             case nameof(RuntimeLogViewModel.RetentionLimit):
             case nameof(RuntimeLogViewModel.RetentionText):
-                OnPropertyChanged(nameof(LogRetentionLimit));
-                OnPropertyChanged(nameof(LogRetentionText));
                 SavePreferenceSettings();
                 break;
             case nameof(RuntimeLogViewModel.SelectedRetentionIndex):

@@ -4,8 +4,6 @@ public partial class MainViewModel
 {
     // Thin relays over the child view models.  They live in their own partial
     // so the main properties file stays inside the architecture line budget.
-    public string DiagnosticSummaryText => Diagnostics.SummaryText;
-
     public string BackendDiagnosticText => Diagnostics.BackendText;
 
     public string ConfigDiagnosticText => Diagnostics.ConfigText;
@@ -13,8 +11,6 @@ public partial class MainViewModel
     public string InputDiagnosticText => Diagnostics.InputText;
 
     public string OutputDiagnosticText => Diagnostics.OutputText;
-
-    public string DiagnosticCheckedAtText => Diagnostics.CheckedAtText;
 
     public string DiagnosticActionText => Diagnostics.ActionText;
 
