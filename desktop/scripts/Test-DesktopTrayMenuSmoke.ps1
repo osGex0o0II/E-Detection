@@ -115,6 +115,38 @@ if ($missing.Count -gt 0) {
     throw "Tray-menu smoke failed: missing $($missing -join ', ')"
 }
 
+# The running icon must actually read as "running" in the notification area.
+# The previous artwork differed from the idle icon by six pixels at 16 px,
+# which looked unchanged; compare the source icons so this stays true even
+# when the publish folder is stale.
+$sourceIdleIcon = Join-Path $sourceFull "Assets\Icons\app.ico"
+$sourceRunningIcon = Join-Path $sourceFull "Assets\Icons\running.ico"
+$iconDistinctness = $null
+if ((Test-Path $sourceIdleIcon) -and (Test-Path $sourceRunningIcon)) {
+    Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+    $idleIcon = New-Object System.Drawing.Icon($sourceIdleIcon, 16, 16)
+    $runIcon = New-Object System.Drawing.Icon($sourceRunningIcon, 16, 16)
+    $idleBitmap = $idleIcon.ToBitmap()
+    $runBitmap = $runIcon.ToBitmap()
+    $differentPixels = 0
+    for ($y = 0; $y -lt $idleBitmap.Height; $y++) {
+        for ($x = 0; $x -lt $idleBitmap.Width; $x++) {
+            $idlePixel = $idleBitmap.GetPixel($x, $y)
+            $runPixel = $runBitmap.GetPixel($x, $y)
+            $delta = [Math]::Abs([int]$idlePixel.R - [int]$runPixel.R) +
+                     [Math]::Abs([int]$idlePixel.G - [int]$runPixel.G) +
+                     [Math]::Abs([int]$idlePixel.B - [int]$runPixel.B)
+            if ($delta -gt 30) { $differentPixels++ }
+        }
+    }
+    $iconPixels = $idleBitmap.Width * $idleBitmap.Height
+    $idleBitmap.Dispose(); $runBitmap.Dispose(); $idleIcon.Dispose(); $runIcon.Dispose()
+    $iconDistinctness = [Math]::Round($differentPixels / $iconPixels, 3)
+    if ($iconDistinctness -lt 0.08) {
+        throw "Tray-menu smoke failed: running.ico differs from app.ico in only $differentPixels/$iconPixels pixels at 16 px."
+    }
+}
+
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $resultPath = Join-Path $outputFull "tray-menu-smoke-$timestamp.json"
 [pscustomobject]@{
@@ -122,6 +154,7 @@ $resultPath = Join-Path $outputFull "tray-menu-smoke-$timestamp.json"
     SourceRoot = $sourceFull
     Commands = @("开始检测", "取消检测", "打开最新报告", "打开报告目录")
     RunningIcon = $runningIcon
+    RunningIconDistinctness = $iconDistinctness
     Passed = $true
     CapturedAt = (Get-Date).ToString("o")
 } | ConvertTo-Json | Set-Content -Path $resultPath -Encoding UTF8
