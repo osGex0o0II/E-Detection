@@ -393,7 +393,8 @@
                         </StackPanel>
                     </Grid>
                     <ItemsRepeater Grid.Row="1"
-                                   ItemsSource="{Binding WorkbenchHighRiskDevices}">
+                                   ItemsSource="{Binding WorkbenchHighRiskDevices}"
+                                   AutomationProperties.Name="高风险设备列表">
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnSpacing="12" Padding="0,6">
@@ -426,7 +427,8 @@
                 <StackPanel x:Name="IssueRankPanel" Grid.Column="1" Spacing="10">
                     <TextBlock Text="异常类型排行"
                                Style="{StaticResource SectionTitleTextStyle}" />
-                    <ItemsRepeater ItemsSource="{Binding WorkbenchTopIssueTypes}">
+                    <ItemsRepeater ItemsSource="{Binding WorkbenchTopIssueTypes}"
+                                   AutomationProperties.Name="异常类型排行列表">
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate>
                                 <Grid ColumnSpacing="10" Padding="0,4">
