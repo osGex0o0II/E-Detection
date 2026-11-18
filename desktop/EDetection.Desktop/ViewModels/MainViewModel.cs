@@ -481,59 +481,6 @@ public partial class MainViewModel
     private bool HasActionableFailure =>
         !IsRunning && (StatusText == "检测失败" || StatusText == "无法开始检测");
 
-    public Visibility FirstRunGuideVisibility =>
-        ShouldShowFirstRunGuide ? Visibility.Visible : Visibility.Collapsed;
-
-    public string FirstRunGuideTitleText => StatusText == "无法开始检测"
-        ? "运行前检查未通过"
-        : IsLocalInputReady()
-            ? "准备开始检测"
-            : "选择检测数据";
-
-    public string FirstRunGuideSubtitleText
-    {
-        get
-        {
-            if (StatusText == "无法开始检测")
-            {
-                return DiagnosticActionText;
-            }
-
-            if (!IsLocalInputReady())
-            {
-                return "左侧选择 CSV 根目录后即可进行就绪检查。";
-            }
-
-            if (!IsConfigReady())
-            {
-                return "确认阈值设置和检测规则后检查状态。";
-            }
-
-            if (BackendDiagnosticText.Contains("可导入", StringComparison.Ordinal))
-            {
-                return "运行环境就绪，可以开始检测。";
-            }
-
-            return DiagnosticActionText;
-        }
-    }
-
-    public string FirstRunInputStepText => IsLocalInputReady()
-        ? InputDiagnosticText
-        : "未选择可用的 CSV 根目录";
-
-    public string FirstRunConfigStepText => ConfigDiagnosticText;
-
-    public string FirstRunBackendStepText => BackendDiagnosticText;
-
-    public string FirstRunOutputStepText => OutputDiagnosticText;
-
-    private bool ShouldShowFirstRunGuide =>
-        !IsRunning
-        && SelectedReport is null
-        && TotalFiles == 0
-        && string.IsNullOrWhiteSpace(ReportPath);
-
     public string ThemeMode => SelectedThemeIndex switch
     {
         1 => "Light",

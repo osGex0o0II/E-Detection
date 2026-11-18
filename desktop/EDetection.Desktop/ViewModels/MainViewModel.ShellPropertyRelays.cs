@@ -51,33 +51,26 @@ public partial class MainViewModel
         {
             case nameof(DiagnosticsViewModel.SummaryText):
                 OnPropertyChanged(nameof(DiagnosticSummaryText));
-                OnPropertyChanged(nameof(FirstRunGuideSubtitleText));
                 OnPropertyChanged(nameof(RunSetupReadinessText));
                 OnPropertyChanged(nameof(RunSetupReadinessDetailText));
                 break;
             case nameof(DiagnosticsViewModel.BackendText):
                 OnPropertyChanged(nameof(BackendDiagnosticText));
-                OnPropertyChanged(nameof(FirstRunBackendStepText));
-                OnPropertyChanged(nameof(FirstRunGuideSubtitleText));
                 break;
             case nameof(DiagnosticsViewModel.ConfigText):
                 OnPropertyChanged(nameof(ConfigDiagnosticText));
-                OnPropertyChanged(nameof(FirstRunConfigStepText));
                 break;
             case nameof(DiagnosticsViewModel.InputText):
                 OnPropertyChanged(nameof(InputDiagnosticText));
-                OnPropertyChanged(nameof(FirstRunInputStepText));
                 break;
             case nameof(DiagnosticsViewModel.OutputText):
                 OnPropertyChanged(nameof(OutputDiagnosticText));
-                OnPropertyChanged(nameof(FirstRunOutputStepText));
                 break;
             case nameof(DiagnosticsViewModel.CheckedAtText):
                 OnPropertyChanged(nameof(DiagnosticCheckedAtText));
                 break;
             case nameof(DiagnosticsViewModel.ActionText):
                 OnPropertyChanged(nameof(DiagnosticActionText));
-                OnPropertyChanged(nameof(FirstRunGuideSubtitleText));
                 OnPropertyChanged(nameof(RunSetupReadinessDetailText));
                 break;
         }

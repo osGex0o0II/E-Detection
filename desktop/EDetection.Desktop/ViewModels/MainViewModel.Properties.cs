@@ -228,7 +228,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(StatusProgressVisibility))]
     [NotifyPropertyChangedFor(nameof(RunTelemetryVisibility))]
     [NotifyPropertyChangedFor(nameof(CompletionActionsVisibility))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideVisibility))]
     [NotifyPropertyChangedFor(nameof(FailureActionsVisibility))]
     [NotifyPropertyChangedFor(nameof(WorkbenchActivityVisibility))]
     [NotifyPropertyChangedFor(nameof(WorkbenchContextText))]
@@ -249,8 +248,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(ShellStatus))]
     [NotifyPropertyChangedFor(nameof(WorkbenchStatusText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchStatusBadgeText))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideTitleText))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideSubtitleText))]
     [NotifyPropertyChangedFor(nameof(FailureActionsVisibility))]
     [NotifyPropertyChangedFor(nameof(WorkbenchActivityVisibility))]
     [NotifyPropertyChangedFor(nameof(FailureActionTitleText))]
@@ -271,7 +268,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WorkbenchProgressText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchProgressPercent))]
     [NotifyPropertyChangedFor(nameof(RunTelemetryVisibility))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideVisibility))]
     public partial int TotalFiles { get; set; }
 
     [ObservableProperty]
@@ -316,7 +312,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(WorkbenchStatusBadgeText))]
     [NotifyPropertyChangedFor(nameof(WorkbenchStatusBadgeVisibility))]
     [NotifyPropertyChangedFor(nameof(CompletionActionBodyText))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideVisibility))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessText))]
     [NotifyPropertyChangedFor(nameof(RunSetupReadinessDetailText))]
     [NotifyCanExecuteChangedFor(nameof(OpenCurrentReportCommand))]
@@ -363,7 +358,6 @@ public partial class MainViewModel
     [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateTitle))]
     [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateHint))]
     [NotifyPropertyChangedFor(nameof(DetailTableEmptyStateVisibility))]
-    [NotifyPropertyChangedFor(nameof(FirstRunGuideVisibility))]
     [NotifyPropertyChangedFor(nameof(SnapshotActionsVisibility))]
     [NotifyPropertyChangedFor(nameof(RunTelemetryVisibility))]
     [NotifyPropertyChangedFor(nameof(CompletionActionsVisibility))]
@@ -728,14 +722,12 @@ public partial class MainViewModel
     partial void OnInputDirectoryChanged(string value)
     {
         RefreshLocalDiagnostics();
-        RefreshFirstRunGuide();
         SavePreferenceSettings();
     }
 
     partial void OnOutputDirectoryChanged(string value)
     {
         RefreshLocalDiagnostics();
-        RefreshFirstRunGuide();
         SavePreferenceSettings();
     }
 
@@ -745,7 +737,6 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(HasPendingConfigPathChange));
         OnPropertyChanged(nameof(DetectionConfigStatusText));
         RefreshLocalDiagnostics();
-        RefreshFirstRunGuide();
         SavePreferenceSettings();
     }
 

@@ -568,7 +568,6 @@ public partial class MainViewModel
         OnPropertyChanged(nameof(WorkbenchDetailPreviewTotalCount));
         OnPropertyChanged(nameof(WorkbenchFilteredDetailPreview));
         OnPropertyChanged(nameof(WorkbenchDetailPreviewStatusText));
-        RefreshFirstRunGuide();
         OpenCurrentReportCommand.NotifyCanExecuteChanged();
         OpenCurrentReportFolderCommand.NotifyCanExecuteChanged();
         CopyCurrentReportPathCommand.NotifyCanExecuteChanged();

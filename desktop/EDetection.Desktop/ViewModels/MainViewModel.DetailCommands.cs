@@ -134,7 +134,8 @@ public partial class MainViewModel
     {
         var snapshot = _diagnostics.BuildLocalSnapshot(BuildDiagnosticsRequest());
         Diagnostics.ApplyLocalSnapshot(snapshot);
-        RefreshFirstRunGuide();
+        OnPropertyChanged(nameof(RunSetupReadinessText));
+        OnPropertyChanged(nameof(RunSetupReadinessDetailText));
     }
 
     private DesktopDiagnosticsRequest BuildDiagnosticsRequest() =>
@@ -143,19 +144,6 @@ public partial class MainViewModel
             OutputDirectory,
             DetectionConfigService.ResolveEffectiveConfigPath(ConfigPath),
             WriteReport);
-
-    private void RefreshFirstRunGuide()
-    {
-        OnPropertyChanged(nameof(FirstRunGuideVisibility));
-        OnPropertyChanged(nameof(FirstRunGuideTitleText));
-        OnPropertyChanged(nameof(FirstRunGuideSubtitleText));
-        OnPropertyChanged(nameof(FirstRunInputStepText));
-        OnPropertyChanged(nameof(FirstRunConfigStepText));
-        OnPropertyChanged(nameof(FirstRunBackendStepText));
-        OnPropertyChanged(nameof(FirstRunOutputStepText));
-        OnPropertyChanged(nameof(RunSetupReadinessText));
-        OnPropertyChanged(nameof(RunSetupReadinessDetailText));
-    }
 
     private void BlockStart(IReadOnlyList<string> issues)
     {
