@@ -731,7 +731,12 @@ public partial class MainViewModel
         }
 
         CopyTextToClipboard(_detailPreview.BuildExportText(rows));
-        AddLog("复制", $"已复制 {rows.Count} 条异常明细。");
+        // The table only receives the first DetailPreviewTransferLimit rows, so
+        // say so when the export is a preview rather than the full result.
+        var total = WorkbenchDetailPreviewTotalCount;
+        AddLog("复制", total > rows.Count
+            ? $"已复制前 {rows.Count} 条异常明细（共 {total} 条，完整数据见 Excel 报告）。"
+            : $"已复制 {rows.Count} 条异常明细。");
     }
 
     [RelayCommand]

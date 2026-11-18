@@ -33,6 +33,7 @@ public sealed class TrayIconService : IDisposable
     private bool _canCancel;
     private bool _canOpenReport;
     private bool _canOpenReportFolder;
+    private bool _reportIsSnapshot;
     private bool _classRegistered;
     private bool _iconAdded;
     private bool _disposed;
@@ -99,12 +100,14 @@ public sealed class TrayIconService : IDisposable
         bool canStart,
         bool canCancel,
         bool canOpenReport,
-        bool canOpenReportFolder)
+        bool canOpenReportFolder,
+        bool reportIsSnapshot = false)
     {
         _canStart = canStart;
         _canCancel = canCancel;
         _canOpenReport = canOpenReport;
         _canOpenReportFolder = canOpenReportFolder;
+        _reportIsSnapshot = reportIsSnapshot;
     }
 
     public void ShowBalloon(string title, string message)
@@ -279,8 +282,10 @@ public sealed class TrayIconService : IDisposable
             AppendCommand(menu, WmAppCommandStart, "开始检测", _canStart);
             AppendCommand(menu, WmAppCommandCancel, "取消检测", _canCancel);
             AppendMenu(menu, MenuFlags.Separator, 0, null);
-            AppendCommand(menu, WmAppCommandOpenReport, "打开最新报告", _canOpenReport);
-            AppendCommand(menu, WmAppCommandOpenReportFolder, "打开报告目录", _canOpenReportFolder);
+            // A history snapshot changes which report these commands target, so
+            // the labels must not keep claiming "latest".
+            AppendCommand(menu, WmAppCommandOpenReport, _reportIsSnapshot ? "打开选中报告" : "打开最新报告", _canOpenReport);
+            AppendCommand(menu, WmAppCommandOpenReportFolder, _reportIsSnapshot ? "打开选中报告目录" : "打开报告目录", _canOpenReportFolder);
             AppendMenu(menu, MenuFlags.Separator, 0, null);
             AppendMenu(menu, MenuFlags.String, WmAppCommandExit, "退出");
 

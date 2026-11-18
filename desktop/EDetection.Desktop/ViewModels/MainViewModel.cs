@@ -204,7 +204,7 @@ public partial class MainViewModel
     public string CancelButtonText => IsCancelConfirmationPending ? "确认取消" : "取消";
 
     public string CancelConfirmationText =>
-        "点击“确认取消”即可停止检测，当前检测任务会被终止。";
+        "再次按 Esc 或点击“确认取消”即可停止检测，当前检测任务会被终止。";
 
     public string ProcessedSummary => TotalFiles > 0
         ? $"{ProcessedFiles}/{TotalFiles}"
@@ -327,7 +327,7 @@ public partial class MainViewModel
                 : "等待检测任务";
 
     public string WorkbenchStatusBadgeText => SelectedReport is not null
-        ? ReportHistoryStatusText
+        ? "历史报告"
         : IsRunning
             ? CurrentFileText
                 : !string.IsNullOrWhiteSpace(ReportPath)

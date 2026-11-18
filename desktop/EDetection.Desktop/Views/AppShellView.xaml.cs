@@ -84,6 +84,28 @@ public sealed partial class AppShellView : UserControl
             }
         };
         Root.KeyboardAccelerators.Add(backAccelerator);
+
+        // The cancel flow tells the user to press Esc again; without this the
+        // instruction was a promise the app never kept.  The Settings page owns
+        // Escape while it is visible, so this only applies to the workbench.
+        var cancelAccelerator = new KeyboardAccelerator
+        {
+            Key = Windows.System.VirtualKey.Escape,
+        };
+        cancelAccelerator.Invoked += (_, args) =>
+        {
+            if (_isSettingsPageVisible || ViewModel?.IsRunning != true)
+            {
+                return;
+            }
+
+            args.Handled = true;
+            if (ViewModel.CancelCommand.CanExecute(null))
+            {
+                ViewModel.CancelCommand.Execute(null);
+            }
+        };
+        Root.KeyboardAccelerators.Add(cancelAccelerator);
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;

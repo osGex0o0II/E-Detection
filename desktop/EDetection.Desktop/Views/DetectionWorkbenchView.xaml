@@ -262,6 +262,13 @@
                                     <TextBlock Text="打开报告" />
                                 </StackPanel>
                             </Button>
+                            <Button Command="{Binding OpenCurrentReportFolderCommand}"
+                                    AutomationProperties.Name="打开报告所在目录" ToolTipService.ToolTip="打开报告所在目录">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8B7;" FontSize="14" />
+                                    <TextBlock Text="所在目录" />
+                                </StackPanel>
+                            </Button>
                             <Button Command="{Binding OpenFirstAnomalySourceCommand}"
                                     AutomationProperties.Name="定位首个异常源文件" ToolTipService.ToolTip="定位首个异常源文件">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -465,7 +472,8 @@
                                        Margin="0,0,12,0"
                                        Text="{Binding WorkbenchDetailPreviewStatusText}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       AutomationProperties.LiveSetting="Polite" />
+                                       AutomationProperties.LiveSetting="Polite"
+                                       ToolTipService.ToolTip="{Binding WorkbenchDetailPreviewStatusText}" />
                             <TextBlock Grid.Column="2"
                                        Text="{Binding DetailSortStatusText}"
                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"

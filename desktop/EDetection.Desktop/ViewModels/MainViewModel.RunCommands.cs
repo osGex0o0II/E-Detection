@@ -369,7 +369,7 @@ public partial class MainViewModel
         IsCancelConfirmationPending = true;
         StatusText = "再次确认取消";
         SetTaskbarProgress(TaskbarProgressKind.Paused, ProgressPercent);
-        AddLog("取消确认", "再次点击“确认取消”即可停止检测。");
+        AddLog("取消确认", "再次按 Esc 或点击“确认取消”即可停止检测。");
         _ = ClearCancelConfirmationAfterDelayAsync(promptCts);
     }
 

@@ -177,13 +177,22 @@ public sealed partial class MainWindow : Window
         try
         {
             var running = ViewModel.IsRunning;
+            var dirty = ViewModel.IsDetectionConfigDirty;
+            var title = running && dirty
+                ? "检测正在运行，阈值尚未保存"
+                : running
+                    ? "检测正在运行"
+                    : "检测阈值尚未保存";
+            var content = running && dirty
+                ? "关闭窗口会终止当前检测，且未保存的阈值修改会丢失。"
+                : running
+                    ? "关闭窗口会终止当前检测，且不会生成未完成的报告。"
+                    : "检测阈值有未保存的修改，关闭后这些修改会丢失。";
             var dialog = new ContentDialog
             {
                 XamlRoot = Shell.XamlRoot,
-                Title = running ? "检测正在运行" : "检测阈值尚未保存",
-                Content = running
-                    ? "关闭窗口会终止当前检测，且不会生成未完成的报告。"
-                    : "检测阈值有未保存的修改，关闭后这些修改会丢失。",
+                Title = title,
+                Content = content,
                 PrimaryButtonText = running ? "终止并关闭" : "放弃修改并关闭",
                 CloseButtonText = running ? "继续检测" : "返回设置",
                 DefaultButton = ContentDialogButton.Close,
@@ -368,7 +377,9 @@ public sealed partial class MainWindow : Window
         }
 
         if (e.PropertyName is nameof(MainViewModel.ReportPath)
-            or nameof(MainViewModel.SelectedReport))
+            or nameof(MainViewModel.SelectedReport)
+            or nameof(MainViewModel.IsDetectionConfigDirty)
+            or nameof(MainViewModel.IsRunning))
         {
             UpdateTrayCommands();
         }
@@ -404,7 +415,8 @@ public sealed partial class MainWindow : Window
             ViewModel.StartCommand.CanExecute(null),
             ViewModel.CancelCommand.CanExecute(null),
             ViewModel.OpenCurrentReportCommand.CanExecute(null),
-            ViewModel.OpenCurrentReportFolderCommand.CanExecute(null));
+            ViewModel.OpenCurrentReportFolderCommand.CanExecute(null),
+            ViewModel.SelectedReport is not null);
 
     private static void ExecuteTrayCommand(System.Windows.Input.ICommand command)
     {
@@ -584,7 +596,10 @@ public sealed partial class MainWindow : Window
 
     private static bool IsSavedPlacementUsable(RectInt32 workArea, int left, int top, int width, int height)
     {
-        if (left <= -30000 || top <= -30000 || width <= 0 || height <= 0)
+        // -1 is the "never saved" sentinel from AppSettings, not a real
+        // coordinate.  Treating it as valid pinned the first launch to the
+        // work-area origin instead of the centered default placement.
+        if (left == -1 || top == -1 || left <= -30000 || top <= -30000 || width <= 0 || height <= 0)
         {
             return false;
         }
