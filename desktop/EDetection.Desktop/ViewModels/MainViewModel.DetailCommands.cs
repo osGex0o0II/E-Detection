@@ -31,18 +31,7 @@ public partial class MainViewModel
     // order, so sorting by time pointed at the newest row instead of the worst
     // one.  Pick the highest severity, then the earliest time within it.
     private ReportDetailPreview? FindMostSevereDetail() =>
-        WorkbenchFilteredDetailPreview
-            .OrderBy(static detail => SeverityRank(detail.Severity))
-            .ThenBy(static detail => detail.TimeText, StringComparer.Ordinal)
-            .FirstOrDefault();
-
-    private static int SeverityRank(string? severity) => severity switch
-    {
-        "高" => 0,
-        "中" => 1,
-        "低" => 2,
-        _ => 3,
-    };
+        DetailSortPresentation.MostSevere(WorkbenchFilteredDetailPreview);
 
     [RelayCommand(CanExecute = nameof(CanOpenFirstAnomalySource))]
     private void OpenFirstAnomalySource()

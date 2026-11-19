@@ -1,3 +1,4 @@
+using EDetection.Desktop.Services;
 using Microsoft.UI.Xaml;
 
 namespace EDetection.Desktop.ViewModels;
@@ -68,37 +69,31 @@ public partial class MainViewModel
 
     public string DetailSortStatusText => SelectedDetailSortKey switch
     {
-        "severity" => SortStatusText("等级"),
-        "device" => SortStatusText("设备"),
-        "time" => SortStatusText("时间"),
-        "issue" => SortStatusText("异常"),
-        "value" => SortStatusText("异常值"),
-        "recommendation" => SortStatusText("建议"),
+        "severity" => DetailSortPresentation.SortStatusText("等级", SelectedDetailSortKey, "severity", DetailSortDescending),
+        "device" => DetailSortPresentation.SortStatusText("设备", SelectedDetailSortKey, "device", DetailSortDescending),
+        "time" => DetailSortPresentation.SortStatusText("时间", SelectedDetailSortKey, "time", DetailSortDescending),
+        "issue" => DetailSortPresentation.SortStatusText("异常", SelectedDetailSortKey, "issue", DetailSortDescending),
+        "value" => DetailSortPresentation.SortStatusText("异常值", SelectedDetailSortKey, "value", DetailSortDescending),
+        "recommendation" => DetailSortPresentation.SortStatusText("建议", SelectedDetailSortKey, "recommendation", DetailSortDescending),
         _ => "默认顺序",
     };
 
     // Sighted users need the same state the screen reader gets from
     // DetailSortStatusText, so the active column carries an arrow.
-    public string DetailSeverityHeaderText => HeaderText("severity", "等级");
+    public string DetailSeverityHeaderText =>
+        DetailSortPresentation.HeaderText("等级", SelectedDetailSortKey, "severity", DetailSortDescending);
 
-    public string DetailDeviceHeaderText => HeaderText("device", "设备");
+    public string DetailDeviceHeaderText =>
+        DetailSortPresentation.HeaderText("设备", SelectedDetailSortKey, "device", DetailSortDescending);
 
-    public string DetailIssueHeaderText => HeaderText("issue", "异常");
+    public string DetailIssueHeaderText =>
+        DetailSortPresentation.HeaderText("异常", SelectedDetailSortKey, "issue", DetailSortDescending);
 
-    public string DetailValueHeaderText => HeaderText("value", "异常值");
+    public string DetailValueHeaderText =>
+        DetailSortPresentation.HeaderText("异常值", SelectedDetailSortKey, "value", DetailSortDescending);
 
-    public string DetailRecommendationHeaderText => HeaderText("recommendation", "建议");
-
-    private string HeaderText(string key, string label)
-    {
-        if (!string.Equals(SelectedDetailSortKey, key, StringComparison.Ordinal))
-        {
-            return label;
-        }
-
-        var descending = key == "time" ? !DetailSortDescending : DetailSortDescending;
-        return descending ? $"{label} ↓" : $"{label} ↑";
-    }
+    public string DetailRecommendationHeaderText =>
+        DetailSortPresentation.HeaderText("建议", SelectedDetailSortKey, "recommendation", DetailSortDescending);
 
     public string DetailTableEmptyStateTitle => WorkbenchDetailPreviewTotalCount == 0
         ? "暂无异常明细"
@@ -121,14 +116,4 @@ public partial class MainViewModel
         WorkbenchDetailPreviewTotalCount == 0 || !WorkbenchFilteredDetailPreview.Any()
             ? Visibility.Visible
             : Visibility.Collapsed;
-
-    private string SortStatusText(string label)
-    {
-        // Time's natural order is newest-first; every other column is
-        // ascending until the direction flag is set.
-        var descending = SelectedDetailSortKey == "time"
-            ? !DetailSortDescending
-            : DetailSortDescending;
-        return $"按{label}{(descending ? "降序" : "升序")}";
-    }
 }

@@ -546,9 +546,18 @@
                                 <Button AutomationProperties.Name="更多明细操作" ToolTipService.ToolTip="更多明细操作">
                                     <Button.Flyout>
                                         <MenuFlyout Opening="DetailActionsFlyout_Opening">
-                                            <MenuFlyoutItem x:Name="CopyDetailPathMenuItem" Text="复制源文件路径" Click="CopyDetailPathMenuItem_Click" />
-                                            <MenuFlyoutItem x:Name="CopyFilteredDetailsMenuItem" Text="复制筛选结果" Click="CopyFilteredDetailsMenuItem_Click" />
-                                            <MenuFlyoutItem x:Name="ExplainSelectedDetailMenuItem" Text="智能解读选中异常" Click="ExplainSelectedDetailMenuItem_Click" />
+                                            <MenuFlyoutItem x:Name="CopyDetailPathMenuItem"
+                                                            Text="复制源文件路径"
+                                                            Click="CopyDetailPathMenuItem_Click"
+                                                            ToolTipService.ToolTip="需要先在下方列表选中一条异常记录" />
+                                            <MenuFlyoutItem x:Name="CopyFilteredDetailsMenuItem"
+                                                            Text="复制筛选结果"
+                                                            Click="CopyFilteredDetailsMenuItem_Click"
+                                                            ToolTipService.ToolTip="复制当前筛选出的明细；没有匹配记录时不可用" />
+                                            <MenuFlyoutItem x:Name="ExplainSelectedDetailMenuItem"
+                                                            Text="智能解读选中异常"
+                                                            Click="ExplainSelectedDetailMenuItem_Click"
+                                                            ToolTipService.ToolTip="需要选中一条异常，并先在设置中启用智能助手" />
                                         </MenuFlyout>
                                     </Button.Flyout>
                                     <StackPanel Orientation="Horizontal" Spacing="6">

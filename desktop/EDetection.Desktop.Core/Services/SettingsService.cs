@@ -17,6 +17,8 @@ public sealed class SettingsService
 
     private static readonly string SettingsPath = Path.Combine(SettingsDirectory, "settings.json");
 
+    private string? _lastSerializedSettings;
+
     public string StorePath => SettingsPath;
 
     public string StoreStatusText => $"设置存储 v{CurrentSettingsVersion} · {SettingsPath}";
@@ -51,7 +53,18 @@ public sealed class SettingsService
         CleanupStaleTemporaryFiles();
         settings.SettingsVersion = CurrentSettingsVersion;
         var json = JsonSerializer.Serialize(settings, JsonOptions);
+
+        // The preference setters save on every toggle and text commit, and the
+        // payload carries the full report history (up to 100 detail rows per
+        // report).  Skipping byte-identical writes avoids rewriting tens of
+        // kilobytes for changes that did not actually touch persistent state.
+        if (string.Equals(json, _lastSerializedSettings, StringComparison.Ordinal))
+        {
+            return;
+        }
+
         WriteAtomic(SettingsPath, json);
+        _lastSerializedSettings = json;
     }
 
     public AppSettings CreateDefault() => CreateDefaultSettings();
