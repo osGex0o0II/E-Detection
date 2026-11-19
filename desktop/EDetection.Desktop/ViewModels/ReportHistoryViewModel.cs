@@ -44,10 +44,13 @@ public sealed partial class ReportHistoryViewModel(
     // a confirmation dialog that then does nothing reads as a broken action.
     public bool HasReports => RecentReports.Count > 0;
 
-    // An empty list still reserved 160 DIP, which pushed the empty-state copy
-    // below the fold in the wide setup pane.  Shrink the reserved area so the
-    // explanation is visible without scrolling.
-    public double ListHeight => RecentReports.Count == 0 ? 108 : 160;
+    // An empty fixed-height list left a clipped strip under the heading and
+    // pushed the empty-state copy below the fold.  Collapse the list so the
+    // explanation sizes itself, while keeping the search/filter row (the
+    // smoke scripts and muscle memory both expect it to stay put).
+    public Visibility ListVisibility => RecentReports.Count > 0
+        ? Visibility.Visible
+        : Visibility.Collapsed;
 
     public Visibility EmptyStateVisibility => FilteredRecentReports.Count == 0
         ? Visibility.Visible
@@ -193,6 +196,6 @@ public sealed partial class ReportHistoryViewModel(
         OnPropertyChanged(nameof(EmptyStateTitle));
         OnPropertyChanged(nameof(EmptyStateHint));
         OnPropertyChanged(nameof(HasReports));
-        OnPropertyChanged(nameof(ListHeight));
+        OnPropertyChanged(nameof(ListVisibility));
     }
 }

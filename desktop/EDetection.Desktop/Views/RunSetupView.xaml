@@ -268,7 +268,8 @@
                     <Grid>
                         <ListView ItemsSource="{Binding ReportHistory.FilteredRecentReports}"
                                   SelectedItem="{Binding ReportHistory.SelectedReport, Mode=TwoWay}"
-                                  Height="{Binding ReportHistory.ListHeight}"
+                                  Height="160"
+                                  Visibility="{Binding ReportHistory.ListVisibility}"
                                   SelectionMode="Single"
                                   AutomationProperties.Name="报告历史列表"
                                   AutomationProperties.AutomationId="ReportHistoryList">
