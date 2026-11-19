@@ -407,16 +407,16 @@
                                         <ColumnDefinition Width="200" />
                                         <ColumnDefinition Width="*" MaxWidth="320" />
                                     </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
                                     <TextBlock Text="登录后自动启动" Style="{StaticResource SettingsRowTitleTextStyle}" ToolTipService.ToolTip="开启后会注册当前用户的 Windows 启动项。" />
                                     <Grid x:Name="StartupActionGrid" Grid.Column="1" ColumnSpacing="8" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
                                         <ToggleSwitch IsOn="{Binding AutoStartOnSignIn, Mode=TwoWay}" AutomationProperties.Name="登录后自动启动" AutomationProperties.AutomationId="AutoStartOnSignInToggle" />
                                         <Button Grid.Column="1" Command="{Binding OpenSystemStartupSettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 启动应用设置">
                                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -424,16 +424,22 @@
                                                 <TextBlock Text="系统设置" />
                                             </StackPanel>
                                         </Button>
-                                        <TextBlock Grid.Row="1"
-                                                   Grid.ColumnSpan="2"
-                                                   Text="{Binding StartupIntegrationStatusText, Mode=OneWay}"
-                                                   FontSize="12"
-                                                   TextWrapping="WrapWholeWords"
-                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                   AutomationProperties.AutomationId="StartupIntegrationStatus"
-                                                   AutomationProperties.LiveSetting="Polite"
-                                                   ToolTipService.ToolTip="{Binding StartupIntegrationStatusText, Mode=OneWay}" />
                                     </Grid>
+                                    <!--
+                                        Kept outside StartupActionGrid: the responsive
+                                        helper rebuilds that grid's rows, which
+                                        collapsed this status line onto the buttons.
+                                    -->
+                                    <TextBlock Grid.Row="1"
+                                               Grid.Column="1"
+                                               Margin="0,4,0,0"
+                                               Text="{Binding StartupIntegrationStatusText, Mode=OneWay}"
+                                               FontSize="12"
+                                               TextWrapping="WrapWholeWords"
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               AutomationProperties.AutomationId="StartupIntegrationStatus"
+                                               AutomationProperties.LiveSetting="Polite"
+                                               ToolTipService.ToolTip="{Binding StartupIntegrationStatusText, Mode=OneWay}" />
                                 </Grid>
                             </StackPanel>
                         </Border>
