@@ -145,7 +145,6 @@ public sealed partial class SettingsView
 
     private void SettingsView_Loaded(object sender, RoutedEventArgs e)
     {
-        CacheSettingRows();
         SelectCategoryBySection("DefaultsSection");
         UpdateResponsiveLayout();
     }

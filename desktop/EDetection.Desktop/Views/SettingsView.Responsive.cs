@@ -5,51 +5,8 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class SettingsView
 {
-    private void CacheSettingRows()
-    {
-        CollectSettingRows(SettingsContentStack);
-    }
-
-    private void CollectSettingRows(DependencyObject root)
-    {
-        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < childCount; i++)
-        {
-            var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i);
-            if (child is Grid grid
-                && !_settingRows.Any(row => ReferenceEquals(row.Row, grid))
-                && TryCreateSettingRowState(grid, out var rowState))
-            {
-                _settingRows.Add(rowState);
-            }
-
-            CollectSettingRows(child);
-        }
-    }
-
-    private static bool TryCreateSettingRowState(Grid grid, out SettingRowLayoutState rowState)
-    {
-        rowState = default!;
-        if (grid.MinHeight < 56 || grid.ColumnDefinitions.Count != 2 || grid.RowDefinitions.Count > 0)
-        {
-            return false;
-        }
-
-        var rowChildren = grid.Children.OfType<FrameworkElement>().ToArray();
-        if (rowChildren.Length != 2
-            || Grid.GetColumn(rowChildren[0]) != 0
-            || Grid.GetColumn(rowChildren[1]) != 1)
-        {
-            return false;
-        }
-
-        rowState = SettingRowLayoutState.Create(grid, rowChildren[0], rowChildren[1]);
-        return true;
-    }
-
     private void UpdateResponsiveLayout()
     {
-        CacheSettingRows();
         var availableWidth = SettingsBody.ActualWidth;
         if (availableWidth <= 0)
         {
@@ -71,13 +28,6 @@ public sealed partial class SettingsView
         }
 
         SettingsContentStack.Width = Math.Min(contentWidth, SettingsContentMaxWidth);
-
-        var stackSettingRows = contentWidth < StackedSettingsRowsBreakpoint;
-        var labelWidth = contentWidth < CompactContentBreakpoint ? CompactLabelWidth : ExpandedLabelWidth;
-        foreach (var row in _settingRows)
-        {
-            ApplySettingsRowLayout(row, stackSettingRows, labelWidth);
-        }
 
         var stackActions = contentWidth < StackedActionBreakpoint;
         foreach (var grid in GetResponsiveActionGrids())
@@ -226,37 +176,6 @@ public sealed partial class SettingsView
         Grid.SetRow(second, 0);
     }
 
-    private static void ApplySettingsRowLayout(SettingRowLayoutState state, bool stack, double labelWidth)
-    {
-        var row = state.Row;
-        row.RowDefinitions.Clear();
-
-        if (!stack)
-        {
-            state.Restore(labelWidth);
-            return;
-        }
-
-        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        row.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        row.ColumnSpacing = 0;
-        row.RowSpacing = 8;
-        row.Padding = new Thickness(16, 12, 16, 12);
-        state.LabelColumn.MinWidth = 0;
-        state.LabelColumn.MaxWidth = double.PositiveInfinity;
-        state.LabelColumn.Width = new GridLength(1, GridUnitType.Star);
-        state.ControlColumn.MinWidth = 0;
-        state.ControlColumn.MaxWidth = double.PositiveInfinity;
-        state.ControlColumn.Width = new GridLength(0);
-
-        Grid.SetRow(state.Label, 0);
-        Grid.SetColumn(state.Label, 0);
-        Grid.SetColumnSpan(state.Label, 2);
-        Grid.SetRow(state.Control, 1);
-        Grid.SetColumn(state.Control, 0);
-        Grid.SetColumnSpan(state.Control, 2);
-    }
-
     private static void ApplyThresholdGridLayout(Grid grid, bool stack)
     {
         if (grid.ColumnDefinitions.Count < 2)
@@ -296,75 +215,6 @@ public sealed partial class SettingsView
             grid.RowDefinitions[i].Height = i < requiredRows
                 ? GridLength.Auto
                 : new GridLength(0);
-        }
-    }
-
-    private sealed record SettingRowLayoutState(
-        Grid Row,
-        FrameworkElement Label,
-        FrameworkElement Control,
-        ColumnDefinition LabelColumn,
-        ColumnDefinition ControlColumn,
-        GridLength OriginalLabelColumnWidth,
-        GridLength OriginalControlColumnWidth,
-        double OriginalLabelColumnMaxWidth,
-        double OriginalControlColumnMaxWidth,
-        double OriginalLabelColumnMinWidth,
-        double OriginalControlColumnMinWidth,
-        Thickness OriginalPadding,
-        double OriginalColumnSpacing,
-        double OriginalRowSpacing,
-        int OriginalLabelRow,
-        int OriginalLabelColumn,
-        int OriginalLabelColumnSpan,
-        int OriginalControlRow,
-        int OriginalControlColumn,
-        int OriginalControlColumnSpan)
-    {
-        public static SettingRowLayoutState Create(Grid row, FrameworkElement label, FrameworkElement control) =>
-            new(
-                row,
-                label,
-                control,
-                row.ColumnDefinitions[0],
-                row.ColumnDefinitions[1],
-                row.ColumnDefinitions[0].Width,
-                row.ColumnDefinitions[1].Width,
-                row.ColumnDefinitions[0].MaxWidth,
-                row.ColumnDefinitions[1].MaxWidth,
-                row.ColumnDefinitions[0].MinWidth,
-                row.ColumnDefinitions[1].MinWidth,
-                row.Padding,
-                row.ColumnSpacing,
-                row.RowSpacing,
-                Grid.GetRow(label),
-                Grid.GetColumn(label),
-                Grid.GetColumnSpan(label),
-                Grid.GetRow(control),
-                Grid.GetColumn(control),
-                Grid.GetColumnSpan(control));
-
-        public void Restore(double labelWidth)
-        {
-            Row.ColumnSpacing = OriginalColumnSpacing;
-            Row.RowSpacing = OriginalRowSpacing;
-            Row.Padding = OriginalPadding;
-
-            LabelColumn.MinWidth = OriginalLabelColumnMinWidth;
-            LabelColumn.MaxWidth = OriginalLabelColumnMaxWidth;
-            LabelColumn.Width = OriginalLabelColumnWidth.IsAbsolute
-                ? new GridLength(labelWidth)
-                : OriginalLabelColumnWidth;
-            ControlColumn.MinWidth = OriginalControlColumnMinWidth;
-            ControlColumn.MaxWidth = OriginalControlColumnMaxWidth;
-            ControlColumn.Width = OriginalControlColumnWidth;
-
-            Grid.SetRow(Label, OriginalLabelRow);
-            Grid.SetColumn(Label, OriginalLabelColumn);
-            Grid.SetColumnSpan(Label, OriginalLabelColumnSpan);
-            Grid.SetRow(Control, OriginalControlRow);
-            Grid.SetColumn(Control, OriginalControlColumn);
-            Grid.SetColumnSpan(Control, OriginalControlColumnSpan);
         }
     }
 }

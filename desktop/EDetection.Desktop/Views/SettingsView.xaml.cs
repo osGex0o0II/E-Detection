@@ -9,20 +9,16 @@ namespace EDetection.Desktop.Views;
 public sealed partial class SettingsView : UserControl
 {
     private const double IconNavigationWidth = 56;
-    private const double ExpandedLabelWidth = 200;
-    private const double CompactLabelWidth = 168;
     private const double SettingsContentMaxWidth = 900;
     private const double CompactBodyBreakpoint = 1040;
     private const double IconNavigationBreakpoint = 820;
     private const double CompactContentBreakpoint = 720;
-    private const double StackedSettingsRowsBreakpoint = 780;
     private const double StackedActionBreakpoint = CompactContentBreakpoint;
     private const double StackedFooterBreakpoint = 820;
     private const double StackedThresholdBreakpoint = 640;
 
     private bool _suppressCategoryScroll;
     private string _lastCategorySectionName = "DefaultsSection";
-    private readonly List<SettingRowLayoutState> _settingRows = [];
     private readonly IReadOnlyList<SettingsSearchEntry> _searchEntries;
 
     public SettingsView()
