@@ -343,6 +343,24 @@ function Invoke-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$Time
     $pattern.Invoke()
 }
 
+function Select-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$TimeoutSeconds) {
+    # Settings opens on the last visited category, so the startup toggle is not
+    # necessarily on screen.  Use the navigation list's selection pattern
+    # instead of assuming the default page.
+    $match = Find-AutomationElement $RootHandle $Name $TimeoutSeconds
+    try {
+        $pattern = $match.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern)
+        $pattern.Select()
+        Start-Sleep -Milliseconds 600
+        return
+    }
+    catch {
+    }
+
+    Invoke-AutomationElement $RootHandle $Name $TimeoutSeconds
+    Start-Sleep -Milliseconds 600
+}
+
 function Toggle-AutomationElement([System.Windows.Automation.AutomationElement]$Element) {
     try {
         $pattern = $Element.GetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern)
@@ -422,6 +440,7 @@ try {
     Start-Sleep -Milliseconds 500
 
     Invoke-AutomationElement $mainWindow.Handle "设置" $WaitSeconds
+    Select-AutomationElement $mainWindow.Handle "常规" $WaitSeconds
     $autoStartToggle = Find-AutomationElementByAutomationId $mainWindow.Handle "AutoStartOnSignInToggle" $WaitSeconds
     Assert-ToggleState $autoStartToggle ([System.Windows.Automation.ToggleState]::Off)
 
