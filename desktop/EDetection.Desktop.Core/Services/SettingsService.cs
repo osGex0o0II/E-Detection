@@ -58,7 +58,10 @@ public sealed class SettingsService
         // payload carries the full report history (up to 100 detail rows per
         // report).  Skipping byte-identical writes avoids rewriting tens of
         // kilobytes for changes that did not actually touch persistent state.
-        if (string.Equals(json, _lastSerializedSettings, StringComparison.Ordinal))
+        // The file check keeps an externally deleted settings file from being
+        // silently left missing.
+        if (File.Exists(SettingsPath)
+            && string.Equals(json, _lastSerializedSettings, StringComparison.Ordinal))
         {
             return;
         }
