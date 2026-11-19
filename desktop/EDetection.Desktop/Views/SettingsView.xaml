@@ -313,7 +313,7 @@
                     <settings:DetectionRulesSettingsSection x:Name="DetectionRulesSection" />
                     <StackPanel x:Name="ReportsSection" Spacing="8">
                         <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="2">
                             <controls:SettingsCard Header="生成 Excel 报告" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
                                 <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding WriteReport, Mode=TwoWay}" IsEnabled="{Binding CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
                             </controls:SettingsCard>
@@ -345,7 +345,7 @@
                     </StackPanel>
                     <StackPanel x:Name="LogsSection" Spacing="8">
                         <TextBlock Text="运行记录" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="2">
                             <controls:SettingsCard Header="运行记录上限">
                                 <StackPanel Spacing="6">
                                     <ComboBox SelectedIndex="{Binding RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录上限">
@@ -543,7 +543,7 @@
                     </StackPanel>
                     <StackPanel x:Name="AdvancedSection" Spacing="8">
                         <TextBlock Text="维护" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="2">
                             <controls:SettingsCard Header="应用状态">
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="{Binding DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -556,7 +556,7 @@
                                 </StackPanel>
                             </controls:SettingsCard>
                             <Expander x:Name="DiagnosticsDetailsExpander" Header="维护详情" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                <StackPanel Spacing="4">
+                                <StackPanel Spacing="2">
                                     <controls:SettingsCard Header="检测组件">
                                         <TextBlock Text="{Binding DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
                                     </controls:SettingsCard>
@@ -690,7 +690,7 @@
                     </StackPanel>
                     <StackPanel x:Name="AppearanceSection" Spacing="8">
                         <TextBlock Text="外观" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="2">
                             <controls:SettingsCard Header="应用主题">
                                 <ComboBox SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
                                     <ComboBoxItem Content="跟随系统" />
@@ -709,7 +709,7 @@
                                 <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
                             </controls:SettingsCard>
                             <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{Binding EnablePoetryStatus, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                <StackPanel Spacing="4">
+                                <StackPanel Spacing="2">
                                     <controls:SettingsCard Header="诗词来源">
                                         <TextBox Text="{Binding PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
                                     </controls:SettingsCard>
