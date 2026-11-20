@@ -7,18 +7,12 @@ public sealed partial class SettingsView
 {
     private void UpdateResponsiveLayout()
     {
-        var availableWidth = SettingsBody.ActualWidth;
+        var availableWidth = SettingsRoot.ActualWidth;
         if (availableWidth <= 0)
         {
             return;
         }
 
-        var compact = availableWidth < CompactBodyBreakpoint;
-        var iconOnlyNavigation = availableWidth < IconNavigationBreakpoint;
-        ExpandedSettingsTrigger.IsActive = !compact && !iconOnlyNavigation;
-        CompactSettingsTrigger.IsActive = compact && !iconOnlyNavigation;
-        IconSettingsTrigger.IsActive = iconOnlyNavigation;
-        UpdateNavigationRailLayout(iconOnlyNavigation);
         UpdateFooterLayout(availableWidth < StackedFooterBreakpoint);
 
         var contentWidth = SettingsScroll.ActualWidth;
@@ -38,74 +32,6 @@ public sealed partial class SettingsView
         var stackThresholds = contentWidth < StackedThresholdBreakpoint;
         ApplyThresholdGridLayout(PrimaryThresholdGrid, stackThresholds);
         ApplyThresholdGridLayout(MoreThresholdGrid, stackThresholds);
-    }
-
-    private void UpdateNavigationRailLayout(bool iconOnly)
-    {
-        SettingsSearchBox.Visibility = iconOnly ? Visibility.Collapsed : Visibility.Visible;
-        SettingsSearchBox.Width = iconOnly ? IconNavigationWidth : double.NaN;
-        SettingsSearchBox.PlaceholderText = iconOnly ? "" : "搜索设置";
-        SettingsNavRail.RowSpacing = iconOnly ? 0 : 10;
-        UpdateSearchEmptyState();
-
-        foreach (var item in SettingsCategoryList.Items.OfType<ListViewItem>())
-        {
-            var title = GetNavigationLabel(item);
-            if (!string.IsNullOrWhiteSpace(title))
-            {
-                Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(item, title);
-                if (item.Content is FrameworkElement content)
-                {
-                    Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(content, title);
-                }
-
-                ToolTipService.SetToolTip(item, title);
-            }
-
-            item.HorizontalContentAlignment = iconOnly
-                ? HorizontalAlignment.Center
-                : HorizontalAlignment.Stretch;
-            item.Padding = iconOnly ? new Thickness(0) : new Thickness(12, 0, 12, 0);
-            item.MinHeight = iconOnly ? 44 : 40;
-
-            if (item.Content is DependencyObject contentRoot)
-            {
-                UpdateNavigationItemContent(contentRoot, iconOnly);
-            }
-        }
-    }
-
-    private static string? GetNavigationLabel(ListViewItem item)
-    {
-        if (item.Content is Panel panel)
-        {
-            return panel.Children
-                .OfType<TextBlock>()
-                .Select(static textBlock => textBlock.Text)
-                .FirstOrDefault(static text => !string.IsNullOrWhiteSpace(text));
-        }
-
-        return item.Content as string;
-    }
-
-    private static void UpdateNavigationItemContent(DependencyObject root, bool iconOnly)
-    {
-        if (root is StackPanel stack)
-        {
-            stack.Spacing = iconOnly ? 0 : 10;
-            stack.HorizontalAlignment = iconOnly ? HorizontalAlignment.Center : HorizontalAlignment.Left;
-        }
-
-        if (root is TextBlock textBlock)
-        {
-            textBlock.Visibility = iconOnly ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        var childCount = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < childCount; i++)
-        {
-            UpdateNavigationItemContent(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i), iconOnly);
-        }
     }
 
     private void UpdateFooterLayout(bool stack)

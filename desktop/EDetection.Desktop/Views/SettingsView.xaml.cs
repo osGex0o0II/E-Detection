@@ -8,10 +8,7 @@ namespace EDetection.Desktop.Views;
 
 public sealed partial class SettingsView : UserControl
 {
-    private const double IconNavigationWidth = 56;
     private const double SettingsContentMaxWidth = 900;
-    private const double CompactBodyBreakpoint = 1040;
-    private const double IconNavigationBreakpoint = 820;
     private const double CompactContentBreakpoint = 720;
     private const double StackedActionBreakpoint = CompactContentBreakpoint;
     private const double StackedFooterBreakpoint = 820;
@@ -26,7 +23,7 @@ public sealed partial class SettingsView : UserControl
         InitializeComponent();
         _searchEntries = BuildSearchEntries();
         _suppressCategoryScroll = true;
-        SettingsCategoryList.SelectedIndex = 0;
+        SettingsNavigation.SelectedItem = SettingsNavigation.MenuItems[0];
         _suppressCategoryScroll = false;
         Loaded += SettingsView_Loaded;
     }
@@ -39,14 +36,15 @@ public sealed partial class SettingsView : UserControl
     {
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (SettingsSearchBox.Visibility == Visibility.Visible)
+            // The search panel is either in the pane header or hosted above the
+            // content in compact mode; it stays visible in both, so it is the
+            // right first stop for a keyboard user.
+            if (SettingsSearchBox.Focus(FocusState.Programmatic))
             {
-                SettingsSearchBox.Focus(FocusState.Programmatic);
+                return;
             }
-            else
-            {
-                SettingsCategoryList.Focus(FocusState.Programmatic);
-            }
+
+            SettingsNavigation.Focus(FocusState.Programmatic);
         });
     }
 
@@ -74,7 +72,7 @@ public sealed partial class SettingsView : UserControl
             ? _lastCategorySectionName
             : initialSectionName;
         _suppressCategoryScroll = true;
-        SettingsCategoryList.SelectedIndex = 0;
+        SettingsNavigation.SelectedItem = SettingsNavigation.MenuItems[0];
         _suppressCategoryScroll = false;
         SelectCategoryBySection(GetCategorySectionName(targetSection));
         SettingsScroll.ChangeView(null, 0, null, disableAnimation: true);

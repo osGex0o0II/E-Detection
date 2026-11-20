@@ -4,43 +4,6 @@
           Background="{ThemeResource AppPageBackdropTintBrush}"
           Opacity="0"
           PreviewKeyDown="SettingsRoot_PreviewKeyDown">
-        <VisualStateManager.VisualStateGroups>
-            <VisualStateGroup x:Name="SettingsLayoutStates">
-                <VisualState x:Name="ExpandedSettingsLayout">
-                    <VisualState.StateTriggers>
-                        <StateTrigger x:Name="ExpandedSettingsTrigger" IsActive="True" />
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="20,16,20,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="20" />
-                        <Setter Target="SettingsNavColumn.Width" Value="184" />
-                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState x:Name="CompactSettingsLayout">
-                    <VisualState.StateTriggers>
-                        <StateTrigger x:Name="CompactSettingsTrigger" />
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="16,14,16,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="16" />
-                        <Setter Target="SettingsNavColumn.Width" Value="152" />
-                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
-                    </VisualState.Setters>
-                </VisualState>
-                <VisualState x:Name="IconSettingsLayout">
-                    <VisualState.StateTriggers>
-                        <StateTrigger x:Name="IconSettingsTrigger" />
-                    </VisualState.StateTriggers>
-                    <VisualState.Setters>
-                        <Setter Target="SettingsBody.Padding" Value="14,12,14,0" />
-                        <Setter Target="SettingsBody.ColumnSpacing" Value="12" />
-                        <Setter Target="SettingsNavColumn.Width" Value="56" />
-                        <Setter Target="SettingsContentStack.MaxWidth" Value="900" />
-                    </VisualState.Setters>
-                </VisualState>
-            </VisualStateGroup>
-        </VisualStateManager.VisualStateGroups>
         <Grid.RenderTransform>
             <CompositeTransform x:Name="SettingsRootTransform" TranslateX="24" />
         </Grid.RenderTransform>
@@ -77,17 +40,50 @@
                            AutomationProperties.HeadingLevel="Level1" />
             </Grid>
         </Border>
-        <Grid x:Name="SettingsBody" Grid.Row="1" Padding="20,16,20,0" ColumnSpacing="20" SizeChanged="SettingsBody_SizeChanged">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition x:Name="SettingsNavColumn" Width="184" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid x:Name="SettingsNavRail" RowSpacing="10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <StackPanel Spacing="6">
+        <!--
+            The category rail is a native NavigationView: it owns selection,
+            keyboard handling, the compact icon-only collapse and the per-item
+            tooltips a 56 DIP rail needs.
+
+            PaneDisplayMode stays Auto because WinUI maps the explicit Left
+            mode to NavigationViewDisplayMode.Expanded unconditionally, which
+            would make CompactModeThresholdWidth dead code. With Auto the pane
+            collapses below ExpandedModeThresholdWidth: a 1267 DIP window
+            measures ~1227 here (expanded) and the 960 DIP window minimum
+            measures ~920 (compact, 56 DIP icon rail). CompactModeThresholdWidth
+            stays 0 so the Minimal hamburger layout is unreachable, matching
+            IsPaneToggleButtonVisible="False".
+        -->
+        <NavigationView x:Name="SettingsNavigation"
+                        Grid.Row="1"
+                        Margin="20,16,20,0"
+                        PaneDisplayMode="Auto"
+                        ExpandedModeThresholdWidth="1080"
+                        CompactModeThresholdWidth="0"
+                        OpenPaneLength="184"
+                        CompactPaneLength="56"
+                        IsPaneOpen="True"
+                        IsSettingsVisible="False"
+                        IsBackButtonVisible="Collapsed"
+                        IsPaneToggleButtonVisible="False"
+                        AlwaysShowHeader="False"
+                        SelectionChanged="SettingsNavigation_SelectionChanged"
+                        DisplayModeChanged="SettingsNavigation_DisplayModeChanged"
+                        SizeChanged="SettingsNavigation_SizeChanged"
+                        AutomationProperties.Name="设置类别">
+            <NavigationView.Resources>
+                <!--
+                    The settings page paints its own card surfaces, so the
+                    navigation chrome must not add a second border or fill.
+                -->
+                <Thickness x:Key="NavigationViewContentGridBorderThickness">0</Thickness>
+                <Thickness x:Key="NavigationViewBorderThickness">0</Thickness>
+                <SolidColorBrush x:Key="NavigationViewContentBackground" Color="Transparent" />
+                <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent" />
+                <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
+            </NavigationView.Resources>
+            <NavigationView.PaneHeader>
+                <StackPanel x:Name="SettingsSearchPanel" Spacing="6" Margin="12,4,12,10">
                     <AutoSuggestBox x:Name="SettingsSearchBox" QueryIcon="Find" PlaceholderText="搜索设置" AutomationProperties.Name="搜索设置" AutomationProperties.HelpText="输入关键词，然后从下拉结果中选择设置项。" TextChanged="SettingsSearchBox_TextChanged" SuggestionChosen="SettingsSearchBox_SuggestionChosen" QuerySubmitted="SettingsSearchBox_QuerySubmitted">
                         <AutoSuggestBox.ItemTemplate>
                             <DataTemplate>
@@ -115,617 +111,630 @@
                                AutomationProperties.AutomationId="SettingsSearchTruncated"
                                AutomationProperties.LiveSetting="Polite" />
                 </StackPanel>
-                <ListView x:Name="SettingsCategoryList" Grid.Row="1" SelectionMode="Single" HorizontalContentAlignment="Stretch" SelectionChanged="SettingsCategoryList_SelectionChanged" AutomationProperties.Name="设置类别">
-                    <ListViewItem Tag="DefaultsSection" AutomationProperties.AutomationId="SettingsNav_Detection" AutomationProperties.Name="检测">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE9D9;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="检测" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="ReportsSection" AutomationProperties.AutomationId="SettingsNav_Reports" AutomationProperties.Name="报告与数据">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE9F9;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="报告与数据" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="WindowSection" AutomationProperties.AutomationId="SettingsNav_General" AutomationProperties.Name="常规">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE7F4;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="常规" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="NotificationsSection" AutomationProperties.AutomationId="SettingsNav_Notifications" AutomationProperties.Name="通知">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE7F7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="通知" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="LlmSection" AutomationProperties.AutomationId="SettingsNav_Integrations" AutomationProperties.Name="连接与集成">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE774;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="连接与集成" />
-                        </StackPanel>
-                    </ListViewItem>
-                    <ListViewItem Tag="UpdatesSection" AutomationProperties.AutomationId="SettingsNav_Maintenance" AutomationProperties.Name="更新与维护">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <FontIcon Glyph="&#xE895;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
-                            <TextBlock Text="更新与维护" />
-                        </StackPanel>
-                    </ListViewItem>
-                </ListView>
-            </Grid>
-            <ScrollViewer x:Name="SettingsScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" SizeChanged="SettingsScroll_SizeChanged">
-                <StackPanel x:Name="SettingsContentStack" MaxWidth="900" HorizontalAlignment="Stretch" Spacing="14" Padding="0,0,16,20">
-                    <InfoBar IsOpen="True"
-                             IsClosable="False"
-                             Severity="Informational"
-                             Visibility="{Binding SettingsRunningBannerVisibility}"
-                             Message="检测正在运行：阈值与报告相关设置暂时锁定，检测结束后可编辑。"
-                             AutomationProperties.AutomationId="SettingsRunningBanner" />
-                    <StackPanel x:Name="DefaultsSection" Spacing="8">
-                        <TextBlock Text="检测" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="检测参数">
-                                <Grid x:Name="DetectionParametersActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Click="OpenThresholdSettings_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="打开阈值设置">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE9D2;" FontSize="14" />
-                                            <TextBlock Text="阈值设置" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Click="OpenDetectionRules_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="打开检测规则">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE9D5;" FontSize="14" />
-                                            <TextBlock Text="检测规则" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="ThresholdsSection" Spacing="8">
-                        <TextBlock Text="检测阈值" Style="{StaticResource SectionTitleTextStyle}" />
-                        <controls:SettingsCard x:Name="ThresholdConfigPathRow" Header="阈值文件路径">
-                            <Grid Width="520" ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBox Text="{Binding PendingConfigPath, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditRunConfiguration}" PlaceholderText="选择要加载或保存的 JSON 文件" AutomationProperties.Name="阈值文件路径" AutomationProperties.HelpText="{Binding PendingConfigPath}" ToolTipService.ToolTip="{Binding PendingConfigPath}" />
-                                <Button Grid.Column="1" Click="BrowseConfigPath_Click" IsEnabled="{Binding CanEditRunConfiguration}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="选择阈值文件" ToolTipService.ToolTip="选择阈值文件">
-                                    <FontIcon Glyph="&#xE8A5;" FontSize="14" />
-                                </Button>
-                                <Button Grid.Column="2"
-                                        Click="LoadDetectionConfig_Click"
-                                        IsEnabled="{Binding CanEditRunConfiguration}"
-                                        AutomationProperties.Name="加载阈值文件"
-                                        ToolTipService.ToolTip="校验并加载阈值文件">
-                                    <TextBlock Text="加载" />
-                                </Button>
-                            </Grid>
-                        </controls:SettingsCard>
-                        <!--
-                            The threshold editors are a dense two-column grid,
-                            not rows, so they keep one shared group surface
-                            instead of one card per editor.
-                        -->
-                        <Border Style="{StaticResource SettingsGroupStyle}">
-                            <StackPanel>
-                                <TextBlock Text="{Binding DetectionConfigStatusText}"
-                                           Margin="14,4,14,8"
-                                           TextWrapping="Wrap"
-                                           FontSize="12"
-                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                           AutomationProperties.LiveSetting="Polite" />
-                                <Grid x:Name="PrimaryThresholdGrid" Padding="18,12" ColumnSpacing="14" RowSpacing="12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <StackPanel x:Name="VoltageMinThresholdRow" Spacing="6">
-                                        <TextBlock Text="电压下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding VoltageMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电压下限" AutomationProperties.HelpText="单位 V，范围 0 到 1000" />
-                                        <TextBlock Text="单位 V · 0-1000" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="VoltageMaxThresholdRow" Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="电压上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding VoltageMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电压上限" AutomationProperties.HelpText="单位 V，范围 0 到 1000" />
-                                        <TextBlock Text="单位 V · 0-1000" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="CurrentMaxThresholdRow" Grid.Row="1" Spacing="6">
-                                        <TextBlock Text="电流上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding CurrentMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="100000" SmallChange="1" LargeChange="100" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流上限" AutomationProperties.HelpText="单位 A" />
-                                        <TextBlock Text="单位 A" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="PowerFactorThresholdRow" Grid.Row="1" Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="功率因数下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding PowerFactorMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="功率因数下限" AutomationProperties.HelpText="比例，范围 0 到 1，例如 0.9 表示 90%" />
-                                        <TextBlock Text="比例 · 0-1，例如 0.9 表示 90%" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="TemperatureMaxThresholdRow" Grid.Row="2" Spacing="6">
-                                        <TextBlock Text="温度上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding TemperatureMaxThreshold, Mode=TwoWay}" Minimum="-50" Maximum="200" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="温度上限" AutomationProperties.HelpText="单位 ℃，范围 -50 到 200" />
-                                        <TextBlock Text="单位 ℃ · -50-200" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                    <StackPanel x:Name="FreezeCountThresholdRow" Grid.Row="2" Grid.Column="1" Spacing="6">
-                                        <TextBlock Text="连续不变化点数" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                        <NumberBox Value="{Binding FreezeCountThreshold, Mode=TwoWay}" Minimum="1" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="连续不变化点数" AutomationProperties.HelpText="采样点数，范围 1 到 1000" />
-                                        <TextBlock Text="采样点数 · 1-1000" Style="{StaticResource TableHeaderTextStyle}" />
-                                    </StackPanel>
-                                </Grid>
-                                <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
-                                <Expander x:Name="MoreThresholdsExpander" Header="更多阈值" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                    <Grid x:Name="MoreThresholdGrid" Padding="18,12" ColumnSpacing="14" RowSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <StackPanel x:Name="CurrentUnbalanceThresholdRow" Spacing="6">
-                                            <TextBlock Text="电流不平衡上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding CurrentUnbalanceMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流不平衡上限" AutomationProperties.HelpText="比例，范围 0 到 1，例如 0.15 表示 15%" />
-                                            <TextBlock Text="比例 · 0-1，例如 0.15 表示 15%" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Spacing="6">
-                                            <TextBlock Text="有功功率下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding ActivePowerMinThreshold, Mode=TwoWay}" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="有功功率下限" AutomationProperties.HelpText="单位 kW" />
-                                            <TextBlock Text="单位 kW" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                        <StackPanel x:Name="TemperatureMinThresholdRow" Grid.Row="1" Spacing="6">
-                                            <TextBlock Text="温度下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding TemperatureMinThreshold, Mode=TwoWay}" Minimum="-50" Maximum="200" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="温度下限" AutomationProperties.HelpText="单位 ℃，范围 -50 到 200" />
-                                            <TextBlock Text="单位 ℃ · -50-200" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                        <StackPanel x:Name="CurrentActiveMinThresholdRow" Grid.Row="1" Grid.Column="1" Spacing="6">
-                                            <TextBlock Text="电流激活下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding CurrentActiveMinThreshold, Mode=TwoWay}" Minimum="0.001" Maximum="100000" SmallChange="0.1" LargeChange="1" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流激活下限" AutomationProperties.HelpText="单位 A" />
-                                            <TextBlock Text="单位 A" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                        <StackPanel x:Name="FreezeStdThresholdRow" Grid.Row="2" Spacing="6">
-                                            <TextBlock Text="数据波动容差" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding FreezeStdThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="数据波动容差" AutomationProperties.HelpText="比例，范围 0 到 1" />
-                                            <TextBlock Text="比例 · 0-1" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6">
-                                            <TextBlock Text="相电压不平衡阈值" Style="{StaticResource SettingsRowTitleTextStyle}" />
-                                            <NumberBox Value="{Binding VoltageImbalanceThreshold, Mode=TwoWay}" Minimum="0.001" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="相电压不平衡阈值" AutomationProperties.HelpText="比例，范围 0.001 到 1" />
-                                            <TextBlock Text="比例 · 0.001-1" Style="{StaticResource TableHeaderTextStyle}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Expander>
+            </NavigationView.PaneHeader>
+            <NavigationView.MenuItems>
+                <NavigationViewItem Tag="DefaultsSection" Content="检测" AutomationProperties.AutomationId="SettingsNav_Detection" AutomationProperties.Name="检测">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="ReportsSection" Content="报告与数据" AutomationProperties.AutomationId="SettingsNav_Reports" AutomationProperties.Name="报告与数据">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9F9;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="WindowSection" Content="常规" AutomationProperties.AutomationId="SettingsNav_General" AutomationProperties.Name="常规">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F4;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="NotificationsSection" Content="通知" AutomationProperties.AutomationId="SettingsNav_Notifications" AutomationProperties.Name="通知">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE7F7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="LlmSection" Content="连接与集成" AutomationProperties.AutomationId="SettingsNav_Integrations" AutomationProperties.Name="连接与集成">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE774;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Tag="UpdatesSection" Content="更新与维护" AutomationProperties.AutomationId="SettingsNav_Maintenance" AutomationProperties.Name="更新与维护">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE895;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
+            <NavigationView.Content>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <!--
+                        Receives SettingsSearchPanel while the pane is compact:
+                        a 56 DIP rail cannot show the search field, and hiding
+                        it outright would strand keyboard users and the smoke
+                        gate that types into it.
+                    -->
+                    <ContentControl x:Name="SettingsCompactSearchHost"
+                                    Grid.Row="0"
+                                    Margin="20,0,20,10"
+                                    HorizontalContentAlignment="Stretch"
+                                    Visibility="Collapsed" />
+                    <ScrollViewer x:Name="SettingsScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" VerticalScrollMode="Enabled" HorizontalScrollBarVisibility="Disabled" HorizontalScrollMode="Disabled" SizeChanged="SettingsScroll_SizeChanged">
+                        <StackPanel x:Name="SettingsContentStack" MaxWidth="900" HorizontalAlignment="Stretch" Spacing="14" Padding="0,0,16,20">
+                            <InfoBar IsOpen="True"
+                                     IsClosable="False"
+                                     Severity="Informational"
+                                     Visibility="{Binding SettingsRunningBannerVisibility}"
+                                     Message="检测正在运行：阈值与报告相关设置暂时锁定，检测结束后可编辑。"
+                                     AutomationProperties.AutomationId="SettingsRunningBanner" />
+                            <StackPanel x:Name="DefaultsSection" Spacing="8">
+                                <TextBlock Text="检测" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="检测参数">
+                                        <Grid x:Name="DetectionParametersActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Click="OpenThresholdSettings_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="打开阈值设置">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE9D2;" FontSize="14" />
+                                                    <TextBlock Text="阈值设置" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1" Click="OpenDetectionRules_Click" HorizontalAlignment="Stretch" AutomationProperties.Name="打开检测规则">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE9D5;" FontSize="14" />
+                                                    <TextBlock Text="检测规则" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </controls:SettingsCard>
+                                </StackPanel>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <settings:DetectionRulesSettingsSection x:Name="DetectionRulesSection" />
-                    <StackPanel x:Name="ReportsSection" Spacing="8">
-                        <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="生成 Excel 报告" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
-                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding WriteReport, Mode=TwoWay}" IsEnabled="{Binding CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="报告历史上限">
-                                <StackPanel Spacing="6">
-                                    <ComboBox SelectedIndex="{Binding ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史上限">
-                                        <ComboBoxItem Content="10 个" />
-                                        <ComboBoxItem Content="20 个" />
-                                        <ComboBoxItem Content="50 个" />
-                                    </ComboBox>
-                                    <TextBlock Text="{Binding ReportHistory.TrimWarningText, Mode=OneWay}"
-                                               Visibility="{Binding ReportHistory.TrimWarningVisibility, Mode=OneWay}"
-                                               FontSize="12"
-                                               TextWrapping="WrapWholeWords"
-                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                               AutomationProperties.AutomationId="ReportHistoryTrimWarning"
-                                               AutomationProperties.LiveSetting="Polite" />
-                                </StackPanel>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="清空报告历史">
-                                <Button Click="ClearRecentReports_Click" IsEnabled="{Binding ReportHistory.HasReports}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史" ToolTipService.ToolTip="移除应用中的报告历史，不会删除磁盘上的报告文件">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                                        <TextBlock Text="清空报告历史" />
-                                    </StackPanel>
-                                </Button>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="LogsSection" Spacing="8">
-                        <TextBlock Text="运行记录" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="运行记录上限">
-                                <StackPanel Spacing="6">
-                                    <ComboBox SelectedIndex="{Binding RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录上限">
-                                        <ComboBoxItem Content="200 条" />
-                                        <ComboBoxItem Content="500 条" />
-                                        <ComboBoxItem Content="1000 条" />
-                                        <ComboBoxItem Content="2000 条" />
-                                    </ComboBox>
-                                    <TextBlock Text="{Binding RuntimeLogs.TrimWarningText, Mode=OneWay}"
-                                               Visibility="{Binding RuntimeLogs.TrimWarningVisibility, Mode=OneWay}"
-                                               FontSize="12"
-                                               TextWrapping="WrapWholeWords"
-                                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                               AutomationProperties.AutomationId="RuntimeLogTrimWarning"
-                                               AutomationProperties.LiveSetting="Polite" />
-                                </StackPanel>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="清空运行记录">
-                                <Button Click="ClearRuntimeLogs_Click" IsEnabled="{Binding RuntimeLogs.HasLogs}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录" ToolTipService.ToolTip="移除应用中的运行记录，无法恢复">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <FontIcon Glyph="&#xE74D;" FontSize="14" />
-                                        <TextBlock Text="清空运行记录" />
-                                    </StackPanel>
-                                </Button>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="WindowSection" Spacing="8">
-                        <TextBlock Text="窗口与启动" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="关闭窗口时隐藏到托盘" Description="开启后，点击窗口关闭按钮不会退出程序。">
-                                <ToggleSwitch IsOn="{Binding CloseToTrayOnClose, Mode=TwoWay}" AutomationProperties.Name="关闭窗口时隐藏到托盘" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="启动时隐藏到托盘">
-                                <ToggleSwitch IsOn="{Binding StartMinimizedToTray, Mode=TwoWay}" AutomationProperties.Name="启动时隐藏到托盘" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="登录后自动启动" Description="开启后会注册当前用户的 Windows 启动项。">
-                                <StackPanel Width="320" Spacing="4">
-                                    <Grid x:Name="StartupActionGrid" ColumnSpacing="8" RowSpacing="8">
+                            <StackPanel x:Name="ThresholdsSection" Spacing="8">
+                                <TextBlock Text="检测阈值" Style="{StaticResource SectionTitleTextStyle}" />
+                                <controls:SettingsCard x:Name="ThresholdConfigPathRow" Header="阈值文件路径">
+                                    <Grid Width="520" ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <ToggleSwitch IsOn="{Binding AutoStartOnSignIn, Mode=TwoWay}" AutomationProperties.Name="登录后自动启动" AutomationProperties.AutomationId="AutoStartOnSignInToggle" />
-                                        <Button Grid.Column="1" Command="{Binding OpenSystemStartupSettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 启动应用设置">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE713;" FontSize="14" />
-                                                <TextBlock Text="系统设置" />
-                                            </StackPanel>
+                                        <TextBox Text="{Binding PendingConfigPath, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditRunConfiguration}" PlaceholderText="选择要加载或保存的 JSON 文件" AutomationProperties.Name="阈值文件路径" AutomationProperties.HelpText="{Binding PendingConfigPath}" ToolTipService.ToolTip="{Binding PendingConfigPath}" />
+                                        <Button Grid.Column="1" Click="BrowseConfigPath_Click" IsEnabled="{Binding CanEditRunConfiguration}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="选择阈值文件" ToolTipService.ToolTip="选择阈值文件">
+                                            <FontIcon Glyph="&#xE8A5;" FontSize="14" />
+                                        </Button>
+                                        <Button Grid.Column="2"
+                                                Click="LoadDetectionConfig_Click"
+                                                IsEnabled="{Binding CanEditRunConfiguration}"
+                                                AutomationProperties.Name="加载阈值文件"
+                                                ToolTipService.ToolTip="校验并加载阈值文件">
+                                            <TextBlock Text="加载" />
                                         </Button>
                                     </Grid>
-                                    <!--
-                                        Kept outside StartupActionGrid: the
-                                        responsive helper rebuilds that grid's
-                                        rows, so the status line lives in this
-                                        outer stack and always sits below the
-                                        toggle and button.
-                                    -->
-                                    <TextBlock Margin="0,4,0,0"
-                                               Text="{Binding StartupIntegrationStatusText, Mode=OneWay}"
-                                               FontSize="12"
-                                               TextWrapping="WrapWholeWords"
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               AutomationProperties.AutomationId="StartupIntegrationStatus"
-                                               AutomationProperties.LiveSetting="Polite"
-                                               ToolTipService.ToolTip="{Binding StartupIntegrationStatusText, Mode=OneWay}" />
-                                </StackPanel>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="LlmSection" Spacing="8">
-                        <TextBlock Text="智能助手集成" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="启用智能助手">
-                                <ToggleSwitch IsOn="{Binding EnableLlmAssistant, Mode=TwoWay}" AutomationProperties.Name="启用智能助手" />
-                            </controls:SettingsCard>
-                            <Expander x:Name="LlmConnectionExpander" Header="连接与凭据（启用后生效）" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                                </controls:SettingsCard>
+                                <!--
+                                    The threshold editors are a dense two-column grid,
+                                    not rows, so they keep one shared group surface
+                                    instead of one card per editor.
+                                -->
+                                <Border Style="{StaticResource SettingsGroupStyle}">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DetectionConfigStatusText}"
+                                                   Margin="14,4,14,8"
+                                                   TextWrapping="Wrap"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   AutomationProperties.LiveSetting="Polite" />
+                                        <Grid x:Name="PrimaryThresholdGrid" Padding="18,12" ColumnSpacing="14" RowSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <StackPanel x:Name="VoltageMinThresholdRow" Spacing="6">
+                                                <TextBlock Text="电压下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding VoltageMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电压下限" AutomationProperties.HelpText="单位 V，范围 0 到 1000" />
+                                                <TextBlock Text="单位 V · 0-1000" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel x:Name="VoltageMaxThresholdRow" Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="电压上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding VoltageMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电压上限" AutomationProperties.HelpText="单位 V，范围 0 到 1000" />
+                                                <TextBlock Text="单位 V · 0-1000" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel x:Name="CurrentMaxThresholdRow" Grid.Row="1" Spacing="6">
+                                                <TextBlock Text="电流上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding CurrentMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="100000" SmallChange="1" LargeChange="100" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流上限" AutomationProperties.HelpText="单位 A" />
+                                                <TextBlock Text="单位 A" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel x:Name="PowerFactorThresholdRow" Grid.Row="1" Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="功率因数下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding PowerFactorMinThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="功率因数下限" AutomationProperties.HelpText="比例，范围 0 到 1，例如 0.9 表示 90%" />
+                                                <TextBlock Text="比例 · 0-1，例如 0.9 表示 90%" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel x:Name="TemperatureMaxThresholdRow" Grid.Row="2" Spacing="6">
+                                                <TextBlock Text="温度上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding TemperatureMaxThreshold, Mode=TwoWay}" Minimum="-50" Maximum="200" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="温度上限" AutomationProperties.HelpText="单位 ℃，范围 -50 到 200" />
+                                                <TextBlock Text="单位 ℃ · -50-200" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                            <StackPanel x:Name="FreezeCountThresholdRow" Grid.Row="2" Grid.Column="1" Spacing="6">
+                                                <TextBlock Text="连续不变化点数" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                <NumberBox Value="{Binding FreezeCountThreshold, Mode=TwoWay}" Minimum="1" Maximum="1000" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="连续不变化点数" AutomationProperties.HelpText="采样点数，范围 1 到 1000" />
+                                                <TextBlock Text="采样点数 · 1-1000" Style="{StaticResource TableHeaderTextStyle}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <Border Height="1" Margin="18,0" Background="{ThemeResource SettingsRowDividerBrush}" />
+                                        <Expander x:Name="MoreThresholdsExpander" Header="更多阈值" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                                            <Grid x:Name="MoreThresholdGrid" Padding="18,12" ColumnSpacing="14" RowSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <StackPanel x:Name="CurrentUnbalanceThresholdRow" Spacing="6">
+                                                    <TextBlock Text="电流不平衡上限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding CurrentUnbalanceMaxThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流不平衡上限" AutomationProperties.HelpText="比例，范围 0 到 1，例如 0.15 表示 15%" />
+                                                    <TextBlock Text="比例 · 0-1，例如 0.15 表示 15%" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Spacing="6">
+                                                    <TextBlock Text="有功功率下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding ActivePowerMinThreshold, Mode=TwoWay}" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="有功功率下限" AutomationProperties.HelpText="单位 kW" />
+                                                    <TextBlock Text="单位 kW" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                                <StackPanel x:Name="TemperatureMinThresholdRow" Grid.Row="1" Spacing="6">
+                                                    <TextBlock Text="温度下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding TemperatureMinThreshold, Mode=TwoWay}" Minimum="-50" Maximum="200" SmallChange="1" LargeChange="10" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="温度下限" AutomationProperties.HelpText="单位 ℃，范围 -50 到 200" />
+                                                    <TextBlock Text="单位 ℃ · -50-200" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                                <StackPanel x:Name="CurrentActiveMinThresholdRow" Grid.Row="1" Grid.Column="1" Spacing="6">
+                                                    <TextBlock Text="电流激活下限" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding CurrentActiveMinThreshold, Mode=TwoWay}" Minimum="0.001" Maximum="100000" SmallChange="0.1" LargeChange="1" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="电流激活下限" AutomationProperties.HelpText="单位 A" />
+                                                    <TextBlock Text="单位 A" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                                <StackPanel x:Name="FreezeStdThresholdRow" Grid.Row="2" Spacing="6">
+                                                    <TextBlock Text="数据波动容差" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding FreezeStdThreshold, Mode=TwoWay}" Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="数据波动容差" AutomationProperties.HelpText="比例，范围 0 到 1" />
+                                                    <TextBlock Text="比例 · 0-1" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                                <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6">
+                                                    <TextBlock Text="相电压不平衡阈值" Style="{StaticResource SettingsRowTitleTextStyle}" />
+                                                    <NumberBox Value="{Binding VoltageImbalanceThreshold, Mode=TwoWay}" Minimum="0.001" Maximum="1" SmallChange="0.01" LargeChange="0.05" SpinButtonPlacementMode="Inline" ValidationMode="InvalidInputOverwritten" HorizontalAlignment="Stretch" AutomationProperties.Name="相电压不平衡阈值" AutomationProperties.HelpText="比例，范围 0.001 到 1" />
+                                                    <TextBlock Text="比例 · 0.001-1" Style="{StaticResource TableHeaderTextStyle}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                            <settings:DetectionRulesSettingsSection x:Name="DetectionRulesSection" />
+                            <StackPanel x:Name="ReportsSection" Spacing="8">
+                                <TextBlock Text="报告" Style="{StaticResource SectionTitleTextStyle}" />
                                 <StackPanel Spacing="2">
-                                    <controls:SettingsCard x:Name="LlmEndpointRow" Header="服务地址">
-                                        <TextBox Width="420" Text="{Binding LlmEndpoint, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://api.example.com/v1/chat/completions" AutomationProperties.Name="LLM 服务地址" AutomationProperties.HelpText="{Binding LlmEndpoint}" ToolTipService.ToolTip="{Binding LlmEndpoint}" />
+                                    <controls:SettingsCard Header="生成 Excel 报告" Description="关闭后仅完成检测并显示摘要，不生成 Excel 文件。">
+                                        <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding WriteReport, Mode=TwoWay}" IsEnabled="{Binding CanEditRunConfiguration, Mode=OneWay}" AutomationProperties.Name="生成 Excel 报告" />
                                     </controls:SettingsCard>
-                                    <controls:SettingsCard x:Name="LlmModelRow" Header="模型">
-                                        <TextBox Width="320" Text="{Binding LlmModel, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="模型名称" AutomationProperties.Name="LLM 模型" />
+                                    <controls:SettingsCard Header="报告历史上限">
+                                        <StackPanel Spacing="6">
+                                            <ComboBox SelectedIndex="{Binding ReportHistory.SelectedRecentReportLimitIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="报告历史上限">
+                                                <ComboBoxItem Content="10 个" />
+                                                <ComboBoxItem Content="20 个" />
+                                                <ComboBoxItem Content="50 个" />
+                                            </ComboBox>
+                                            <TextBlock Text="{Binding ReportHistory.TrimWarningText, Mode=OneWay}"
+                                                       Visibility="{Binding ReportHistory.TrimWarningVisibility, Mode=OneWay}"
+                                                       FontSize="12"
+                                                       TextWrapping="WrapWholeWords"
+                                                       Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                       AutomationProperties.AutomationId="ReportHistoryTrimWarning"
+                                                       AutomationProperties.LiveSetting="Polite" />
+                                        </StackPanel>
                                     </controls:SettingsCard>
-                                    <controls:SettingsCard x:Name="LlmApiKeyRow" Header="API Key">
+                                    <controls:SettingsCard Header="清空报告历史">
+                                        <Button Click="ClearRecentReports_Click" IsEnabled="{Binding ReportHistory.HasReports}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空报告历史" ToolTipService.ToolTip="移除应用中的报告历史，不会删除磁盘上的报告文件">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                                <TextBlock Text="清空报告历史" />
+                                            </StackPanel>
+                                        </Button>
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="LogsSection" Spacing="8">
+                                <TextBlock Text="运行记录" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="运行记录上限">
+                                        <StackPanel Spacing="6">
+                                            <ComboBox SelectedIndex="{Binding RuntimeLogs.SelectedRetentionIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="运行记录上限">
+                                                <ComboBoxItem Content="200 条" />
+                                                <ComboBoxItem Content="500 条" />
+                                                <ComboBoxItem Content="1000 条" />
+                                                <ComboBoxItem Content="2000 条" />
+                                            </ComboBox>
+                                            <TextBlock Text="{Binding RuntimeLogs.TrimWarningText, Mode=OneWay}"
+                                                       Visibility="{Binding RuntimeLogs.TrimWarningVisibility, Mode=OneWay}"
+                                                       FontSize="12"
+                                                       TextWrapping="WrapWholeWords"
+                                                       Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                                       AutomationProperties.AutomationId="RuntimeLogTrimWarning"
+                                                       AutomationProperties.LiveSetting="Polite" />
+                                        </StackPanel>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="清空运行记录">
+                                        <Button Click="ClearRuntimeLogs_Click" IsEnabled="{Binding RuntimeLogs.HasLogs}" HorizontalAlignment="Stretch" AutomationProperties.Name="清空运行记录" ToolTipService.ToolTip="移除应用中的运行记录，无法恢复">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                                <TextBlock Text="清空运行记录" />
+                                            </StackPanel>
+                                        </Button>
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="WindowSection" Spacing="8">
+                                <TextBlock Text="窗口与启动" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="关闭窗口时隐藏到托盘" Description="开启后，点击窗口关闭按钮不会退出程序。">
+                                        <ToggleSwitch IsOn="{Binding CloseToTrayOnClose, Mode=TwoWay}" AutomationProperties.Name="关闭窗口时隐藏到托盘" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="启动时隐藏到托盘">
+                                        <ToggleSwitch IsOn="{Binding StartMinimizedToTray, Mode=TwoWay}" AutomationProperties.Name="启动时隐藏到托盘" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="登录后自动启动" Description="开启后会注册当前用户的 Windows 启动项。">
+                                        <StackPanel Width="320" Spacing="4">
+                                            <Grid x:Name="StartupActionGrid" ColumnSpacing="8" RowSpacing="8">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <ToggleSwitch IsOn="{Binding AutoStartOnSignIn, Mode=TwoWay}" AutomationProperties.Name="登录后自动启动" AutomationProperties.AutomationId="AutoStartOnSignInToggle" />
+                                                <Button Grid.Column="1" Command="{Binding OpenSystemStartupSettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 启动应用设置">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                                        <TextBlock Text="系统设置" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </Grid>
+                                            <!--
+                                                Kept outside StartupActionGrid: the
+                                                responsive helper rebuilds that grid's
+                                                rows, so the status line lives in this
+                                                outer stack and always sits below the
+                                                toggle and button.
+                                            -->
+                                            <TextBlock Margin="0,4,0,0"
+                                                       Text="{Binding StartupIntegrationStatusText, Mode=OneWay}"
+                                                       FontSize="12"
+                                                       TextWrapping="WrapWholeWords"
+                                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       AutomationProperties.AutomationId="StartupIntegrationStatus"
+                                                       AutomationProperties.LiveSetting="Polite"
+                                                       ToolTipService.ToolTip="{Binding StartupIntegrationStatusText, Mode=OneWay}" />
+                                        </StackPanel>
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="LlmSection" Spacing="8">
+                                <TextBlock Text="智能助手集成" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="启用智能助手">
+                                        <ToggleSwitch IsOn="{Binding EnableLlmAssistant, Mode=TwoWay}" AutomationProperties.Name="启用智能助手" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsExpander x:Name="LlmConnectionExpander" Header="连接与凭据（启用后生效）">
+                                        <controls:SettingsExpander.Items>
+                                            <controls:SettingsCard x:Name="LlmEndpointRow" Header="服务地址">
+                                                <TextBox Width="420" Text="{Binding LlmEndpoint, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://api.example.com/v1/chat/completions" AutomationProperties.Name="LLM 服务地址" AutomationProperties.HelpText="{Binding LlmEndpoint}" ToolTipService.ToolTip="{Binding LlmEndpoint}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard x:Name="LlmModelRow" Header="模型">
+                                                <TextBox Width="320" Text="{Binding LlmModel, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="模型名称" AutomationProperties.Name="LLM 模型" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard x:Name="LlmApiKeyRow" Header="API Key">
+                                                <Grid Width="420" ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <PasswordBox Password="{Binding PendingLlmApiKey, Mode=TwoWay}" PlaceholderText="{Binding LlmApiKeyStatusText}" AutomationProperties.Name="LLM API Key" />
+                                                    <Button Grid.Column="1" Command="{Binding SaveLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 LLM API Key" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                                                    </Button>
+                                                    <Button Grid.Column="2" Command="{Binding ClearLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 LLM API Key" ToolTipService.ToolTip="清除已保存凭据">
+                                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
+                                                    </Button>
+                                                </Grid>
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard x:Name="LlmProxyRow" Header="使用网络代理">
+                                                <ToggleSwitch IsOn="{Binding UseProxyForLlm, Mode=TwoWay}" AutomationProperties.Name="LLM 使用网络代理" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="连接测试">
+                                                <Button Width="320" Command="{Binding TestLlmConnectionCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试 LLM 连接">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="14" />
+                                                        <TextBlock Text="测试连接" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </controls:SettingsCard>
+                                        </controls:SettingsExpander.Items>
+                                    </controls:SettingsExpander>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="NotificationsSection" Spacing="8">
+                                <TextBlock Text="桌面通知" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="桌面通知">
+                                        <ToggleSwitch IsOn="{Binding EnableDesktopNotifications, Mode=TwoWay}" AutomationProperties.Name="桌面通知" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="桌面通知测试">
+                                        <Grid x:Name="DesktopNotificationActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Command="{Binding TestDesktopNotificationCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试桌面通知">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE7F7;" FontSize="14" />
+                                                    <TextBlock Text="测试通知" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1" Command="{Binding OpenSystemNotificationSettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 通知设置">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                                    <TextBlock Text="系统设置" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </controls:SettingsCard>
+                                </StackPanel>
+                                <TextBlock Text="外部消息推送" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="启用 ntfy 推送">
+                                        <ToggleSwitch IsOn="{Binding EnableNtfyNotifications, Mode=TwoWay}" AutomationProperties.Name="启用 ntfy 推送" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsExpander x:Name="NtfySettingsExpander" Header="推送服务配置（启用后生效）">
+                                        <controls:SettingsExpander.Items>
+                                            <controls:SettingsCard x:Name="NtfyServerRow" Header="ntfy 服务地址">
+                                                <TextBox Width="420" Text="{Binding NtfyServerUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://ntfy.sh" AutomationProperties.Name="ntfy 服务地址" AutomationProperties.HelpText="{Binding NtfyServerUrl}" ToolTipService.ToolTip="{Binding NtfyServerUrl}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="主题">
+                                                <TextBox Width="320" Text="{Binding NtfyTopic, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="topic" AutomationProperties.Name="ntfy 主题" AutomationProperties.HelpText="{Binding NtfyTopic}" ToolTipService.ToolTip="{Binding NtfyTopic}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="优先级">
+                                                <ComboBox Width="320" SelectedIndex="{Binding SelectedNtfyPriorityIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="ntfy 优先级">
+                                                    <ComboBoxItem Content="最低" />
+                                                    <ComboBoxItem Content="低" />
+                                                    <ComboBoxItem Content="默认" />
+                                                    <ComboBoxItem Content="高" />
+                                                    <ComboBoxItem Content="紧急" />
+                                                </ComboBox>
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard x:Name="NtfyTokenRow" Header="Token">
+                                                <Grid Width="420" ColumnSpacing="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <PasswordBox Password="{Binding PendingNtfyToken, Mode=TwoWay}" PlaceholderText="{Binding NtfyTokenStatusText}" AutomationProperties.Name="ntfy Token" />
+                                                    <Button Grid.Column="1" Command="{Binding SaveNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 ntfy Token" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                                                    </Button>
+                                                    <Button Grid.Column="2" Command="{Binding ClearNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 ntfy Token" ToolTipService.ToolTip="清除已保存凭据">
+                                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
+                                                    </Button>
+                                                </Grid>
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="使用网络代理">
+                                                <ToggleSwitch IsOn="{Binding UseProxyForNotifications, Mode=TwoWay}" AutomationProperties.Name="ntfy 使用网络代理" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="连接测试">
+                                                <Button Width="320" Command="{Binding SendTestNtfyNotificationCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="发送 ntfy 测试推送">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <FontIcon Glyph="&#xE724;" FontSize="14" />
+                                                        <TextBlock Text="发送测试推送" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </controls:SettingsCard>
+                                        </controls:SettingsExpander.Items>
+                                    </controls:SettingsExpander>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="AdvancedSection" Spacing="8">
+                                <TextBlock Text="维护" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="应用状态">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock Text="{Binding DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                            <Button Command="{Binding RefreshDesktopHealthCommand, Mode=OneWay}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                                                    <TextBlock Text="刷新状态" />
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsExpander x:Name="DiagnosticsDetailsExpander" Header="维护详情">
+                                        <controls:SettingsExpander.Items>
+                                            <controls:SettingsCard Header="检测组件">
+                                                <TextBlock Text="{Binding DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="设置存储">
+                                                <TextBlock Text="{Binding DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{Binding DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{Binding DesktopHealth.SettingsText, Mode=OneWay}" />
+                                            </controls:SettingsCard>
+                                            <!--
+                                                The summary names the failing checks, so each
+                                                one needs a row; otherwise "3 项需要关注"
+                                                cannot be traced to a specific subsystem.
+                                            -->
+                                            <controls:SettingsCard Header="系统通知">
+                                                <TextBlock Text="{Binding DesktopHealth.NotificationText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.NotificationText, Mode=OneWay}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="登录自启动">
+                                                <TextBlock Text="{Binding DesktopHealth.StartupText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.StartupText, Mode=OneWay}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="包完整性">
+                                                <TextBlock Text="{Binding DesktopHealth.PackageText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.PackageText, Mode=OneWay}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="安装形态">
+                                                <TextBlock Text="{Binding DesktopHealth.InstallText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.InstallText, Mode=OneWay}" />
+                                            </controls:SettingsCard>
+                                        </controls:SettingsExpander.Items>
+                                    </controls:SettingsExpander>
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel x:Name="ProxySection" Spacing="8">
+                                <TextBlock Text="网络连接" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="启用代理">
+                                        <ToggleSwitch IsOn="{Binding EnableNetworkProxy, Mode=TwoWay}" AutomationProperties.Name="启用网络代理" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="代理地址">
+                                        <TextBox Width="420" Text="{Binding ProxyAddress, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding EnableNetworkProxy}" PlaceholderText="http://127.0.0.1:7890" AutomationProperties.Name="代理地址" AutomationProperties.HelpText="{Binding ProxyAddress}" ToolTipService.ToolTip="{Binding ProxyAddress}" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="需要认证">
+                                        <ToggleSwitch IsOn="{Binding ProxyRequiresAuthentication, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="代理需要认证" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="用户名">
+                                        <TextBox Width="320" Text="{Binding ProxyUserName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditProxyCredentials}" AutomationProperties.Name="代理用户名" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="密码">
                                         <Grid Width="420" ColumnSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <PasswordBox Password="{Binding PendingLlmApiKey, Mode=TwoWay}" PlaceholderText="{Binding LlmApiKeyStatusText}" AutomationProperties.Name="LLM API Key" />
-                                            <Button Grid.Column="1" Command="{Binding SaveLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 LLM API Key" ToolTipService.ToolTip="保存到 Windows 凭据">
+                                            <PasswordBox Password="{Binding PendingProxyPassword, Mode=TwoWay}" IsEnabled="{Binding CanEditProxyCredentials}" PlaceholderText="{Binding ProxyPasswordStatusText}" AutomationProperties.Name="代理密码" />
+                                            <Button Grid.Column="1" Command="{Binding SaveProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存代理密码" ToolTipService.ToolTip="保存到 Windows 凭据">
                                                 <FontIcon Glyph="&#xE74E;" FontSize="14" />
                                             </Button>
-                                            <Button Grid.Column="2" Command="{Binding ClearLlmApiKeyCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 LLM API Key" ToolTipService.ToolTip="清除已保存凭据">
+                                            <Button Grid.Column="2" Command="{Binding ClearProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除代理密码" ToolTipService.ToolTip="清除已保存凭据">
                                                 <FontIcon Glyph="&#xE894;" FontSize="14" />
                                             </Button>
                                         </Grid>
                                     </controls:SettingsCard>
-                                    <controls:SettingsCard x:Name="LlmProxyRow" Header="使用网络代理">
-                                        <ToggleSwitch IsOn="{Binding UseProxyForLlm, Mode=TwoWay}" AutomationProperties.Name="LLM 使用网络代理" />
-                                    </controls:SettingsCard>
                                     <controls:SettingsCard Header="连接测试">
-                                        <Button Width="320" Command="{Binding TestLlmConnectionCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试 LLM 连接">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE768;" FontSize="14" />
-                                                <TextBlock Text="测试连接" />
-                                            </StackPanel>
-                                        </Button>
-                                    </controls:SettingsCard>
-                                </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="NotificationsSection" Spacing="8">
-                        <TextBlock Text="桌面通知" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="桌面通知">
-                                <ToggleSwitch IsOn="{Binding EnableDesktopNotifications, Mode=TwoWay}" AutomationProperties.Name="桌面通知" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="桌面通知测试">
-                                <Grid x:Name="DesktopNotificationActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Command="{Binding TestDesktopNotificationCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试桌面通知">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE7F7;" FontSize="14" />
-                                            <TextBlock Text="测试通知" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Command="{Binding OpenSystemNotificationSettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 通知设置">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE713;" FontSize="14" />
-                                            <TextBlock Text="系统设置" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                        <TextBlock Text="外部消息推送" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="启用 ntfy 推送">
-                                <ToggleSwitch IsOn="{Binding EnableNtfyNotifications, Mode=TwoWay}" AutomationProperties.Name="启用 ntfy 推送" />
-                            </controls:SettingsCard>
-                            <Expander x:Name="NtfySettingsExpander" Header="推送服务配置（启用后生效）" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                <StackPanel Spacing="2">
-                                    <controls:SettingsCard x:Name="NtfyServerRow" Header="ntfy 服务地址">
-                                        <TextBox Width="420" Text="{Binding NtfyServerUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://ntfy.sh" AutomationProperties.Name="ntfy 服务地址" AutomationProperties.HelpText="{Binding NtfyServerUrl}" ToolTipService.ToolTip="{Binding NtfyServerUrl}" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="主题">
-                                        <TextBox Width="320" Text="{Binding NtfyTopic, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="topic" AutomationProperties.Name="ntfy 主题" AutomationProperties.HelpText="{Binding NtfyTopic}" ToolTipService.ToolTip="{Binding NtfyTopic}" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="优先级">
-                                        <ComboBox Width="320" SelectedIndex="{Binding SelectedNtfyPriorityIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="ntfy 优先级">
-                                            <ComboBoxItem Content="最低" />
-                                            <ComboBoxItem Content="低" />
-                                            <ComboBoxItem Content="默认" />
-                                            <ComboBoxItem Content="高" />
-                                            <ComboBoxItem Content="紧急" />
-                                        </ComboBox>
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard x:Name="NtfyTokenRow" Header="Token">
-                                        <Grid Width="420" ColumnSpacing="8">
+                                        <Grid x:Name="ProxyActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <PasswordBox Password="{Binding PendingNtfyToken, Mode=TwoWay}" PlaceholderText="{Binding NtfyTokenStatusText}" AutomationProperties.Name="ntfy Token" />
-                                            <Button Grid.Column="1" Command="{Binding SaveNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存 ntfy Token" ToolTipService.ToolTip="保存到 Windows 凭据">
-                                                <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                                            <Button Command="{Binding TestNetworkProxyCommand}" IsEnabled="{Binding EnableNetworkProxy}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试网络代理">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE968;" FontSize="14" />
+                                                    <TextBlock Text="测试代理" />
+                                                </StackPanel>
                                             </Button>
-                                            <Button Grid.Column="2" Command="{Binding ClearNtfyTokenCommand}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除 ntfy Token" ToolTipService.ToolTip="清除已保存凭据">
-                                                <FontIcon Glyph="&#xE894;" FontSize="14" />
+                                            <Button Grid.Column="1" Command="{Binding OpenSystemProxySettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 代理设置">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                                    <TextBlock Text="系统设置" />
+                                                </StackPanel>
                                             </Button>
                                         </Grid>
                                     </controls:SettingsCard>
-                                    <controls:SettingsCard Header="使用网络代理">
-                                        <ToggleSwitch IsOn="{Binding UseProxyForNotifications, Mode=TwoWay}" AutomationProperties.Name="ntfy 使用网络代理" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="连接测试">
-                                        <Button Width="320" Command="{Binding SendTestNtfyNotificationCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="发送 ntfy 测试推送">
-                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                <FontIcon Glyph="&#xE724;" FontSize="14" />
-                                                <TextBlock Text="发送测试推送" />
-                                            </StackPanel>
-                                        </Button>
-                                    </controls:SettingsCard>
                                 </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="AdvancedSection" Spacing="8">
-                        <TextBlock Text="维护" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="应用状态">
-                                <StackPanel Spacing="8">
-                                    <TextBlock Text="{Binding DesktopHealth.SummaryText, Mode=OneWay}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                    <Button Command="{Binding RefreshDesktopHealthCommand, Mode=OneWay}" HorizontalAlignment="Left" AutomationProperties.Name="刷新应用状态">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE72C;" FontSize="14" />
-                                            <TextBlock Text="刷新状态" />
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-                            </controls:SettingsCard>
-                            <Expander x:Name="DiagnosticsDetailsExpander" Header="维护详情" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
+                            </StackPanel>
+                            <StackPanel x:Name="UpdatesSection" Spacing="8">
+                                <TextBlock Text="应用更新" Style="{StaticResource SectionTitleTextStyle}" />
                                 <StackPanel Spacing="2">
-                                    <controls:SettingsCard Header="检测组件">
-                                        <TextBlock Text="{Binding DesktopHealth.BackendText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="设置存储">
-                                        <TextBlock Text="{Binding DesktopHealth.SettingsText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="设置存储路径" AutomationProperties.HelpText="{Binding DesktopHealth.SettingsText, Mode=OneWay}" ToolTipService.ToolTip="{Binding DesktopHealth.SettingsText, Mode=OneWay}" />
-                                    </controls:SettingsCard>
                                     <!--
-                                        The summary names the failing checks, so each
-                                        one needs a row; otherwise "3 项需要关注"
-                                        cannot be traced to a specific subsystem.
+                                        One control for one decision.  A separate
+                                        "自动检查更新" switch plus a "检查方式"
+                                        dropdown in the advanced section both gated
+                                        the same startup check, so they could
+                                        contradict each other.
                                     -->
-                                    <controls:SettingsCard Header="系统通知">
-                                        <TextBlock Text="{Binding DesktopHealth.NotificationText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.NotificationText, Mode=OneWay}" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="登录自启动">
-                                        <TextBlock Text="{Binding DesktopHealth.StartupText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.StartupText, Mode=OneWay}" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="包完整性">
-                                        <TextBlock Text="{Binding DesktopHealth.PackageText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.PackageText, Mode=OneWay}" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="安装形态">
-                                        <TextBlock Text="{Binding DesktopHealth.InstallText, Mode=OneWay}" TextTrimming="CharacterEllipsis" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" ToolTipService.ToolTip="{Binding DesktopHealth.InstallText, Mode=OneWay}" />
-                                    </controls:SettingsCard>
-                                </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="ProxySection" Spacing="8">
-                        <TextBlock Text="网络连接" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="启用代理">
-                                <ToggleSwitch IsOn="{Binding EnableNetworkProxy, Mode=TwoWay}" AutomationProperties.Name="启用网络代理" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="代理地址">
-                                <TextBox Width="420" Text="{Binding ProxyAddress, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding EnableNetworkProxy}" PlaceholderText="http://127.0.0.1:7890" AutomationProperties.Name="代理地址" AutomationProperties.HelpText="{Binding ProxyAddress}" ToolTipService.ToolTip="{Binding ProxyAddress}" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="需要认证">
-                                <ToggleSwitch IsOn="{Binding ProxyRequiresAuthentication, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="代理需要认证" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="用户名">
-                                <TextBox Width="320" Text="{Binding ProxyUserName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding CanEditProxyCredentials}" AutomationProperties.Name="代理用户名" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="密码">
-                                <Grid Width="420" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <PasswordBox Password="{Binding PendingProxyPassword, Mode=TwoWay}" IsEnabled="{Binding CanEditProxyCredentials}" PlaceholderText="{Binding ProxyPasswordStatusText}" AutomationProperties.Name="代理密码" />
-                                    <Button Grid.Column="1" Command="{Binding SaveProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="保存代理密码" ToolTipService.ToolTip="保存到 Windows 凭据">
-                                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
-                                    </Button>
-                                    <Button Grid.Column="2" Command="{Binding ClearProxyPasswordCommand}" IsEnabled="{Binding CanEditProxyCredentials}" Style="{StaticResource UtilityIconButtonStyle}" AutomationProperties.Name="清除代理密码" ToolTipService.ToolTip="清除已保存凭据">
-                                        <FontIcon Glyph="&#xE894;" FontSize="14" />
-                                    </Button>
-                                </Grid>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="连接测试">
-                                <Grid x:Name="ProxyActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Command="{Binding TestNetworkProxyCommand}" IsEnabled="{Binding EnableNetworkProxy}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试网络代理">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE968;" FontSize="14" />
-                                            <TextBlock Text="测试代理" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Command="{Binding OpenSystemProxySettingsCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="打开 Windows 代理设置">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE713;" FontSize="14" />
-                                            <TextBlock Text="系统设置" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </controls:SettingsCard>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="UpdatesSection" Spacing="8">
-                        <TextBlock Text="应用更新" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <!--
-                                One control for one decision.  A separate
-                                "自动检查更新" switch plus a "检查方式"
-                                dropdown in the advanced section both gated
-                                the same startup check, so they could
-                                contradict each other.
-                            -->
-                            <controls:SettingsCard x:Name="UpdateChannelRow" Header="检查方式" Description="自动检查在启动时进行；仅手动检查时仍可使用“检查更新”。">
-                                <ComboBox Width="320" SelectedIndex="{Binding SelectedUpdateChannelIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="更新检查方式" AutomationProperties.HelpText="自动检查在启动时进行，选择仅手动检查后仍可随时手动检查更新。">
-                                    <ComboBoxItem Content="自动检查" />
-                                    <ComboBoxItem Content="仅手动检查" />
-                                </ComboBox>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="更新状态">
-                                <TextBlock MaxWidth="420" Text="{Binding UpdateStatusText}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="{Binding UpdateStatusToolTipText}" ToolTipService.ToolTip="{Binding UpdateStatusToolTipText}" />
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="更新操作">
-                                <Grid x:Name="UpdateActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button Command="{Binding CheckForUpdatesCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="检查更新" ToolTipService.ToolTip="立即检查更新">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE895;" FontSize="14" />
-                                            <TextBlock Text="检查更新" />
-                                        </StackPanel>
-                                    </Button>
-                                    <Button Grid.Column="1" Command="{Binding OpenUpdateFeedCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="获取更新" ToolTipService.ToolTip="有安装包时下载并显示位置，否则打开发布页面">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon Glyph="&#xE8A7;" FontSize="14" />
-                                            <TextBlock Text="获取更新" />
-                                        </StackPanel>
-                                    </Button>
-                                </Grid>
-                            </controls:SettingsCard>
-                            <Expander x:Name="AdvancedUpdateExpander" Header="高级更新选项" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                <StackPanel Spacing="2">
-                                    <controls:SettingsCard x:Name="UpdateProxyRow" Header="使用网络代理">
-                                        <ToggleSwitch IsOn="{Binding UseProxyForUpdates, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="更新使用网络代理" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard x:Name="UpdateFeedRow" Header="更新源">
-                                        <TextBox Width="420" Text="{Binding UpdateFeedUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="更新源" AutomationProperties.HelpText="{Binding UpdateFeedUrl}" ToolTipService.ToolTip="{Binding UpdateFeedUrl}" />
-                                    </controls:SettingsCard>
-                                </StackPanel>
-                            </Expander>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel x:Name="AppearanceSection" Spacing="8">
-                        <TextBlock Text="外观" Style="{StaticResource SectionTitleTextStyle}" />
-                        <StackPanel Spacing="2">
-                            <controls:SettingsCard Header="应用主题">
-                                <ComboBox SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
-                                    <ComboBoxItem Content="跟随系统" />
-                                    <ComboBoxItem Content="浅色" />
-                                    <ComboBoxItem Content="深色" />
-                                </ComboBox>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="窗口背景">
-                                <ComboBox SelectedIndex="{Binding SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
-                                    <ComboBoxItem Content="Mica" />
-                                    <ComboBoxItem Content="Acrylic" />
-                                    <ComboBoxItem Content="无" />
-                                </ComboBox>
-                            </controls:SettingsCard>
-                            <controls:SettingsCard Header="顶部诗词">
-                                <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
-                            </controls:SettingsCard>
-                            <Expander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{Binding EnablePoetryStatus, Mode=OneWay}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Expanding="SettingsExpander_Expanding">
-                                <StackPanel Spacing="2">
-                                    <controls:SettingsCard Header="诗词来源">
-                                        <TextBox Text="{Binding PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
-                                    </controls:SettingsCard>
-                                    <controls:SettingsCard Header="诗词语言">
-                                        <ComboBox SelectedIndex="{Binding SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
-                                            <ComboBoxItem Content="简体中文" />
-                                            <ComboBoxItem Content="繁体中文" />
+                                    <controls:SettingsCard x:Name="UpdateChannelRow" Header="检查方式" Description="自动检查在启动时进行；仅手动检查时仍可使用“检查更新”。">
+                                        <ComboBox Width="320" SelectedIndex="{Binding SelectedUpdateChannelIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="更新检查方式" AutomationProperties.HelpText="自动检查在启动时进行，选择仅手动检查后仍可随时手动检查更新。">
+                                            <ComboBoxItem Content="自动检查" />
+                                            <ComboBoxItem Content="仅手动检查" />
                                         </ComboBox>
                                     </controls:SettingsCard>
+                                    <controls:SettingsCard Header="更新状态">
+                                        <TextBlock MaxWidth="420" Text="{Binding UpdateStatusText}" TextWrapping="WrapWholeWords" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" AutomationProperties.Name="{Binding UpdateStatusToolTipText}" ToolTipService.ToolTip="{Binding UpdateStatusToolTipText}" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="更新操作">
+                                        <Grid x:Name="UpdateActionGrid" Width="320" ColumnSpacing="8" RowSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button Command="{Binding CheckForUpdatesCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="检查更新" ToolTipService.ToolTip="立即检查更新">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE895;" FontSize="14" />
+                                                    <TextBlock Text="检查更新" />
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1" Command="{Binding OpenUpdateFeedCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="获取更新" ToolTipService.ToolTip="有安装包时下载并显示位置，否则打开发布页面">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <FontIcon Glyph="&#xE8A7;" FontSize="14" />
+                                                    <TextBlock Text="获取更新" />
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsExpander x:Name="AdvancedUpdateExpander" Header="高级更新选项">
+                                        <controls:SettingsExpander.Items>
+                                            <controls:SettingsCard x:Name="UpdateProxyRow" Header="使用网络代理">
+                                                <ToggleSwitch IsOn="{Binding UseProxyForUpdates, Mode=TwoWay}" IsEnabled="{Binding EnableNetworkProxy}" AutomationProperties.Name="更新使用网络代理" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard x:Name="UpdateFeedRow" Header="更新源">
+                                                <TextBox Width="420" Text="{Binding UpdateFeedUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" AutomationProperties.Name="更新源" AutomationProperties.HelpText="{Binding UpdateFeedUrl}" ToolTipService.ToolTip="{Binding UpdateFeedUrl}" />
+                                            </controls:SettingsCard>
+                                        </controls:SettingsExpander.Items>
+                                    </controls:SettingsExpander>
                                 </StackPanel>
-                            </Expander>
+                            </StackPanel>
+                            <StackPanel x:Name="AppearanceSection" Spacing="8">
+                                <TextBlock Text="外观" Style="{StaticResource SectionTitleTextStyle}" />
+                                <StackPanel Spacing="2">
+                                    <controls:SettingsCard Header="应用主题">
+                                        <ComboBox SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="应用主题">
+                                            <ComboBoxItem Content="跟随系统" />
+                                            <ComboBoxItem Content="浅色" />
+                                            <ComboBoxItem Content="深色" />
+                                        </ComboBox>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="窗口背景">
+                                        <ComboBox SelectedIndex="{Binding SelectedBackdropIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="窗口背景">
+                                            <ComboBoxItem Content="Mica" />
+                                            <ComboBoxItem Content="Acrylic" />
+                                            <ComboBoxItem Content="无" />
+                                        </ComboBox>
+                                    </controls:SettingsCard>
+                                    <controls:SettingsCard Header="顶部诗词">
+                                        <ToggleSwitch Style="{StaticResource DefaultToggleSwitchStyle}" IsOn="{Binding EnablePoetryStatus, Mode=TwoWay}" AutomationProperties.Name="顶部诗词" />
+                                    </controls:SettingsCard>
+                                    <controls:SettingsExpander x:Name="PoetryOptionsExpander" Header="诗词显示选项（可选）" IsEnabled="{Binding EnablePoetryStatus, Mode=OneWay}">
+                                        <controls:SettingsExpander.Items>
+                                            <controls:SettingsCard Header="诗词来源">
+                                                <TextBox Text="{Binding PoetryServiceUrl, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" PlaceholderText="https://poetry.palemoky.com/" AutomationProperties.Name="顶部诗词来源" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Header="诗词语言">
+                                                <ComboBox SelectedIndex="{Binding SelectedPoetryLanguageIndex, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="诗词语言">
+                                                    <ComboBoxItem Content="简体中文" />
+                                                    <ComboBoxItem Content="繁体中文" />
+                                                </ComboBox>
+                                            </controls:SettingsCard>
+                                        </controls:SettingsExpander.Items>
+                                    </controls:SettingsExpander>
+                                </StackPanel>
+                            </StackPanel>
                         </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </ScrollViewer>
-        </Grid>
+                    </ScrollViewer>
+                </Grid>
+            </NavigationView.Content>
+        </NavigationView>
         <Border x:Name="SettingsFooter" Grid.Row="2" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,1,0,0" Padding="24,12">
             <Grid x:Name="SettingsFooterLayout" ColumnSpacing="16" RowSpacing="10">
                 <Grid.RowDefinitions>

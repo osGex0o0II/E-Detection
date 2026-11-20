@@ -519,22 +519,26 @@ function Expand-AutomationElement([IntPtr]$RootHandle, [string]$Name, [int]$Time
         $Name)
 
     do {
-        $match = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
-        if ($match -ne $null) {
+        # A toolkit SettingsExpander exposes its header text on the outer
+        # SettingsExpander group peer and on the inner Expander button peer, so
+        # the first name match is not necessarily the expandable node.  Try
+        # every match and report the one that accepted a pattern.
+        $matches = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+        foreach ($match in $matches) {
             try {
                 $pattern = $match.GetCurrentPattern([System.Windows.Automation.ExpandCollapsePattern]::Pattern)
                 $pattern.Expand()
+                return $match.Current.Name
             }
             catch {
                 try {
                     $invoke = $match.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern)
                     $invoke.Invoke()
+                    return $match.Current.Name
                 }
                 catch {
                 }
             }
-
-            return $match.Current.Name
         }
 
         Start-Sleep -Milliseconds 250

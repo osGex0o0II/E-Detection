@@ -12,14 +12,14 @@ public sealed partial class SettingsView
         NavigateToElementByName(sectionName);
     }
 
-    private void SettingsCategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void SettingsNavigation_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs e)
     {
         if (_suppressCategoryScroll)
         {
             return;
         }
 
-        if (SettingsCategoryList.SelectedItem is not ListViewItem { Tag: string sectionName }
+        if (sender.SelectedItem is not NavigationViewItem { Tag: string sectionName }
             || SettingsScroll is null)
         {
             return;
@@ -31,13 +31,13 @@ public sealed partial class SettingsView
     private void SelectCategoryBySection(string sectionName)
     {
         var categorySectionName = GetCategorySectionName(sectionName);
-        for (var i = 0; i < SettingsCategoryList.Items.Count; i++)
+        foreach (var item in SettingsNavigation.MenuItems.OfType<NavigationViewItem>())
         {
-            if (SettingsCategoryList.Items[i] is ListViewItem { Tag: string itemSection }
+            if (item.Tag is string itemSection
                 && string.Equals(itemSection, categorySectionName, StringComparison.Ordinal))
             {
                 _suppressCategoryScroll = true;
-                SettingsCategoryList.SelectedIndex = i;
+                SettingsNavigation.SelectedItem = item;
                 _suppressCategoryScroll = false;
                 ShowCategory(categorySectionName);
                 return;
@@ -95,7 +95,7 @@ public sealed partial class SettingsView
             }
         }
 
-        SettingsCategoryList.Focus(FocusState.Programmatic);
+        SettingsSearchBox.Focus(FocusState.Programmatic);
     }
 
     private static bool TryFocus(Control control) =>
@@ -125,7 +125,7 @@ public sealed partial class SettingsView
         }
 
         if (!string.IsNullOrWhiteSpace(entry.ExpanderName)
-            && FindName(entry.ExpanderName) is Expander expander)
+            && FindName(entry.ExpanderName) is CommunityToolkit.WinUI.Controls.SettingsExpander expander)
         {
             expander.IsExpanded = true;
         }
@@ -138,18 +138,70 @@ public sealed partial class SettingsView
         UpdateResponsiveLayout();
     }
 
-    private void SettingsBody_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void SettingsNavigation_SizeChanged(object sender, SizeChangedEventArgs e)
     {
+        SyncSettingsSearchHost();
+        UpdateResponsiveLayout();
+    }
+
+    private void SettingsNavigation_DisplayModeChanged(NavigationView sender, NavigationViewDisplayModeChangedEventArgs args)
+    {
+        SyncSettingsSearchHost();
         UpdateResponsiveLayout();
     }
 
     private void SettingsView_Loaded(object sender, RoutedEventArgs e)
     {
+        SyncSettingsSearchHost();
         SelectCategoryBySection("DefaultsSection");
         UpdateResponsiveLayout();
     }
 
+    /// <summary>
+    /// Keeps the settings search reachable in both pane layouts.  The pane
+    /// header is hidden once NavigationView collapses to the 56 DIP icon rail,
+    /// so the same panel moves to a host above the content instead of being
+    /// hidden with it.
+    /// </summary>
+    private void SyncSettingsSearchHost()
+    {
+        if (SettingsNavigation is null || SettingsSearchPanel is null || SettingsCompactSearchHost is null)
+        {
+            return;
+        }
+
+        var compact = SettingsNavigation.DisplayMode != NavigationViewDisplayMode.Expanded;
+        var hostedInContent = SettingsCompactSearchHost.Content is not null;
+        if (compact == hostedInContent)
+        {
+            return;
+        }
+
+        if (compact)
+        {
+            SettingsNavigation.PaneHeader = null;
+            SettingsCompactSearchHost.Content = SettingsSearchPanel;
+            SettingsCompactSearchHost.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            SettingsCompactSearchHost.Content = null;
+            SettingsCompactSearchHost.Visibility = Visibility.Collapsed;
+            SettingsNavigation.PaneHeader = SettingsSearchPanel;
+        }
+    }
+
     private void SettingsExpander_Expanding(Expander sender, ExpanderExpandingEventArgs args)
+    {
+        QueueResponsiveLayoutRefresh(sender);
+    }
+
+    /// <summary>
+    /// Expanding an expander reveals grids whose columns are rebuilt by
+    /// <see cref="UpdateResponsiveLayout"/>; the layout must be re-measured once
+    /// the content has been measured, and once more after that pass has
+    /// applied, hence the nested dispatch.</summary>
+    private void QueueResponsiveLayoutRefresh(FrameworkElement sender)
     {
         DispatcherQueue.TryEnqueue(() =>
         {
