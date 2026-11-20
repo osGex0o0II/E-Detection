@@ -100,25 +100,35 @@ public sealed partial class SettingsView
             NavigateToElementByName(entry.TargetName ?? entry.SectionName);
             // The AutoSuggestBox popup is still closing when the category swap
             // happens, and a focus request made while it is open is rejected.
-            // Poll for the popup to close instead of sleeping a fixed 250 ms,
-            // so focus lands as soon as it is accepted.
             DispatcherQueue.TryEnqueue(
                 Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
                 () => FocusSearchTargetWhenPopupCloses(entry.TargetName ?? entry.SectionName));
         });
     }
 
-    private void FocusSearchTargetWhenPopupCloses(string elementName, int attempt = 0)
+    /// <summary>
+    /// Waits for the suggestion popup to close before taking focus.  The wait
+    /// must be wall-clock: a DispatcherQueue-only retry loop burns through every
+    /// attempt within a few milliseconds, long before the popup actually closes,
+    /// so the focus request is rejected and focus is left stranded.
+    /// </summary>
+    private async void FocusSearchTargetWhenPopupCloses(string elementName)
     {
-        if (!HasOpenPopup() || attempt >= 20)
+        for (var attempt = 0; attempt < 20; attempt++)
         {
-            FocusSearchTarget(elementName);
-            return;
+            if (!HasOpenPopup())
+            {
+                break;
+            }
+
+            await Task.Delay(50);
+            if (!IsLoaded)
+            {
+                return;
+            }
         }
 
-        DispatcherQueue.TryEnqueue(
-            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-            () => FocusSearchTargetWhenPopupCloses(elementName, attempt + 1));
+        FocusSearchTarget(elementName);
     }
 
     private static SettingsSearchEntry[] BuildSearchEntries() =>

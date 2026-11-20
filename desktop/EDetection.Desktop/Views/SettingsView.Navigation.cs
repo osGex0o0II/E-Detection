@@ -73,11 +73,11 @@ public sealed partial class SettingsView
             return;
         }
 
-        if (root is Control rootControl && TryFocus(rootControl))
-        {
-            return;
-        }
-
+        // Descendants first, then the container itself.  A SettingsCard is a
+        // ContentControl and therefore focusable, so focusing the root first
+        // would park focus on the card shell instead of the editor inside it
+        // (the pre-migration rows were plain Grids, which are not focusable,
+        // so the BFS always reached the real control).
         var pending = new Queue<DependencyObject>();
         pending.Enqueue(root);
         while (pending.Count > 0)
@@ -93,6 +93,11 @@ public sealed partial class SettingsView
             {
                 pending.Enqueue(VisualTreeHelper.GetChild(current, i));
             }
+        }
+
+        if (root is Control rootControl && TryFocus(rootControl))
+        {
+            return;
         }
 
         SettingsSearchBox.Focus(FocusState.Programmatic);
