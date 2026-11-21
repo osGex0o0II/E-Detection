@@ -130,7 +130,7 @@
                 </NavigationViewItem>
                 <NavigationViewItem Tag="NotificationsSection" Content="通知" AutomationProperties.AutomationId="SettingsNav_Notifications" AutomationProperties.Name="通知">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE7F7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
+                        <FontIcon Glyph="&#xE7E7;" FontSize="16" AutomationProperties.AccessibilityView="Raw" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Tag="LlmSection" Content="连接与集成" AutomationProperties.AutomationId="SettingsNav_Integrations" AutomationProperties.Name="连接与集成">
@@ -482,7 +482,7 @@
                                             </Grid.ColumnDefinitions>
                                             <Button Command="{Binding TestDesktopNotificationCommand}" HorizontalAlignment="Stretch" AutomationProperties.Name="测试桌面通知">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <FontIcon Glyph="&#xE7F7;" FontSize="14" />
+                                                    <FontIcon Glyph="&#xE7E7;" FontSize="14" />
                                                     <TextBlock Text="测试通知" />
                                                 </StackPanel>
                                             </Button>

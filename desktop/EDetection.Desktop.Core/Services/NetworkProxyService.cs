@@ -55,14 +55,53 @@ public sealed class NetworkProxyService(IAppCredentialStore credentials)
         {
             Timeout = TestTimeout,
         };
-        using var response = await client.GetAsync("https://www.msftconnecttest.com/connecttest.txt", cancellationToken).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-        if (!body.Contains("Microsoft Connect Test", StringComparison.OrdinalIgnoreCase))
+
+        // Probe several well-known captive-portal endpoints and accept the first
+        // that answers 2xx.  The previous single probe was
+        // https://www.msftconnecttest.com/connecttest.txt, which now resolves to
+        // an Akamai host that serves a certificate for a248.e.akamai.net with no
+        // SAN for the requested name - so the test failed with
+        // RemoteCertificateNameMismatch on every machine, even behind a working
+        // proxy.  The generate_204 endpoints answer 204 over valid TLS.
+        Exception? lastFailure = null;
+        foreach (var probe in ConnectivityProbes)
         {
-            throw new InvalidOperationException("代理返回了非预期的连接测试响应。");
+            try
+            {
+                using var response = await client.GetAsync(probe, cancellationToken).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    return;
+                }
+
+                lastFailure = new HttpRequestException(
+                    $"代理连接测试返回 HTTP {(int)response.StatusCode}");
+            }
+            catch (Exception ex) when (ex is HttpRequestException
+                                       or TaskCanceledException
+                                       or OperationCanceledException
+                                       or System.Security.Authentication.AuthenticationException)
+            {
+                lastFailure = ex;
+            }
         }
+
+        throw lastFailure ?? new InvalidOperationException("代理连接测试未收到任何响应。");
     }
+
+    /// <summary>
+    /// Endpoints that answer a bare 2xx/204 with valid TLS.  Order matters:
+    /// the first one that succeeds wins, so a proxy that only allows some hosts
+    /// still reports success.  Exposed for the regression test that guards
+    /// against re-introducing a host whose certificate no longer matches its
+    /// own DNS name (that is what broke the previous single probe).
+    /// </summary>
+    public static IReadOnlyList<string> ConnectivityProbes { get; } =
+    [
+        "https://connectivitycheck.gstatic.com/generate_204",
+        "https://www.gstatic.com/generate_204",
+        "https://cp.cloudflare.com/generate_204",
+    ];
 
     // WebProxy's constructor throws UriFormatException on values that are
     // perfectly ordinary strings but not valid URIs ("http://", a stray space
