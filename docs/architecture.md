@@ -129,9 +129,9 @@ WinUI 3 壳只负责界面与系统集成：
 - `Views/AppShellView.xaml`：标题栏、状态带、工作台/设置页切换。
 - `Views/RunSetupView.xaml`：输入、输出、运行开关、报告历史。
 - `Views/DetectionWorkbenchView.xaml`：指标卡、风险设备、异常类型、异常明细、运行记录。
-- `Views/SettingsView.xaml` 及其 partial 文件：设置分区、搜索、导航与动作；通过 `SettingsLayoutStates` 适配窗口宽度。
+- `Views/SettingsView.xaml` 及其 partial 文件：设置分区、搜索、导航与动作；分类导航使用原生 `NavigationView`（`PaneDisplayMode="Auto"`，在 1080 DIP 以下收为 56 DIP 图标栏），设置行统一使用 `SettingsCard`。
 - `Views/Settings/DetectionRulesSettingsSection.xaml`：独立检测规则设置分区；可由设置页搜索与分类导航定位。
-- 设置卡片使用 `CommunityToolkit.WinUI.Controls.SettingsControls`；`UpdateResponsiveLayout` 更新响应式状态。
+- 设置卡片与展开区使用 `CommunityToolkit.WinUI.Controls.SettingsControls`（`SettingsCard` / `SettingsExpander`）；`UpdateResponsiveLayout` 只负责搜索宿主、页脚、按钮网格与阈值网格的换行。
 - `ViewModels/MainViewModel*.cs`：命令、属性、设置持久化、报告文本、运行事件编排。
 - `Composition/AppHost.cs`：WinUI 壳的 DI 组合根。
 - `Services/DesktopHealthService.cs`：应用、通知、启动集成、设置存储与包健康状态。
