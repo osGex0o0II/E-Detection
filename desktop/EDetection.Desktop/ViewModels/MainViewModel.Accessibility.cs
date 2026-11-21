@@ -1,3 +1,4 @@
+using EDetection.Desktop.Models;
 using EDetection.Desktop.Services;
 using Microsoft.UI.Xaml;
 
@@ -57,7 +58,7 @@ public partial class MainViewModel
         || SkippedFiles > 0;
 
     private bool ShouldShowCompletionActions =>
-        !IsRunning && SelectedReport is null && StatusText == "检测完成";
+        !IsRunning && SelectedReport is null && StatusText == RunStatusText.Completed;
 
     // Only a bounded window of detail rows is transferred to the UI (the
     // backend keeps the first 100).  Showing "100/600 条预览" reads like a

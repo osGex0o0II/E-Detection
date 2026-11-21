@@ -156,8 +156,8 @@ public sealed class RunEventService
         new()
         {
             ProgressPercent = 100,
-            CurrentFileText = "检测完成",
-            StatusText = "检测完成",
+            CurrentFileText = RunStatusText.Completed,
+            StatusText = RunStatusText.Completed,
             StopTelemetry = true,
             TaskbarKind = TaskbarProgressKind.Normal,
             TaskbarPercent = 100,
@@ -171,8 +171,8 @@ public sealed class RunEventService
         var failure = evt.Message ?? evt.ErrorType ?? "原生检测核心返回错误。";
         return new RunEventAction
         {
-            StatusText = "检测失败",
-            CurrentFileText = "检测失败",
+            StatusText = RunStatusText.Failed,
+            CurrentFileText = RunStatusText.Failed,
             LastFailureText = failure,
             StopTelemetry = true,
             TaskbarKind = TaskbarProgressKind.Error,
@@ -181,7 +181,7 @@ public sealed class RunEventService
             LogMessage = failure,
             Notification = new DesktopNotificationRequest(
                 DesktopNotificationKind.Error,
-                "检测失败",
+                RunStatusText.Failed,
                 failure),
         };
     }

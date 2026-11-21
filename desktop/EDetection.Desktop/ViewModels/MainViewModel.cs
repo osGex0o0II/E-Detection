@@ -364,19 +364,19 @@ public partial class MainViewModel
                 return "需要加载有效阈值文件";
             }
 
-            if (StatusText == "无法开始检测")
+            if (StatusText == RunStatusText.Blocked)
             {
                 return "需要处理后再开始";
             }
 
-            if (StatusText == "检测失败")
+            if (StatusText == RunStatusText.Failed)
             {
                 return "检测未完成";
             }
 
             if (!string.IsNullOrWhiteSpace(ReportPath))
             {
-                return "检测完成";
+                return RunStatusText.Completed;
             }
 
             if (!IsLocalInputReady())
@@ -414,7 +414,7 @@ public partial class MainViewModel
                 return "当前阈值文件尚未通过校验，请在设置中加载或另存为有效文件。";
             }
 
-            if (StatusText == "无法开始检测" || StatusText == "检测失败")
+            if (RunStatusText.IsFailure(StatusText))
             {
                 return LastFailureText == "暂无失败"
                     ? DiagnosticActionText
@@ -450,7 +450,7 @@ public partial class MainViewModel
         ? Visibility.Visible
         : Visibility.Collapsed;
 
-    public string FailureActionTitleText => StatusText == "无法开始检测"
+    public string FailureActionTitleText => StatusText == RunStatusText.Blocked
         ? "运行前检查未通过"
         : "检测失败";
 
@@ -463,7 +463,7 @@ public partial class MainViewModel
         : Visibility.Collapsed;
 
     private bool HasActionableFailure =>
-        !IsRunning && (StatusText == "检测失败" || StatusText == "无法开始检测");
+        !IsRunning && RunStatusText.IsFailure(StatusText);
 
     public string ThemeMode => SelectedThemeIndex switch
     {

@@ -143,7 +143,7 @@ public partial class MainViewModel
 
     private void BlockStart(string message, string action)
     {
-        StatusText = "无法开始检测";
+        StatusText = RunStatusText.Blocked;
         LastFailureText = message;
         Diagnostics.ApplyBlockStart(message, action);
         SetTaskbarProgress(TaskbarProgressKind.None, 0);

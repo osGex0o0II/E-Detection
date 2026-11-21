@@ -46,7 +46,7 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(_activeDetectionConfigPath))
         {
             LastFailureText = "当前阈值文件未通过校验。请先加载有效配置或另存为新文件。";
-            StatusText = "无法开始检测";
+            StatusText = RunStatusText.Blocked;
             ShowSettingsFeedback(LastFailureText, InfoBarSeverity.Warning);
             return;
         }
@@ -64,7 +64,7 @@ public partial class MainViewModel
         StartRunTelemetry();
         IsRunning = true;
         _desktopNotificationSent = false;
-        StatusText = "正在准备检测...";
+        StatusText = RunStatusText.Preparing;
         SetTaskbarProgress(TaskbarProgressKind.Indeterminate, 0);
         _runCts = new CancellationTokenSource();
         SaveSettings();
@@ -82,15 +82,15 @@ public partial class MainViewModel
 
             if (exitCode != 0)
             {
-                RunTelemetry.ApplyCurrentFile("检测失败");
+                RunTelemetry.ApplyCurrentFile(RunStatusText.Failed);
                 StopRunTelemetry();
                 LastFailureText = $"检测组件退出码: {exitCode}";
                 AddLog("错误", LastFailureText);
-                StatusText = "检测失败";
+                StatusText = RunStatusText.Failed;
                 SetTaskbarProgress(TaskbarProgressKind.Error, Math.Max(ProgressPercent, 100));
                 RequestDesktopNotification(
                     DesktopNotificationKind.Error,
-                    "检测失败",
+                    RunStatusText.Failed,
                     LastFailureText,
                     ReportPath);
             }
@@ -98,29 +98,29 @@ public partial class MainViewModel
         catch (OperationCanceledException)
         {
             ClearCancelConfirmation();
-            RunTelemetry.ApplyCurrentFile("检测已取消");
+            RunTelemetry.ApplyCurrentFile(RunStatusText.Cancelled);
             StopRunTelemetry();
             AddLog("取消", "检测已取消。");
-            StatusText = "检测已取消";
+            StatusText = RunStatusText.Cancelled;
             SetTaskbarProgress(TaskbarProgressKind.Paused, ProgressPercent);
             RequestDesktopNotification(
                 DesktopNotificationKind.Warning,
-                "检测已取消",
+                RunStatusText.Cancelled,
                 $"已处理 {ProcessedFiles}/{TotalFiles} 个文件。",
                 ReportPath);
         }
         catch (Exception ex)
         {
             ClearCancelConfirmation();
-            RunTelemetry.ApplyCurrentFile("检测失败");
+            RunTelemetry.ApplyCurrentFile(RunStatusText.Failed);
             StopRunTelemetry();
             LastFailureText = ex.Message;
             AddLog("错误", ex.Message);
-            StatusText = "检测失败";
+            StatusText = RunStatusText.Failed;
             SetTaskbarProgress(TaskbarProgressKind.Error, 100);
             RequestDesktopNotification(
                 DesktopNotificationKind.Error,
-                "检测失败",
+                RunStatusText.Failed,
                 ex.Message,
                 ReportPath);
         }
@@ -193,7 +193,6 @@ public partial class MainViewModel
         {
             StatusText = action.StatusText;
         }
-
         if (action.LastFailureText is not null)
         {
             LastFailureText = action.LastFailureText;

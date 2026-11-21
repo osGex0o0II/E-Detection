@@ -80,7 +80,7 @@ public partial class MainViewModel
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            ShowSettingsFeedback($"另存为失败：{ex.Message}", InfoBarSeverity.Warning);
+            ShowSettingsFeedback($"另存为失败: {ex.Message}", InfoBarSeverity.Warning);
             return false;
         }
     }
